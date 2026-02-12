@@ -15,4 +15,9 @@ class Article extends Model
         'tech_stack', 
         'github_url'
     ];
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }
