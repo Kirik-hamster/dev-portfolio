@@ -9,3 +9,71 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+
+/* Контейнер для редактора и отображения */
+.prose-editor {
+    color: #e5e7eb; /* Цвет текста по умолчанию */
+}
+
+/* Заголовки */
+.prose-editor h1 {
+    font-size: 3.5rem !important;
+    font-weight: 800 !important;
+    margin-bottom: 2rem !important;
+    color: #ffffff !important;
+    line-height: 1.1;
+}
+
+.prose-editor h2 {
+    font-size: 2.25rem !important;
+    font-weight: 700 !important;
+    margin-top: 2.5rem !important;
+    margin-bottom: 1.25rem !important;
+    color: #f3f4f6 !important;
+}
+
+/* Списки — самая частая проблема в Tailwind */
+.prose-editor ul {
+    list-style-type: disc !important; /* Точки */
+    padding-left: 2rem !important;
+    margin: 1.5rem 0 !important;
+}
+
+.prose-editor ol {
+    list-style-type: decimal !important; /* Цифры */
+    padding-left: 2rem !important;
+    margin: 1.5rem 0 !important;
+}
+
+.prose-editor li {
+    margin-bottom: 0.75rem !important;
+    display: list-item !important; /* Гарантируем отображение маркера */
+}
+
+/* Блок кода */
+.prose-editor pre {
+    background: #0d1117 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 1rem !important;
+    padding: 1.5rem !important;
+    margin: 2rem 0 !important;
+    overflow-x: auto;
+}
+
+.prose-editor pre code {
+    background: transparent !important;
+    color: #93c5fd !important;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.9rem !important;
+    padding: 0 !important;
+}
+
+/* Цитаты */
+.prose-editor blockquote {
+    border-left: 4px solid #3b82f6 !important;
+    padding-left: 1.5rem !important;
+    font-style: italic !important;
+    color: #9ca3af !important;
+    margin: 2rem 0 !important;
+}

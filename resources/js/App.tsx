@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom/client';
 import { Article } from './types';
 import { ArticleForm } from './components/ArticleForm';
 import { CommentSection } from './components/CommentSection'; // Не забудь импорт!
+import { ArticleApiService } from './services/ArticleApiService';
 
 // Определяем типы для навигации
 type ViewState = 'list' | 'create' | 'detail';
@@ -23,18 +24,14 @@ function App() {
     // 1. Загрузка данных (согласно ТЗ GET /api/articles)
     const fetchArticles = useCallback((query = '') => {
         setLoading(true);
-        
-        // ВАЖНО: Используем обратные кавычки (backticks) ` ` чтобы работала подстановка ${query}
-        fetch(`/api/articles?search=${query}`) 
-            .then(res => res.json())
-            .then((data: Article[]) => {
+        ArticleApiService.fetchAll(query)
+            .then(data => {
                 setArticles(data);
                 setLoading(false);
-                // Мы не всегда хотим сбрасывать в 'list' при поиске, 
-                // но для простоты пока оставим как в твоем коде
-                setView('list'); 
+                setView('list');
                 setEditingArticle(undefined);
-            });
+            })
+            .catch(err => console.error(err));
     }, []);
 
     useEffect(() => {
@@ -45,14 +42,10 @@ function App() {
     // 2. Удаление (CRUD требование)
     const handleDelete = async (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (!confirm('Удалить?')) return;
-        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!confirm('Удалить статью?')) return;
         
-        await fetch(`/api/articles/${id}`, { // Добавили /api
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': token || '' }
-        });
-        fetchArticles(searchQuery);
+        const res = await ArticleApiService.delete(id);
+        if (res.ok) fetchArticles(searchQuery);
     };
 
     useEffect(() => {
@@ -108,15 +101,13 @@ function App() {
                             <div 
                                 key={article.id} 
                                 onClick={() => {
-                                    setLoading(true); // Показываем лоадер
-                                    fetch(`/api/articles/${article.id}`)
-                                        .then(res => res.json())
-                                        .then(fullArticle => {
-                                            setSelectedArticle(fullArticle);
-                                            setView('detail');
-                                            setLoading(false);
-                                            window.scrollTo(0, 0); // Прокрутка наверх для премиум-ощущения
-                                        });
+                                    setLoading(true);
+                                    ArticleApiService.fetchOne(article.id).then(fullArticle => {
+                                        setSelectedArticle(fullArticle);
+                                        setView('detail');
+                                        setLoading(false);
+                                        window.scrollTo(0, 0);
+                                    });
                                 }}
                                 className="group cursor-pointer relative p-8 rounded-[32px] bg-white/[0.02] border border-white/5 hover:border-blue-500/30 transition-all duration-500 backdrop-blur-sm"
                             >
@@ -168,7 +159,7 @@ function App() {
                             <div className="h-px flex-1 bg-white/5"></div>
                         </div>
 
-                        <div className="prose prose-invert prose-lg max-w-none pb-20" dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
+                        <div className="prose-editor shadow-2xl" dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
                         
                         {/* ОБЛАСТЬ ОБСУЖДЕНИЯ С ЯКОРЕМ */}
                         <div id="discussion-area" className="mt-20 pt-20 border-white/5">

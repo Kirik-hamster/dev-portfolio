@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
+import { ArticleApiService } from '../services/ArticleApiService';
 
 export const CommentSection = ({ articleId, comments, onCommentAdded }: any) => {
     const [name, setName] = useState('');
@@ -7,12 +8,10 @@ export const CommentSection = ({ articleId, comments, onCommentAdded }: any) => 
 
     const handleSubmit = async () => {
         if (!name.trim() || !content.trim()) return;
-        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-        const res = await fetch(`/api/articles/${articleId}/comments`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token || '' },
-            body: JSON.stringify({ author_name: name, content: content })
+        const res = await ArticleApiService.addComment(articleId, { 
+            author_name: name, 
+            content: content 
         });
 
         if (res.ok) {
