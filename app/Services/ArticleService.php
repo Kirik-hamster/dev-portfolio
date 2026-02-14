@@ -2,37 +2,49 @@
 
 namespace App\Services;
 
+use App\Interfaces\ArticleRepositoryInterface;
 use App\Models\Article;
-use Illuminate\Support\Str;
 
+/**
+ * Сервис для управления бизнес-логикой, связанной со статьями.
+ * Делегирует операции с данными репозиторию, оставляя за собой
+ * только оркестрацию и специфическую бизнес-логику (если она есть).
+ */
 class ArticleService
 {
+    // Внедряем зависимость от интерфейса, а не от конкретной реализации
+    public function __construct(
+        protected ArticleRepositoryInterface $repository
+    ) {}
+
     public function getFilteredArticles(?string $search = null)
     {
-        return Article::withCount('comments')
-            ->when($search, fn($q) => 
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('content', 'like', "%{$search}%")
-            )
-            ->latest()
-            ->get();
+        return $this->repository->getFiltered($search);
     }
 
     public function createArticle(array $data): Article
     {
-        // Автоматическая генерация слага, если его нет (OOP подход)
-        $data['slug'] = $data['slug'] ?? Str::slug($data['title']);
-        return Article::create($data);
+        // Здесь могла бы быть сложная бизнес-логика:
+        // - Отправка уведомлений
+        // - Проверка прав
+        // - Начисление бонусов и т.д.
+        return $this->repository->create($data);
     }
 
     public function updateArticle(Article $article, array $data): Article
     {
-        $article->update($data);
-        return $article;
+        $this->repository->update($article, $data);
+        // Возвращаем обновленную модель
+        return $article->fresh();
     }
 
     public function addComment(Article $article, array $data)
     {
-        return $article->comments()->create($data);
+        return $this->repository->addComment($article, $data);
+    }
+
+    public function deleteArticle(Article $article): ?bool
+    {
+        return $this->repository->delete($article);
     }
 }

@@ -15,7 +15,7 @@ import { ArticleApiService } from '../services/ArticleApiService';
 // ОБЯЗАТЕЛЬНО: Описание пропсов должно быть тут
 interface Props {
     article: Article | undefined;
-    onSave: () => void;
+    onSave: (data: any) => void;
     onCancel: () => void;
 }
 
@@ -70,7 +70,7 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!editor || !title.trim()) return;
         const payload = { 
             title, 
@@ -79,8 +79,7 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
             tech_stack: techStack, 
             slug: title.toLowerCase().split(' ').join('-') 
         };
-        const res = await ArticleApiService.save(payload, article?.id);
-        if (res.ok) onSave();
+        onSave(payload);
     };
 
     if (!editor) return null;
