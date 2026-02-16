@@ -1,10 +1,12 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ArticleController;
-use App\Models\Article;
 
-// Отдача главной страницы React
-Route::get('/', function () {
-    return view('welcome');
+// Роуты авторизации теперь будут доступны по /api/login, /api/register и т.д.
+Route::prefix('api')->group(function () {
+    require __DIR__.'/auth.php';
 });
+
+// Этот роут всегда должен быть ПОСЛЕДНИМ
+Route::get('/{any?}', function () {
+    return view('app');
+})->where('any', '.*');

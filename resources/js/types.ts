@@ -1,15 +1,19 @@
+// resources/js/types.ts
+
+export interface User {
+    id: number;
+    name: string;
+    role: 'admin' | 'user';
+    email: string;
+}
+
 export interface Article {
     id: number;
     title: string;
     content: string;
+    slug: string;
     type: 'blog' | 'portfolio';
     tech_stack?: string;
-    slug: string;
-    created_at: string;
-    comments?: Array<{
-        id: number;
-        author_name: string;
-        content: string;
-        created_at: string;
-    }>; 
+    github_url?: string;
+    comments?: any[];
 }

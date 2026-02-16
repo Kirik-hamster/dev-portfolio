@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Article extends Model
 {
     // Это "белый список" полей, которые можно заполнять через Article::create
-    protected $fillable = [
+    protected $fillable = 
+    [
         'title', 
         'content', 
         'slug', 
         'type', 
+        'user_id', 
+        'is_main', 
         'tech_stack', 
         'github_url'
     ];

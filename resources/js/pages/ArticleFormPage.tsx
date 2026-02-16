@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { ArticleForm } from '../components/ArticleForm';
-import { Article } from '../types';
-import { ArticleApiService } from '../services/ArticleApiService'; // Импортируем сервис
+import { Article, User } from '../types'; // ДОБАВИЛИ User В ИМПОРТ
+import { ArticleApiService } from '../services/ArticleApiService';
 
 interface ArticleFormPageProps {
+    user: User | null; 
     article?: Article;
     onSave: () => void;
     onCancel: () => void;
@@ -14,7 +14,7 @@ interface ArticleFormPageProps {
  * Страница-обертка для формы создания/редактирования статьи.
  * Теперь эта страница отвечает за вызов API для сохранения данных.
  */
-export function ArticleFormPage({ article, onSave, onCancel }: ArticleFormPageProps) {
+export function ArticleFormPage({ user, article, onSave, onCancel }: ArticleFormPageProps) {
     
     // Новая функция, которая будет передана в форму
     const handleSave = async (data: any) => {

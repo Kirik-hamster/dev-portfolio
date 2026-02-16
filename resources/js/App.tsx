@@ -3,16 +3,20 @@ import { Github, Mail, ArrowUpRight } from 'lucide-react';
 import './bootstrap';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Article } from './types';
+import { Article, User } from './types';
 
 // Импортируем наши новые компоненты страниц
 import { HomePage } from './pages/HomePage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { ArticleDetailPage } from './pages/ArticleDetailPage';
 import { ArticleFormPage } from './pages/ArticleFormPage';
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
+import { BlogsPage } from './pages/BlogsPage'; 
+import { ProfilePage } from './pages/ProfilePage';
 
 // Определяем состояния нашего простого роутера
-type Page = 'home' | 'portfolio' | 'detail' | 'form';
+type Page = 'home' | 'portfolio' | 'detail' | 'form' | 'login' | 'register' | 'profile' | 'blogs';
 
 /**
  * Главный компонент приложения.
@@ -22,10 +26,51 @@ type Page = 'home' | 'portfolio' | 'detail' | 'form';
 function App() {
     // Состояние роутера
     const [page, setPage] = useState<Page>('home');
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
     const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null);
     const [editingArticle, setEditingArticle] = useState<Article | undefined>(undefined);
     
     const glowRef = useRef<HTMLDivElement>(null);
+
+    // 1. Помощник для получения токена из куки
+    const getXsrfToken = () => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; XSRF-TOKEN=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+        return '';
+    };
+
+    // 2. Функция выхода внутри компонента App
+    const handleLogout = async () => {
+        await fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-XSRF-TOKEN': getXsrfToken() // Даем серверу токен
+            },
+            credentials: 'include' // Передаем куки сессии
+        });
+        
+        // Очищаем состояние и обновляемся
+        setUser(null);
+        setPage('home');
+        window.location.reload();
+    };
+
+    // Проверка: кто зашел?
+    useEffect(() => {
+        fetch('/api/user', { credentials: 'include' }) // ДОБАВЛЕНО
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                setUser(data);
+                setLoading(false);
+            })
+            .catch(() => {
+                setUser(null);
+                setLoading(false);
+            });
+    }, []);
 
     // --- Логика навигации ---
     const navigateToHome = () => setPage('home');
@@ -71,22 +116,49 @@ function App() {
 
     // Функция для рендеринга текущей страницы в зависимости от состояния
     const renderPage = () => {
+
+
+        if (page === 'login') return (
+            <LoginPage 
+                onLoginSuccess={(u) => { setUser(u); setPage('home'); }} 
+                onNavigateToRegister={() => setPage('register')}
+            />
+        );
+
+        if (page === 'register') return (
+            <RegisterPage 
+                onRegisterSuccess={(u) => { setUser(u); setPage('home'); }} 
+                onNavigateToLogin={() => setPage('login')} // Позволит вернуться назад
+            />
+        );
         switch (page) {
             case 'portfolio':
                 return <PortfolioPage 
+                    user={user} // ПЕРЕДАВАЙ ЮЗЕРА В ПОРТФОЛИО!
                     onArticleSelect={handleSelectArticle}
                     onEditArticle={handleEditArticle}
                     onCreateArticle={handleCreateArticle}
                 />;
             case 'detail':
-                return selectedArticleId ? <ArticleDetailPage articleId={selectedArticleId} onBack={navigateToPortfolio} /> : <PortfolioPage onArticleSelect={handleSelectArticle} onEditArticle={handleEditArticle} onCreateArticle={handleCreateArticle} />;
+                return selectedArticleId ? 
+                    <ArticleDetailPage articleId={selectedArticleId} onBack={navigateToPortfolio} /> : 
+                    <PortfolioPage 
+                        user={user} // ДОБАВЛЕНО
+                        onArticleSelect={handleSelectArticle} 
+                        onEditArticle={handleEditArticle} 
+                        onCreateArticle={handleCreateArticle} 
+                    />;
             case 'form':
                 return <ArticleFormPage 
+                    user={user} // ДОБАВЛЕНО
                     onSave={handleFormSave} 
                     onCancel={handleFormCancel} 
-                    // Условное добавление пропа, чтобы соответствовать `exactOptionalPropertyTypes`
                     {...(editingArticle && { article: editingArticle })}
                 />;
+            case 'blogs':
+                return <BlogsPage user={user} onNavigateToProfile={() => setPage('profile')} />;
+            case 'profile':
+                return <ProfilePage user={user} />;
             case 'home':
             default:
                 return <HomePage onNavigateToPortfolio={navigateToPortfolio} />;
@@ -104,9 +176,40 @@ function App() {
                     <h2 className="text-lg font-medium tracking-tight bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent cursor-pointer" onClick={navigateToHome}>
                         Kirill Myakotin
                     </h2>
-                    <nav className="flex gap-2">
-                        <button onClick={navigateToPortfolio} className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${page === 'portfolio' ? 'bg-white text-black' : 'hover:bg-white/10'}`}>Портфолио</button>
-                        <button className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all hover:bg-white/10 text-gray-500 cursor-not-allowed">Блоги</button>
+                    <nav className="flex gap-4 items-center">
+                        <button onClick={() => setPage('portfolio')} className="...">Портфолио</button>
+                        
+                        <button 
+                            onClick={() => setPage('blogs')} 
+                            className="px-4 py-2 hover:bg-white/5 rounded-full transition-colors text-xs font-bold uppercase tracking-widest"
+                        >
+                            Блоги
+                        </button>
+
+                        {user ? (
+                            <div className="flex items-center gap-3">
+                                <span 
+                                    onClick={() => setPage('profile')}
+                                    className="text-blue-400 font-bold uppercase text-[10px] cursor-pointer hover:text-white transition-colors border-b border-blue-400/20 pb-0.5"
+                                >
+                                    {user.name} <span className="text-gray-600">[{user.role}]</span>
+                                </span>
+                                
+                                <button 
+                                    onClick={handleLogout} 
+                                    className="text-gray-500 hover:text-white text-[10px] font-black uppercase transition-colors"
+                                >
+                                    Выход
+                                </button>
+                            </div>
+                        ) : (
+                            <button 
+                                onClick={() => setPage('login')} 
+                                className="px-6 py-2 border border-white/10 rounded-full text-xs font-bold uppercase hover:bg-white hover:text-black transition-all"
+                            >
+                                Вход
+                            </button>
+                        )}
                     </nav>
                 </div>
             </header>

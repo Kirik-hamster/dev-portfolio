@@ -21,7 +21,11 @@ class ArticleController extends Controller
 
     public function index(Request $request)
     {
-        return $this->service->getFilteredArticles($request->search);
+        // Берем слово из поиска (?search=...)
+        $search = $request->query('search');
+        
+        // Передаем его в сервис (который передаст в репозиторий)
+        return $this->service->getFilteredArticles($search);
     }
 
     public function show(Article $article)

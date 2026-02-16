@@ -1,58 +1,61 @@
 import { Article } from '../types';
 
-// Получаем CSRF-токен один раз для всех запросов
-const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+// Функция для чтения куки (Sanctum кладет токен именно туда)
+const getXsrfToken = () => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; XSRF-TOKEN=`);
+    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+    return '';
+};
 
 const BASE_URL = '/api/articles';
 
+// Базовые заголовки для всех POST/PUT/DELETE запросов
+const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-XSRF-TOKEN': getXsrfToken() // ВАЖНО: именно X-XSRF-TOKEN
+});
+
 export const ArticleApiService = {
-    // Получить список (индекс)
     async fetchAll(query = ''): Promise<Article[]> {
-        const response = await fetch(`${BASE_URL}?search=${query}`);
-        if (!response.ok) throw new Error('Ошибка при загрузке списка');
-        return response.json();
+        const response = await fetch(`${BASE_URL}?search=${query}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        return response.ok ? response.json() : [];
     },
 
-    // Получить одну статью (show)
     async fetchOne(id: number): Promise<Article> {
         const response = await fetch(`${BASE_URL}/${id}`);
         if (!response.ok) throw new Error('Статья не найдена');
         return response.json();
     },
 
-    // Создать или обновить (store/update)
     async save(data: any, id?: number) {
         const url = id ? `${BASE_URL}/${id}` : BASE_URL;
         const method = id ? 'PUT' : 'POST';
 
-        const response = await fetch(url, {
+        return fetch(url, {
             method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken()
-            },
+            headers: getHeaders(),
+            credentials: 'include', // ОБЯЗАТЕЛЬНО для передачи сессии админа
             body: JSON.stringify(data)
         });
-        return response;
     },
 
-    // Удалить (destroy)
     async delete(id: number) {
         return fetch(`${BASE_URL}/${id}`, {
             method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': getCsrfToken() }
+            headers: getHeaders(),
+            credentials: 'include'
         });
     },
 
-    // Добавить комментарий
-    async addComment(articleId: number, commentData: { author_name: string, content: string }) {
+    async addComment(articleId: number, commentData: any) {
         return fetch(`${BASE_URL}/${articleId}/comments`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken()
-            },
+            headers: getHeaders(),
+            credentials: 'include',
             body: JSON.stringify(commentData)
         });
     }
