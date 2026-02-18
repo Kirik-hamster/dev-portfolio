@@ -7,6 +7,8 @@ use App\Services\ArticleService;
 use App\Http\Requests\ArticleStoreRequest;
 use App\Http\Requests\StoreCommentRequest; // Импортируем новый класс
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Blog;
 
 /**
  * Контроллер для обработки HTTP-запросов, связанных со статьями.
@@ -19,13 +21,28 @@ class ArticleController extends Controller
         protected ArticleService $service
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request, Blog $blog)
     {
-        // Берем слово из поиска (?search=...)
         $search = $request->query('search');
+
+        // Берем статьи ТОЛЬКО этой конкретной папки ($blog)
+        return $blog->articles()
+            ->when($search, function($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%");
+            })
+            ->with(['blog', 'user'])
+            ->latest()
+            ->get();
+    }
+
+    public function portfolio()
+    {
+        // А здесь — ТОЛЬКО статьи из системного блога
+        $portfolioBlog = Blog::where('is_portfolio', true)->first();
         
-        // Передаем его в сервис (который передаст в репозиторий)
-        return $this->service->getFilteredArticles($search);
+        if (!$portfolioBlog) return response()->json([], 200);
+
+        return $portfolioBlog->articles()->latest()->get();
     }
 
     public function show(Article $article)
@@ -33,14 +50,32 @@ class ArticleController extends Controller
         return $article->load('comments');
     }
 
-    public function store(ArticleStoreRequest $request)
+    public function store(ArticleStoreRequest $request, $blogId)
     {
-        return $this->service->createArticle($request->validated());
+        // Если ID нет или он кривой — сервер должен выдать ошибку, а не молча слать в портфолио!
+        $blog = Blog::findOrFail($blogId); 
+
+        $data = $request->validated();
+        $data['blog_id'] = $blog->id;
+        $data['user_id'] = Auth::id();
+
+        return $this->service->createArticle($data);
     }
 
     public function update(ArticleStoreRequest $request, Article $article)
     {
         return $this->service->updateArticle($article, $request->validated());
+    }
+
+    public function community()
+    {
+        // Берем статьи только из НЕ-системных блогов
+        return Article::whereHas('blog', function($query) {
+            $query->where('is_portfolio', false);
+        })
+        ->with(['blog', 'user']) // Загружаем автора и папку!
+        ->latest()
+        ->get();
     }
 
     // Используем наш новый Form Request для валидации

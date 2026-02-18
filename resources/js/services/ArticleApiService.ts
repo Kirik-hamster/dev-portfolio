@@ -1,6 +1,5 @@
 import { Article } from '../types';
 
-// Функция для чтения куки (Sanctum кладет токен именно туда)
 const getXsrfToken = () => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; XSRF-TOKEN=`);
@@ -9,17 +8,26 @@ const getXsrfToken = () => {
 };
 
 const BASE_URL = '/api/articles';
+const BLOG_URL = '/api/blogs'; // Добавили базовый путь для блогов
 
-// Базовые заголовки для всех POST/PUT/DELETE запросов
 const getHeaders = () => ({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'X-XSRF-TOKEN': getXsrfToken() // ВАЖНО: именно X-XSRF-TOKEN
+    'X-XSRF-TOKEN': getXsrfToken()
 });
 
 export const ArticleApiService = {
-    async fetchAll(query = ''): Promise<Article[]> {
-        const response = await fetch(`${BASE_URL}?search=${query}`, {
+    // 1. Получить статьи системного портфолио
+    async fetchPortfolio(query = ''): Promise<Article[]> {
+        const response = await fetch(`/api/portfolio?search=${query}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        return response.ok ? response.json() : [];
+    },
+
+    // 2. Получить статьи конкретного блога (папки)
+    async fetchByBlog(blogId: number, query = ''): Promise<Article[]> {
+        const response = await fetch(`${BLOG_URL}/${blogId}/articles?search=${query}`, {
             headers: { 'Accept': 'application/json' }
         });
         return response.ok ? response.json() : [];
@@ -31,14 +39,24 @@ export const ArticleApiService = {
         return response.json();
     },
 
-    async save(data: any, id?: number) {
-        const url = id ? `${BASE_URL}/${id}` : BASE_URL;
+    // 3. Обновленный метод сохранения
+    async save(data: any, blogId?: number, id?: number) {
+        if (!id && !blogId) {
+            console.error("ОШИБКА: blogId потерялся перед отправкой!");
+            alert("Ошибка: Не выбрана папка. Вернитесь в профиль и выберите папку снова.");
+            return Promise.reject("Missing blogId");
+        }
+
+        const url = id 
+            ? `${BASE_URL}/${id}` 
+            : `${BLOG_URL}/${blogId}/articles`;
+        
         const method = id ? 'PUT' : 'POST';
 
         return fetch(url, {
             method,
             headers: getHeaders(),
-            credentials: 'include', // ОБЯЗАТЕЛЬНО для передачи сессии админа
+            credentials: 'include',
             body: JSON.stringify(data)
         });
     },

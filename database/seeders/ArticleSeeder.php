@@ -12,7 +12,7 @@ class ArticleSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Создаем или находим Админа (тебя)
+        // 1. Админ
         $admin = User::firstOrCreate(
             ['email' => 'kir.myak@bk.ru'],
             [
@@ -23,24 +23,31 @@ class ArticleSeeder extends Seeder
             ]
         );
 
-        // 2. Проект: Геймдев
-        Article::create([
-            'user_id' => $admin->id, // Привязываем к админу
+        // 2. Создаем твой Блог-Портфолио (Папка для проектов)
+        $portfolioBlog = \App\Models\Blog::firstOrCreate(
+            ['user_id' => $admin->id, 'is_portfolio' => true],
+            [
+                'title' => 'My Engineering Portfolio',
+                'description' => 'Здесь собраны все мои технические проекты и кейсы.',
+            ]
+        );
+
+        // 3. Проект: Геймдев (Кладем в созданный блог)
+        $portfolioBlog->articles()->create([
+            'user_id' => $admin->id,
             'title' => 'Blast Game (Cocos Creator)',
-            'content' => 'Динамичный пазл-шутер с использованием TypeScript...',
+            'content' => 'Динамичный пазл-шутер...',
             'slug' => 'blast-game-cocos',
-            'type' => 'portfolio',
             'tech_stack' => 'Cocos Creator, TypeScript, Box2D',
             'github_url' => 'https://github.com/Kirik-hamster/blast_game_by_kir'
         ]);
 
-        // 3. Проект: Веб
-        Article::create([
+        // 4. Проект: Веб
+        $portfolioBlog->articles()->create([
             'user_id' => $admin->id,
             'title' => 'Full Stack Portfolio Engine',
             'content' => 'Собственная платформа на стеке Laravel + React...',
             'slug' => 'dev-portfolio-engine',
-            'type' => 'portfolio',
             'tech_stack' => 'Laravel 12, React, Tailwind, Docker',
             'github_url' => 'https://github.com/Kirik-hamster/dev-portfolio'
         ]);

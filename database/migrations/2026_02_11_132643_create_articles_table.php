@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
+            $table->foreignId('blog_id')->constrained()->onDelete('cascade'); 
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Автор
             $table->string('title');
             $table->text('content');
             $table->string('slug')->unique();
-            $table->enum('type', ['blog', 'portfolio'])->default('blog');
             $table->string('tech_stack')->nullable();
             $table->string('github_url')->nullable();
             $table->timestamps();

@@ -75,7 +75,6 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
         const payload = { 
             title, 
             content: editor.getHTML(), 
-            type, 
             tech_stack: techStack, 
             slug: title.toLowerCase().split(' ').join('-') 
         };
@@ -99,13 +98,6 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
                 </div>
                 {/* Твой блок с категорией и стеком */}
                 <div className="md:col-span-4 space-y-6 bg-white/5 p-6 rounded-3xl border border-white/5 backdrop-blur-md">
-                    <div className="space-y-2">
-                        <label className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-bold">Категория</label>
-                        <select value={type} onChange={(e) => setType(e.target.value as any)} className="w-full bg-white/5 rounded-xl border-none text-sm outline-none focus:ring-1 focus:ring-blue-500/50">
-                            <option value="blog">Journal / Blog</option>
-                            <option value="portfolio">Case Study / Portfolio</option>
-                        </select>
-                    </div>
                     <div className="space-y-2">
                         <label className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-bold">Стек</label>
                         <input value={techStack} onChange={(e) => setTechStack(e.target.value)} placeholder="React, Three.js..." className="w-full bg-transparent border-b border-white/10 text-sm outline-none py-1 focus:border-blue-500/50 transition-colors" />

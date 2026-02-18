@@ -3,7 +3,7 @@ import { Github, Mail, ArrowUpRight } from 'lucide-react';
 import './bootstrap';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Article, User } from './types';
+import { Article, User, Blog } from './types';
 
 // Импортируем наши новые компоненты страниц
 import { HomePage } from './pages/HomePage';
@@ -24,13 +24,16 @@ type Page = 'home' | 'portfolio' | 'detail' | 'form' | 'login' | 'register' | 'p
  * соответствующей страницы.
  */
 function App() {
-    // Состояние роутера
     const [page, setPage] = useState<Page>('home');
+    const [fromPage, setFromPage] = useState<Page>('home');
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+
     const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null);
+    const [currentBlogId, setCurrentBlogId] = useState<number | null>(null); // ID текущей "папки"
     const [editingArticle, setEditingArticle] = useState<Article | undefined>(undefined);
-    
+    const [portfolioBlogId, setPortfolioBlogId] = useState<number | null>(null);
+
     const glowRef = useRef<HTMLDivElement>(null);
 
     // 1. Помощник для получения токена из куки
@@ -60,23 +63,59 @@ function App() {
 
     // Проверка: кто зашел?
     useEffect(() => {
-        fetch('/api/user', { credentials: 'include' }) // ДОБАВЛЕНО
+        // 1. СНАЧАЛА УЗНАЕМ, КТО ЗАЛОГИНЕН (ЭТОГО У ТЕБЯ НЕТ!)
+        fetch('/api/user', { credentials: 'include' })
             .then(res => res.ok ? res.json() : null)
-            .then(data => {
-                setUser(data);
-                setLoading(false);
-            })
-            .catch(() => {
-                setUser(null);
+            .then(userData => {
+                setUser(userData);
+                
+                // 2. ЕСЛИ ЭТО АДМИН, СРАЗУ ГРУЗИМ ЕГО ПАПКИ
+                if (userData?.role === 'admin') {
+                    fetch('/api/blogs?my_only=1')
+                        .then(res => res.json())
+                        .then(blogs => {
+                            // Ищем ту самую запись с ID 1 из твоей таблицы
+                            const p = blogs.find((b: Blog) => b.is_portfolio);
+                            if (p) {
+                                setPortfolioBlogId(p.id);
+                                // Если мы уже на странице портфолио — активируем ID
+                                if (page === 'portfolio') setCurrentBlogId(p.id);
+                            }
+                        });
+                }
                 setLoading(false);
             });
     }, []);
 
+    const handleBackFromDetail = () => {
+        setSelectedArticleId(null);
+        setPage(fromPage);
+    };
+
+    useEffect(() => {
+        if (page === 'portfolio' && portfolioBlogId && !currentBlogId) {
+            setCurrentBlogId(portfolioBlogId);
+        }
+    }, [page, portfolioBlogId]);
+
     // --- Логика навигации ---
-    const navigateToHome = () => setPage('home');
-    const navigateToPortfolio = () => setPage('portfolio');
+    const navigateToHome = () => {
+        setCurrentBlogId(null);
+        setPage('home');
+    };
+    const navigateToPortfolio = () => {
+        // Принудительно ставим ID системной папки при переходе
+        if (portfolioBlogId) setCurrentBlogId(portfolioBlogId);
+        setPage('portfolio');
+    };
+
+    const handleSelectBlog = (blogId: number) => {
+        setCurrentBlogId(blogId);
+        setPage('portfolio'); // Используем PortfolioPage как универсальный список статей
+    };
     
     const handleSelectArticle = (article: Article) => {
+        setFromPage(page);
         setSelectedArticleId(article.id);
         setPage('detail');
     };
@@ -94,12 +133,23 @@ function App() {
     const handleFormSave = () => {
         setEditingArticle(undefined);
         setSelectedArticleId(null);
-        setPage('portfolio');
+        
+        // Если мы сохраняли в системное портфолио — идем на страницу портфолио
+        // Если в личную папку — возвращаемся в профиль
+        if (currentBlogId === portfolioBlogId) {
+            setPage('portfolio');
+        } else {
+            setPage('profile');
+        }
     };
 
     const handleFormCancel = () => {
         setEditingArticle(undefined);
-        setPage('portfolio');
+        if (currentBlogId === portfolioBlogId) {
+            setPage('portfolio');
+        } else {
+            setPage('profile');
+        }
     };
 
     // Эффект для "магического" свечения за курсором
@@ -134,31 +184,58 @@ function App() {
         switch (page) {
             case 'portfolio':
                 return <PortfolioPage 
-                    user={user} // ПЕРЕДАВАЙ ЮЗЕРА В ПОРТФОЛИО!
+                    user={user}
+                    blogId={currentBlogId} // Передаем напрямую number | null
                     onArticleSelect={handleSelectArticle}
                     onEditArticle={handleEditArticle}
                     onCreateArticle={handleCreateArticle}
                 />;
             case 'detail':
-                return selectedArticleId ? 
-                    <ArticleDetailPage articleId={selectedArticleId} onBack={navigateToPortfolio} /> : 
+                return selectedArticleId ? (
+                    <ArticleDetailPage 
+                        articleId={selectedArticleId} 
+                        // МЕНЯЕМ navigateToPortfolio на handleBackFromDetail
+                        onBack={handleBackFromDetail} 
+                    />
+                ) : (
                     <PortfolioPage 
-                        user={user} // ДОБАВЛЕНО
+                        user={user} 
                         onArticleSelect={handleSelectArticle} 
                         onEditArticle={handleEditArticle} 
                         onCreateArticle={handleCreateArticle} 
-                    />;
+                    />
+                );
             case 'form':
                 return <ArticleFormPage 
-                    user={user} // ДОБАВЛЕНО
+                    user={user} 
+                    // Если текущий выбор пуст, используем железный ID системной папки
+                    blogId={currentBlogId || portfolioBlogId} 
                     onSave={handleFormSave} 
                     onCancel={handleFormCancel} 
                     {...(editingArticle && { article: editingArticle })}
                 />;
             case 'blogs':
-                return <BlogsPage user={user} onNavigateToProfile={() => setPage('profile')} />;
+                return (
+                    <BlogsPage 
+                        user={user} 
+                        onNavigateToProfile={() => setPage('profile')} 
+                        onArticleSelect={handleSelectArticle} 
+                        initialBlogId={currentBlogId}
+                        onBlogSelect={(id) => setCurrentBlogId(id)}
+                    />
+                );
             case 'profile':
-                return <ProfilePage user={user} />;
+                return (
+                <ProfilePage 
+                    user={user} 
+                    initialBlogId={currentBlogId !== portfolioBlogId ? currentBlogId : null}
+                    onBlogSelect={(id: number) => setCurrentBlogId(id)} 
+                    onNavigateToPortfolio={navigateToPortfolio}
+                    onTriggerCreate={() => setPage('form')}
+                    onEditArticle={handleEditArticle} 
+                    onArticleSelect={handleSelectArticle}
+                />
+            );
             case 'home':
             default:
                 return <HomePage onNavigateToPortfolio={navigateToPortfolio} />;
@@ -176,28 +253,40 @@ function App() {
                     <h2 className="text-lg font-medium tracking-tight bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent cursor-pointer" onClick={navigateToHome}>
                         Kirill Myakotin
                     </h2>
-                    <nav className="flex gap-4 items-center">
-                        <button onClick={() => setPage('portfolio')} className="...">Портфолио</button>
+                    <nav className="flex items-center gap-6">
+                        {/* Основная навигация */}
+                        <button 
+                            onClick={navigateToPortfolio} 
+                            className={`text-[11px] font-bold uppercase transition-colors ${page === 'portfolio' ? 'text-blue-500' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Портфолио
+                        </button>
                         
                         <button 
                             onClick={() => setPage('blogs')} 
-                            className="px-4 py-2 hover:bg-white/5 rounded-full transition-colors text-xs font-bold uppercase tracking-widest"
+                            className={`text-[11px] font-bold uppercase transition-colors ${page === 'blogs' ? 'text-blue-500' : 'text-gray-400 hover:text-white'}`}
                         >
                             Блоги
                         </button>
 
                         {user ? (
-                            <div className="flex items-center gap-3">
-                                <span 
+                            <div className="flex items-center gap-4 pl-6 border-l border-white/10">
+                                {/* Блок пользователя: Имя + Роль */}
+                                <div 
                                     onClick={() => setPage('profile')}
-                                    className="text-blue-400 font-bold uppercase text-[10px] cursor-pointer hover:text-white transition-colors border-b border-blue-400/20 pb-0.5"
+                                    className="flex items-center gap-3 cursor-pointer group"
                                 >
-                                    {user.name} <span className="text-gray-600">[{user.role}]</span>
-                                </span>
+                                    <span className={`text-[11px] font-black uppercase transition-colors ${page === 'profile' ? 'text-blue-500' : 'text-white group-hover:text-blue-400'}`}>
+                                        {user.name}
+                                    </span>
+                                    <span className="text-[8px] px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-md text-blue-500 uppercase font-black tracking-wider">
+                                        {user.role}
+                                    </span>
+                                </div>
                                 
                                 <button 
                                     onClick={handleLogout} 
-                                    className="text-gray-500 hover:text-white text-[10px] font-black uppercase transition-colors"
+                                    className="text-[10px] font-bold uppercase text-gray-600 hover:text-red-500 transition-colors"
                                 >
                                     Выход
                                 </button>
@@ -205,7 +294,7 @@ function App() {
                         ) : (
                             <button 
                                 onClick={() => setPage('login')} 
-                                className="px-6 py-2 border border-white/10 rounded-full text-xs font-bold uppercase hover:bg-white hover:text-black transition-all"
+                                className="px-5 py-2 border border-white/10 rounded-full text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-all"
                             >
                                 Вход
                             </button>

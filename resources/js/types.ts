@@ -7,8 +7,18 @@ export interface User {
     email: string;
 }
 
+// НОВЫЙ ИНТЕРФЕЙС
+export interface Blog {
+    id: number;
+    user_id: number;
+    title: string;
+    description?: string;
+    is_portfolio: boolean;
+}
+
 export interface Article {
     id: number;
+    blog_id: number; // Ссылка на родителя
     title: string;
     content: string;
     slug: string;

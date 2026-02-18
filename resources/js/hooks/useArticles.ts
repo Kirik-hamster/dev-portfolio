@@ -1,43 +1,39 @@
-
+// resources/js/hooks/useArticles.ts
 import { useState, useEffect, useCallback } from 'react';
 import { Article } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 
-/**
- * Хук для управления статьями.
- * Инкапсулирует всю логику по загрузке, созданию, обновлению,
- * удалению и поиску статей. Предоставляет простой API для компонентов.
- * @returns \{ articles, loading, fetchArticles, deleteArticle \}
- */
-export function useArticles(searchQuery: string) {
+export function useArticles(searchQuery: string, blogId?: number) {
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
-    const fetchArticles = useCallback((query = '') => {
+    // Оборачиваем в useCallback, чтобы функция не создавалась заново зря
+    const fetchArticles = useCallback(async (query = '') => {
         setLoading(true);
-        ArticleApiService.fetchAll(query)
-            .then(data => {
-                setArticles(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            });
-    }, []);
+        try {
+            // Решаем, куда стучаться
+            const data = blogId 
+                ? await ArticleApiService.fetchByBlog(blogId, query) 
+                : await ArticleApiService.fetchPortfolio(query);
+            
+            setArticles(data);
+        } catch (err) {
+            console.error("Ошибка при получении статей:", err);
+            setArticles([]); // Если ошибка — считаем, что пусто
+        } finally {
+            // ВЫКЛЮЧАЕМ ЗАГРУЗКУ В ЛЮБОМ СЛУЧАЕ!
+            setLoading(false);
+        }
+    }, [blogId]);
 
+    // ОСНОВНОЙ ТРИГГЕР: срабатывает при входе в папку или поиске
     useEffect(() => {
-        // Дебаунс для поискового запроса, чтобы не слать запросы на каждое нажатие
-        const timer = setTimeout(() => fetchArticles(searchQuery), 400);
-        return () => clearTimeout(timer);
-    }, [searchQuery, fetchArticles]);
+        fetchArticles(searchQuery);
+    }, [fetchArticles, searchQuery]);
 
     const deleteArticle = async (id: number) => {
         const res = await ArticleApiService.delete(id);
-        if (res.ok) {
-            // Перезагружаем список статей после успешного удаления
-            fetchArticles(searchQuery);
-        }
+        if (res.ok) fetchArticles(searchQuery);
     };
 
     return { articles, loading, fetchArticles, deleteArticle };

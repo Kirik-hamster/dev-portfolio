@@ -1,12 +1,17 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\BlogController; // УБЕДИСЬ, ЧТО ЭТА СТРОКА ЕСТЬ
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// 1. Открытые маршруты (видят все)
-Route::get('/articles', [ArticleController::class, 'index']);
-Route::get('/articles/{article}', [ArticleController::class, 'show']);
+Route::get('/blogs', [BlogController::class, 'index']); // Список всех "папок" (блогов пользователей)
+Route::get('/blogs/{blog}/articles', [ArticleController::class, 'index']); // Все статьи конкретного блога
+Route::get('/articles/{article}', [ArticleController::class, 'show']); // Деталка статьи
+// Публичная лента всех блогов сообщества
+Route::get('/community-articles', [ArticleController::class, 'community']);
+Route::get('/portfolio', [ArticleController::class, 'portfolio']);
 
 // 2. Закрытые маршруты (только после логина)
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -15,8 +20,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return $request->user();
     });
 
-    // Управление статьями
-    Route::post('/articles', [ArticleController::class, 'store']);
+    Route::post('/blogs', [BlogController::class, 'store']);
+    Route::post('/blogs/{blog}/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
     

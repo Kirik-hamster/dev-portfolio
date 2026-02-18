@@ -1,10 +1,11 @@
 import React from 'react';
 import { ArticleForm } from '../components/ArticleForm';
-import { Article, User } from '../types'; // ДОБАВИЛИ User В ИМПОРТ
+import { Article, User } from '../types'; 
 import { ArticleApiService } from '../services/ArticleApiService';
 
 interface ArticleFormPageProps {
     user: User | null; 
+    blogId?: number | null; // ДОБАВЛЕНО: принимаем ID текущей папки из App.tsx
     article?: Article;
     onSave: () => void;
     onCancel: () => void;
@@ -12,19 +13,23 @@ interface ArticleFormPageProps {
 
 /**
  * Страница-обертка для формы создания/редактирования статьи.
- * Теперь эта страница отвечает за вызов API для сохранения данных.
  */
-export function ArticleFormPage({ user, article, onSave, onCancel }: ArticleFormPageProps) {
+export function ArticleFormPage({ user, blogId, article, onSave, onCancel }: ArticleFormPageProps) {
     
-    // Новая функция, которая будет передана в форму
     const handleSave = async (data: any) => {
-        const res = await ArticleApiService.save(data, article?.id);
+        // ПОРЯДОК: Данные, ID папки (блога), ID статьи (если редактируем)
+        const res = await ArticleApiService.save(
+            data, 
+            blogId ?? undefined, // Берем из пропсов, исправляем null на undefined
+            article?.id
+        );
+
         if (res.ok) {
-            onSave(); // Вызываем onSave, который пришел от App.tsx для навигации
+            onSave(); 
         } else {
-            // Здесь можно добавить обработку ошибок, например, показать уведомление
-            console.error("Failed to save the article");
-            alert("Ошибка: не удалось сохранить статью!");
+            // Выводим текст ошибки, если сервер ответил 500 или 404
+            const errorText = await res.text();
+            alert("Ошибка сервера: " + errorText);
         }
     };
 
@@ -32,7 +37,7 @@ export function ArticleFormPage({ user, article, onSave, onCancel }: ArticleForm
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <ArticleForm
                 article={article}
-                onSave={handleSave} // Передаем новую функцию
+                onSave={handleSave} 
                 onCancel={onCancel}
             />
         </div>
