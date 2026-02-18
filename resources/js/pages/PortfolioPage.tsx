@@ -36,7 +36,7 @@ export function PortfolioPage({
     const isAdmin = user?.role === 'admin';
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="max-w-6xl mx-auto px-6 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* ПАНЕЛЬ УПРАВЛЕНИЯ */}
             <div className="flex justify-between items-center gap-4 mb-12">
                 <div className="flex-1 max-w-md relative group">

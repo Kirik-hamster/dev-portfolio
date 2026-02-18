@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity } from 'lucide-react';
+import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
 import { User as UserType, Blog, Article } from '../types';
 import { UserArticlesList } from '../components/UserArticlesList';
 
@@ -22,10 +22,12 @@ export function ProfilePage({
     onArticleSelect,
     initialBlogId
 }: ProfilePageProps) {
-    const [activeTab, setActiveTab] = useState<'general' | 'blog' | 'security' | 'admin'>(
-        initialBlogId ? 'blog' : 'general'
+    const [activeTab, setActiveTab] = useState<'profile' | 'blog' | 'admin' | 'comments'>(
+        initialBlogId ? 'blog' : 'profile'
     );
     const [blogs, setBlogs] = useState<Blog[]>([]);
+    const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
+
     const [allBlogsCount, setAllBlogsCount] = useState(0);
     const [loading, setLoading] = useState(false);
 
@@ -86,41 +88,148 @@ export function ProfilePage({
         }
     };
 
+    // Функция обновления (PUT)
+    const handleUpdateSubmit = async () => {
+        if (!editingBlog) return;
+        const res = await fetch(`/api/blogs/${editingBlog.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': getXsrfToken() },
+            body: JSON.stringify(editingBlog)
+        });
+        if (res.ok) {
+            setEditingBlog(null);
+            fetchBlogs(); // Обновляем список
+        }
+    };
+
+    // Функция удаления (DELETE)
+    const handleDeleteBlog = async (id: number) => {
+        if (!window.confirm("Удалить папку и ВСЕ статьи внутри?")) return;
+        
+        const res = await fetch(`/api/blogs/${id}`, {
+            method: 'DELETE',
+            headers: { 'Accept': 'application/json', 'X-XSRF-TOKEN': getXsrfToken() }
+        });
+        if (res.ok) fetchBlogs();
+    };
+
     const renderContent = () => {
         switch (activeTab) {
-            case 'general':
+            case 'profile':
                 return (
-                    <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[30px] animate-in fade-in duration-500">
-                         <h3 className="text-xl font-bold mb-6 uppercase tracking-tight text-white/90">Личные данные</h3>
-                         <div className="space-y-4 text-sm">
-                             <div className="flex justify-between border-b border-white/5 pb-4">
-                                 <span className="text-gray-500 font-bold uppercase text-[10px]">Имя</span>
-                                 <span>{user.name}</span>
-                             </div>
-                             <div className="flex justify-between border-b border-white/5 pb-4">
-                                 <span className="text-gray-500 font-bold uppercase text-[10px]">Email</span>
-                                 <span>{user.email}</span>
-                             </div>
-                             <div className="flex justify-between uppercase text-[10px] font-black">
-                                 <span className="text-gray-500">Роль</span>
-                                 <span className="text-blue-500">{user.role}</span>
-                             </div>
-                         </div>
+                    <div className="max-w-6xl animate-in fade-in duration-700">
+                        {/* СЕТКА: 1 колонка на мобилках, 2 колонки на десктопе */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            
+                            {/* ЛЕВАЯ КОЛОНКА: ЛИЧНЫЕ ДАННЫЕ */}
+                            <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[40px] shadow-2xl shadow-black/20 backdrop-blur-3xl relative overflow-hidden group">
+                                <div className="absolute -right-20 -top-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors" />
+                                
+                                <h3 className="text-xl font-black mb-10 uppercase tracking-tighter text-white/90 border-b border-white/5 pb-6 flex items-center gap-3">
+                                    <UserCircle size={20} className="text-blue-500/50" />
+                                    Личные данные
+                                </h3>
+                                <div className="space-y-6 text-sm relative z-10">
+                                    <div className="flex justify-between items-center border-b border-white/5 pb-5">
+                                        <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Имя</span>
+                                        <span className="text-white font-medium text-lg tracking-tight">{user.name}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center border-b border-white/5 pb-5">
+                                        <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Email</span>
+                                        <span className="text-gray-300 font-medium">{user.email}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2">
+                                        <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Роль</span>
+                                        <span className="px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-tighter">
+                                            {user.role}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ПРАВАЯ КОЛОНКА: ЗАЩИТА */}
+                            <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[40px] shadow-2xl shadow-black/20 backdrop-blur-3xl relative overflow-hidden">
+                                <div className="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
+                                    <div className="p-3 bg-white/5 rounded-2xl border border-white/10 shadow-inner">
+                                        <Shield className="text-blue-500" size={24}/>
+                                    </div>
+                                    <h3 className="text-xl font-bold uppercase tracking-tight text-white/90">Безопасность</h3>
+                                </div>
+                                
+                                <div className="space-y-6">
+                                    <p className="text-[12px] text-gray-500 leading-relaxed italic">
+                                        Управляйте доступом к вашему аккаунту. Мы рекомендуем регулярно обновлять пароль для поддержания высокого уровня защиты.
+                                    </p>
+                                    <button className="w-full py-5 bg-white/5 border border-white/10 rounded-[22px] text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+                                        Сбросить текущий пароль
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 );
+            
+            case 'comments':
+                return (
+                        <div className="bg-white/[0.02] border border-white/5 rounded-[50px] relative overflow-hidden animate-in fade-in duration-500 min-h-[500px] flex flex-col items-center justify-center text-center p-10">
+                            {/* Фоновая огромная иконка для атмосферы */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none transform -rotate-12">
+                                <MessageSquare size={400} />
+                            </div>
+
+                            {/* Центральный контент */}
+                            <div className="relative z-10 flex flex-col items-center">
+                                <div className="w-28 h-28 bg-blue-500/10 rounded-full flex items-center justify-center mb-10 border border-blue-500/20 shadow-2xl shadow-blue-500/10">
+                                    <MessageSquare size={48} className="text-blue-500" />
+                                </div>
+                                
+                                <h3 className="text-3xl font-black uppercase tracking-tighter text-white mb-6">
+                                    Раздел в разработке
+                                </h3>
+                                
+                                <p className="text-gray-500 text-sm max-w-md leading-relaxed mb-10 font-medium">
+                                    Скоро здесь появится удобная история всех ваших комментариев к статьям, ответы на них и уведомления о реакциях.
+                                </p>
+                                
+                                {/* Стильный бейдж "Скоро" */}
+                                <span className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 cursor-wait hover:bg-white/10 transition-colors">
+                                    Coming Soon
+                                </span>
+                            </div>
+                        </div>
+                    );
 
             case 'blog':
-                // УРОВЕНЬ 2: ВНУТРИ ПАПКИ (СПИСОК СТАТЕЙ)
+                // ВНУТРИ ПАПКИ (СПИСОК СТАТЕЙ)
                 if (insideBlogId) {
+                    const currentBlog = blogs.find(b => b.id === Number(insideBlogId));
                     return (
                         <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                            <div className="flex items-center gap-4 mb-8">
-                                <button onClick={() => setInsideBlogId(null)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-gray-400">
-                                    <ChevronRight size={20} className="rotate-180"/>
-                                </button>
-                                <div>
-                                    <h3 className="text-2xl font-black uppercase tracking-tight leading-none">{insideBlogTitle}</h3>
-                                    <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-2">Записи в этой категории</p>
+                            {/* ШАПКА ПАПКИ */}
+                            <div className="p-12 bg-white/[0.01] border border-white/5 rounded-[50px] relative overflow-hidden backdrop-blur-3xl">
+                                <div className="absolute -right-10 -top-10 opacity-[0.02] transform rotate-12 pointer-events-none">
+                                    <Folder size={300} />
+                                </div>
+
+                                <div className="relative z-10">
+                                    {/* Кнопка назад */}
+                                    <button onClick={() => setInsideBlogId(null)} className="mb-10 p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-gray-400 transition-all border border-white/5">
+                                        <ChevronRight size={20} className="rotate-180"/>
+                                    </button>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                                        <div>
+                                            <span className="text-[8px] font-black uppercase text-blue-500/60 block mb-4 tracking-[0.2em]">Название категории:</span>
+                                            <h3 className="text-5xl font-black uppercase tracking-tighter text-white mb-8">{insideBlogTitle}</h3>
+                                            
+                                            <span className="text-[8px] font-black uppercase text-gray-600 block mb-4 tracking-[0.2em]">Описание:</span>
+                                            <p className="text-[14px] text-gray-400/80 leading-7 font-medium border-l border-white/10 pl-6 whitespace-pre-line italic">
+                                                {currentBlog?.description || "Описание пока не добавлено."}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
                                 </div>
                             </div>
                             
@@ -138,7 +247,7 @@ export function ProfilePage({
                     );
                 }
 
-                // УРОВЕНЬ 1: СПИСОК ПАПОК
+                // СПИСОК ПАПОК
                 return (
                     <div className="space-y-6 animate-in fade-in duration-500">
                         <div className="flex justify-between items-center mb-6 px-2">
@@ -164,24 +273,89 @@ export function ProfilePage({
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {editingBlog && (
+                            <div className="bg-white/[0.03] border border-white/10 p-10 rounded-[40px] mb-8 animate-in zoom-in-95 backdrop-blur-xl">
+                                <div className="flex justify-between items-center mb-6">
+                                    <div className="flex items-center gap-3 text-blue-500">
+                                        <Pencil size={14} />
+                                        <h4 className="font-black uppercase text-[10px] tracking-widest">Редактирование</h4>
+                                    </div>
+                                    <button onClick={() => setEditingBlog(null)}><X size={18}/></button>
+                                </div>
+                                <div className="space-y-4">
+                                    <input 
+                                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-blue-500/50 text-sm"
+                                        value={editingBlog.title}
+                                        onChange={e => setEditingBlog({...editingBlog, title: e.target.value})}
+                                    />
+                                    <textarea 
+                                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-blue-500/50 text-sm min-h-[100px]"
+                                        value={editingBlog.description || ''}
+                                        onChange={e => setEditingBlog({...editingBlog, description: e.target.value})}
+                                    />
+                                    <div className="flex gap-4">
+                                        <button onClick={handleUpdateSubmit} className="flex-1 py-4 bg-blue-600 rounded-full font-black uppercase text-[10px]">Сохранить</button>
+                                        <button onClick={() => setEditingBlog(null)} className="px-8 py-4 bg-white/5 rounded-full font-black uppercase text-[10px]">Отмена</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                             {blogs.map(blog => (
                                 <div 
                                     key={blog.id} 
                                     onClick={() => {
-                                        if (blog.is_portfolio) onNavigateToPortfolio(); // Админ уходит в общую систему
-                                        else { onBlogSelect(blog.id); setInsideBlogId(blog.id); setInsideBlogTitle(blog.title); } // Проваливаемся в обычный блог
+                                        if (blog.is_portfolio) onNavigateToPortfolio();
+                                        else { onBlogSelect(blog.id); setInsideBlogId(blog.id); setInsideBlogTitle(blog.title); }
                                     }} 
-                                    className="group p-8 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-blue-500/30 cursor-pointer transition-all flex items-center justify-between"
+                                    className="group p-8 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-blue-500/30 cursor-pointer transition-all flex flex-col gap-6 relative overflow-hidden"
                                 >
-                                    <div className="flex items-center gap-5">
-                                        <div className="p-4 bg-white/5 rounded-3xl text-gray-400 group-hover:text-blue-500 transition-colors"><Folder size={24}/></div>
-                                        <div>
-                                            <h4 className="font-bold text-lg tracking-tight">{blog.title}</h4>
-                                            <p className="text-[10px] text-gray-500 uppercase font-black">{blog.is_portfolio ? 'Система' : 'Личный блог'}</p>
-                                        </div>
+                                    {/* Иконка папки на фоне для "дороговизны" */}
+                                    <div className="absolute -right-4 -bottom-4 opacity-[0.02] transform rotate-6 pointer-events-none text-white">
+                                        <Folder size={120} />
                                     </div>
-                                    <ChevronRight size={20} className="text-gray-800 group-hover:text-white transition-colors"/>
+
+                                    <div className="flex items-center justify-between relative z-10 w-full">
+                                        <div className="flex items-center gap-5">
+                                            <div className="p-4 bg-white/5 rounded-3xl text-gray-400 group-hover:text-blue-500 transition-colors border border-white/5">
+                                                <Folder size={24}/>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-xl tracking-tight text-white/90 leading-tight">{blog.title}</h4>
+                                                <p className="text-[8px] text-blue-500/50 uppercase font-black tracking-widest mt-1">
+                                                    {blog.is_portfolio ? 'Системный раздел' : 'Ваш блог'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* ИКОНКИ УПРАВЛЕНИЯ (Requirement: Карандаш и Корзина) */}
+                                        {!blog.is_portfolio && (
+                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 relative z-20">
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setEditingBlog(blog); }}
+                                                    className="p-3 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-2xl border border-white/5 transition-all"
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteBlog(blog.id); }}
+                                                    className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-2xl border border-white/5 transition-all"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* ОПИСАНИЕ (Requirement: Информативность + CSS Truncate) */}
+                                    {!blog.is_portfolio && (
+                                        <div className="relative z-10">
+                                            <p className="text-[12px] text-gray-500 leading-relaxed italic border-l border-white/5 pl-4 line-clamp-2 h-9 overflow-hidden">
+                                                {blog.description || "Описание не добавлено..."}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -206,44 +380,51 @@ export function ProfilePage({
                     </div>
                 );
 
-            case 'security':
-                return (
-                    <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[40px] animate-in fade-in">
-                        <div className="flex items-center gap-4 mb-8">
-                            <Shield className="text-gray-500" size={24}/>
-                            <h3 className="text-xl font-bold uppercase tracking-tight">Безопасность</h3>
-                        </div>
-                        <button className="w-full py-4 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/5 transition-all">
-                            Сбросить текущий пароль
-                        </button>
-                    </div>
-                );
             default: return null;
         }
     };
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-16 pt-10 px-6 pb-20">
+        <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row gap-10 lg:gap-16 pt-10 px-6 md:px-12 pb-20">
             {/* САЙДБАР */}
-            <aside className="w-full md:w-72 flex-shrink-0 space-y-10">
-                <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                    <div className="w-24 h-24 bg-white/5 rounded-[32px] border border-white/10 flex items-center justify-center mb-6 relative">
-                        <UserCircle size={48} className="text-white/20" />
-                        <div className="absolute top-0 right-0 w-4 h-4 bg-green-500 rounded-full border-4 border-[#050505]" />
+            <aside className="w-full md:w-72 flex-shrink-0 space-y-12">
+                {/* 1. БЛОК ПОЛЬЗОВАТЕЛЯ (Выравнивание по иконкам меню) */}
+                <div className="flex flex-col items-start px-6"> {/* Добавили px-6, чтобы совпало с отступом иконок */}
+                    <div className="w-20 h-20 bg-white/5 rounded-[28px] border border-white/10 flex items-center justify-center mb-6 relative shadow-2xl shadow-black/50">
+                        <UserCircle size={40} className="text-white/20" />
+                        {/* Статус-точка */}
+                        <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-[3px] border-[#050505]" />
                     </div>
-                    <h2 className="text-3xl font-black uppercase tracking-tighter mb-1 leading-none">{user.name}</h2>
-                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.4em]">{user.role}</p>
+                    <h2 className="text-2xl font-black uppercase tracking-tighter mb-1.5 leading-none text-white/90">
+                        {user.name}
+                    </h2>
+                    {/* Роль: убрали дикий tracking, сделали аккуратнее */}
+                    <span className="text-[7px] px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-blue-500 uppercase font-black tracking-widest">
+                        {user.role}
+                    </span>
                 </div>
 
+                {/* 2. НАВИГАЦИЯ (Идеальное выравнивание иконок) */}
                 <nav className="flex flex-col gap-1.5">
                     {[
-                        { id: 'general', label: 'Общее', icon: UserCircle },
+                        { id: 'profile', label: 'Профиль', icon: UserCircle },
                         { id: 'blog', label: 'Мой блог', icon: BookOpen },
+                        { id: 'comments', label: 'Мои комментарии', icon: MessageSquare },
                         ...(isAdmin ? [{ id: 'admin', label: 'Управление', icon: Database }] : []),
-                        { id: 'security', label: 'Защита', icon: Shield },
                     ].map((tab) => (
-                        <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setInsideBlogId(null); setIsCreating(false); }} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest border ${activeTab === tab.id ? 'bg-white/5 text-blue-500 border-white/10 shadow-lg shadow-blue-500/5' : 'text-gray-500 hover:text-white hover:bg-white/[0.02] border-transparent'}`}>
-                            <tab.icon size={16} /> {tab.label}
+                        <button 
+                            key={tab.id} 
+                            onClick={() => { setActiveTab(tab.id as any); setInsideBlogId(null); setIsCreating(false); }} 
+                            className={`
+                                w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest border
+                                ${activeTab === tab.id 
+                                    ? 'bg-white/5 text-blue-500 border-white/10 shadow-xl shadow-blue-500/5' 
+                                    : 'text-gray-500 hover:text-white hover:bg-white/[0.02] border-transparent'}
+                            `}
+                        >
+                            {/* Иконка теперь стоит ровно под аватаром */}
+                            <tab.icon size={16} className={activeTab === tab.id ? 'text-blue-500' : 'text-gray-600'} /> 
+                            {tab.label}
                         </button>
                     ))}
                 </nav>
@@ -253,10 +434,10 @@ export function ProfilePage({
             <main className="flex-1 min-h-[400px]">
                 <div className="mb-10 border-b border-white/5 pb-10 flex justify-between items-end">
                     <h2 className="text-5xl font-black uppercase tracking-tighter">
-                        {activeTab === 'general' && 'Профиль'}
+                        {activeTab === 'profile' && 'Профиль'}
                         {activeTab === 'blog' && (insideBlogId ? 'Записи' : 'Мои блоги')}
                         {activeTab === 'admin' && 'Управление'}
-                        {activeTab === 'security' && 'Безопасность'}
+                        {activeTab === 'comments' && 'Комментарии'}
                     </h2>
                 </div>
                 {renderContent()}

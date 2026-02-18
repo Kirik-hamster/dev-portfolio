@@ -304,7 +304,7 @@ function App() {
             </header>
 
             {/* --- MAIN CONTENT (с отступом сверху) --- */}
-            <main className="relative z-10 flex-grow pt-32 pb-20 max-w-5xl mx-auto px-6 w-full">
+            <main className="relative z-10 flex-grow pt-32 pb-20 w-full">
                 {renderPage()}
             </main>
 

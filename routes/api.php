@@ -21,6 +21,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::post('/blogs', [BlogController::class, 'store']);
+    Route::put('/blogs/{blog}', [BlogController::class, 'update']); // Обновление
+    Route::delete('/blogs/{blog}', [BlogController::class, 'destroy']); // Удаление
+    
     Route::post('/blogs/{blog}/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);

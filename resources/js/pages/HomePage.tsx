@@ -11,7 +11,7 @@ interface HomePageProps {
  */
 export function HomePage({ onNavigateToPortfolio }: HomePageProps) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in zoom-in duration-1000">
+        <div className="max-w-6xl mx-auto px-6 w-full flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12 animate-in fade-in zoom-in duration-1000">
             <h1 className="text-6xl md:text-8xl font-bold tracking-tighter bg-gradient-to-b from-white via-white to-gray-500 bg-clip-text text-transparent leading-tight">
                 Solving Business<br/>Problems with Code.
             </h1>

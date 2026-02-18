@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Edit3, Trash2, Plus, Folder } from 'lucide-react';
+import { Search, Edit3, Trash2, Plus, Folder, FileText} from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
 import { Article, User } from '../types';
 
@@ -64,22 +64,56 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
                 {articles.map(article => (
-                    <div key={article.id} onClick={() => onArticleSelect(article)} className="group p-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:border-blue-500/30 cursor-pointer transition-all flex justify-between items-center">
-                        <div>
-                            <h4 className="font-bold text-lg">{article.title}</h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {article.tech_stack?.split(',').map(tag => (
-                                    <span key={tag} className="text-[8px] px-2 py-1 bg-blue-500/10 text-blue-400 rounded-md uppercase font-black">
-                                        {tag.trim()}
-                                    </span>
-                                ))}
+                    <div 
+                        key={article.id} 
+                        onClick={() => onArticleSelect(article)} 
+                        className="group p-8 bg-white/[0.01] border border-white/5 rounded-[35px] hover:border-blue-500/20 cursor-pointer transition-all flex flex-col gap-5 relative overflow-hidden h-64"
+                    >
+                        {/* ДЕКОР: Иконка статьи на фоне (как в Блогах) */}
+                        <div className="absolute -right-6 -bottom-6 opacity-[0.02] transform -rotate-12 transition-transform group-hover:scale-110 pointer-events-none">
+                            <FileText size={180} className="text-white" />
+                        </div>
+
+                        <div className="flex justify-between items-start relative z-10">
+                            <div className="flex-1 pr-20">
+                                <h4 className="font-black text-2xl tracking-tighter text-white/90 group-hover:text-blue-400 transition-colors leading-tight mb-3">
+                                    {article.title}
+                                </h4>
+                                
+                                {/* ПРЕВЬЮ КОНТЕНТА (CSS Truncate) */}
+                                <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-3 max-w-xl">
+                                    {article.content?.replace(/<[^>]*>/g, '') || "Нет текста для предварительного просмотра..."}
+                                </p>
+                            </div>
+
+                            {/* КНОПКИ УПРАВЛЕНИЯ (Стильные) */}
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onEditArticle(article); }} 
+                                    className="p-3 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-2xl border border-white/5 transition-all"
+                                    title="Редактировать"
+                                >
+                                    <Edit3 size={16}/>
+                                </button>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(e, article.id); }} 
+                                    className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-2xl border border-white/5 transition-all"
+                                    title="Удалить"
+                                >
+                                    <Trash2 size={16}/>
+                                </button>
                             </div>
                         </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={(e) => { e.stopPropagation(); onEditArticle(article); }} className="p-2 hover:text-blue-500"><Edit3 size={16}/></button>
-                            <button onClick={(e) => handleDelete(e, article.id)} className="p-2 hover:text-red-500"><Trash2 size={16}/></button>
+
+                        {/* ТЕГИ (Нижняя часть) */}
+                        <div className="mt-auto flex flex-wrap gap-2 relative z-10">
+                            {article.tech_stack?.split(',').map(tag => (
+                                <span key={tag} className="text-[8px] px-2.5 py-1 bg-white/5 border border-white/5 text-gray-500 rounded-lg uppercase font-black tracking-tighter group-hover:border-blue-500/10 transition-colors">
+                                    {tag.trim()}
+                                </span>
+                            ))}
                         </div>
                     </div>
                 ))}

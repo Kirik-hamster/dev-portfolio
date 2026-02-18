@@ -84,7 +84,7 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
     if (!editor) return null;
 
     return (
-        <div className="space-y-12 animate-in fade-in duration-700">
+        <div className="max-w-6xl mx-auto px-6 w-full space-y-12 animate-in fade-in duration-700">
             {/* Секция метаданных (оставляем твою верстку) */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
                 <div className="md:col-span-8 space-y-2">

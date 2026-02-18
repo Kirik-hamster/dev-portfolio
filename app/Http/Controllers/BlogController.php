@@ -21,6 +21,33 @@ class BlogController extends Controller
         return $query->where('is_portfolio', false)->latest()->get();
     }
 
+    public function update(Request $request, Blog $blog)
+    {
+        // Проверка: может ли этот юзер менять этот блог?
+        if ($blog->user_id !== Auth::id()) return response()->json(['message' => 'Forbidden'], 403);
+
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $blog->update($data);
+        return $blog;
+    }
+
+    public function destroy(Blog $blog)
+    {
+        if ($blog->user_id !== Auth::id()) return response()->json(['message' => 'Forbidden'], 403);
+        
+        // 1. Сначала удаляем все статьи, принадлежащие этому блогу
+        $blog->articles()->delete(); 
+        
+        // 2. Теперь удаляем саму папку
+        $blog->delete();
+        
+        return response()->json(['message' => 'Deleted']);
+    }
+
     public function store(Request $request) {
         $data = $request->validate([
             'title' => 'required|string|max:255',
