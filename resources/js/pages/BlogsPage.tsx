@@ -125,7 +125,10 @@ export function BlogsPage({ user, onNavigateToProfile, onArticleSelect, initialB
             <div className="max-w-6xl mx-auto px-6">
                 <div className="flex justify-between items-end mb-12">
                     <h1 className="text-5xl font-black uppercase tracking-tighter">
-                        {selectedBlogId ? `Блог: ${blogs.find(b => b.id === selectedBlogId)?.title}` : (viewMode === 'blogs' ? 'Блоги' : 'Публикации')}
+                        {selectedBlogId 
+                            ? `Блог: ${blogs.find(b => b.id === selectedBlogId)?.title}` || 'Загрузка...'
+                            : (viewMode === 'blogs' ? 'Блоги' : 'Публикации')
+                        }
                     </h1>
                     {/* Кнопка НАЗАД (Requirement: только возвращает из папки) */}
                     {selectedBlogId && (

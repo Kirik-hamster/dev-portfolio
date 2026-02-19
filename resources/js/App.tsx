@@ -266,7 +266,10 @@ function App() {
                         </button>
                         
                         <button 
-                            onClick={() => setPage('blogs')} 
+                            onClick={() => { 
+                                setCurrentBlogId(null);
+                                setPage('blogs'); 
+                            }}
                             className={`text-[11px] font-bold uppercase transition-colors ${page === 'blogs' ? 'text-blue-500' : 'text-gray-400 hover:text-white'}`}
                         >
                             Блоги
