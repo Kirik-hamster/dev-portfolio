@@ -5,9 +5,9 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { 
-    Bold, Italic, List, ListOrdered, Quote, Code, 
+    Bold, Italic, List, Code, Tag,
     Heading1, Heading2, Undo, Redo, Type, Underline as UnderlineIcon,
-    AlignLeft, AlignCenter, AlignRight, Link as LinkIcon
+    AlignLeft, AlignCenter, Link as LinkIcon
 } from 'lucide-react'; 
 import { Article } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
@@ -35,8 +35,8 @@ const MenuButton = ({ onClick, isActive, children, title }: any) => (
 
 export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
     const [title, setTitle] = useState(article?.title || '');
-    const [type, setType] = useState<'blog' | 'portfolio'>(article?.type || 'blog');
     const [techStack, setTechStack] = useState(article?.tech_stack || '');
+    const [githubUrl, setGithubUrl] = useState(article?.github_url || '');
 
     const editor = useEditor({
         extensions: [
@@ -76,6 +76,7 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
             title, 
             content: editor.getHTML(), 
             tech_stack: techStack, 
+            github_url: githubUrl,
             slug: title.toLowerCase().split(' ').join('-') 
         };
         onSave(payload);
@@ -85,22 +86,51 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
 
     return (
         <div className="max-w-6xl mx-auto px-6 w-full space-y-12 animate-in fade-in duration-700">
-            {/* Секция метаданных (оставляем твою верстку) */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
-                <div className="md:col-span-8 space-y-2">
-                    <label className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-bold">Название записи</label>
+            {/* СЕКЦИЯ МЕТАДАННЫХ (Выровненная и широкая) */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
+                
+                {/* ЛЕВАЯ ЧАСТЬ: ЗАГОЛОВОК (md:col-span-6 для баланса) */}
+                <div className="md:col-span-6 flex flex-col justify-end pb-2">
+                    <label className="text-[10px] tracking-[0.3em] text-gray-600 uppercase font-black pl-1 mb-2">Название записи</label>
                     <input 
                         value={title} 
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Заголовок истории..."
-                        className="w-full bg-transparent text-5xl font-semibold outline-none border-none p-0 placeholder:text-white/10 focus:ring-0"
+                        placeholder="Заголовок..."
+                        className="w-full bg-transparent text-5xl font-black uppercase tracking-tighter outline-none border-none p-0 placeholder:text-white/5 focus:ring-0"
                     />
                 </div>
-                {/* Твой блок с категорией и стеком */}
-                <div className="md:col-span-4 space-y-6 bg-white/5 p-6 rounded-3xl border border-white/5 backdrop-blur-md">
-                    <div className="space-y-2">
-                        <label className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-bold">Стек</label>
-                        <input value={techStack} onChange={(e) => setTechStack(e.target.value)} placeholder="React, Three.js..." className="w-full bg-transparent border-b border-white/10 text-sm outline-none py-1 focus:border-blue-500/50 transition-colors" />
+
+                {/* ПРАВАЯ ЧАСТЬ: КАРТОЧКА (md:col-span-6 — стала шире) */}
+                <div className="md:col-span-6 bg-white/[0.02] border border-white/5 p-8 rounded-[35px] backdrop-blur-xl relative overflow-hidden group flex flex-col justify-center">
+                    {/* Фоновый мягкий блик */}
+                    <div className="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors pointer-events-none" />
+
+                    <div className="space-y-6 relative z-10">
+                        
+                        {/* Строка 1: Теги */}
+                        <div className="flex items-center gap-4 group/input">
+                            <Tag size={16} className="text-blue-500/40 shrink-0" />
+                            <span className="text-[9px] tracking-[0.1em] text-gray-500 uppercase font-black shrink-0 w-12">Теги:</span>
+                            <input 
+                                value={techStack} 
+                                onChange={(e) => setTechStack(e.target.value)} 
+                                placeholder="React, Laravel..." 
+                                className="flex-1 bg-transparent border-b border-white/5 py-1 text-[13px] text-white placeholder:text-gray-700 outline-none focus:border-blue-500/30 transition-all" 
+                            />
+                        </div>
+
+                        {/* Строка 2: Ссылка */}
+                        <div className="flex items-center gap-4 group/input">
+                            <LinkIcon size={16} className="text-blue-500/40 shrink-0" />
+                            <span className="text-[9px] tracking-[0.1em] text-gray-500 uppercase font-black shrink-0 w-12">Ссылка:</span>
+                            <input 
+                                value={githubUrl} 
+                                onChange={(e) => setGithubUrl(e.target.value)} 
+                                placeholder="URL проекта..." 
+                                className="flex-1 bg-transparent border-b border-white/5 py-1 text-[13px] text-blue-400/60 placeholder:text-gray-700 outline-none focus:border-blue-500/30 transition-all" 
+                            />
+                        </div>
+
                     </div>
                 </div>
             </div>

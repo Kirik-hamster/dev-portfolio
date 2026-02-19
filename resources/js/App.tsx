@@ -127,6 +127,9 @@ function App() {
 
     const handleCreateArticle = () => {
         setEditingArticle(undefined);
+        if (page === 'portfolio' && portfolioBlogId) {
+            setCurrentBlogId(portfolioBlogId);
+        }
         setPage('form');
     };
     
