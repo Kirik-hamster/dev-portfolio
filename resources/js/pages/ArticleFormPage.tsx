@@ -4,9 +4,10 @@ import { PremiumLoader } from '@/components/PremiumLoader';
 import { ArticleApiService } from '@/services/ArticleApiService';
 import { Article } from '@/types';
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Добавь эти импорты
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 
 export function ArticleFormPage({ user, onSave, onCancel }: any) {
+    if (!user) return <Navigate to="/login" replace />;
     const { articleId, blogId } = useParams(); // Берем ID прямо из URL
     const navigate = useNavigate();
     const [article, setArticle] = React.useState<Article | undefined>(undefined);
@@ -18,6 +19,13 @@ export function ArticleFormPage({ user, onSave, onCancel }: any) {
             setLoading(true);
             ArticleApiService.fetchOne(Number(articleId))
                 .then(data => {
+                    const isOwner = data.user_id === user.id;
+                    const isAdmin = user.role === 'admin';
+
+                    if (!isAdmin && !isOwner) {
+                        navigate('/');
+                        return;
+                    }
                     setArticle(data);
                     setLoading(false);
                 })

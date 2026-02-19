@@ -18,7 +18,8 @@ export interface Blog {
 
 export interface Article {
     id: number;
-    blog_id: number; // Ссылка на родителя
+    user_id: number;
+    blog_id: number;
     title: string;
     content: string;
     slug: string;
