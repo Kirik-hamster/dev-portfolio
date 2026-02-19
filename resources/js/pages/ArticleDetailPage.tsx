@@ -4,6 +4,7 @@ import { Article, User } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/CommentSection';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { PremiumLoader } from '../components/PremiumLoader';
 
 
 interface ArticleDetailPageProps {
@@ -40,7 +41,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
     }, [articleId]);
 
     if (loading && !article) {
-        return <p>Loading article...</p>;
+        return <PremiumLoader />;
     }
 
     if (!article) {

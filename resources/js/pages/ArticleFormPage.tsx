@@ -1,45 +1,49 @@
+// resources/js/pages/ArticleFormPage.tsx
+import { ArticleForm } from '@/components/ArticleForm';
+import { PremiumLoader } from '@/components/PremiumLoader';
+import { ArticleApiService } from '@/services/ArticleApiService';
+import { Article } from '@/types';
 import React from 'react';
-import { ArticleForm } from '../components/ArticleForm';
-import { Article, User } from '../types'; 
-import { ArticleApiService } from '../services/ArticleApiService';
+import { useParams, useNavigate } from 'react-router-dom'; // Добавь эти импорты
 
-interface ArticleFormPageProps {
-    user: User | null; 
-    blogId?: number | null; // ДОБАВЛЕНО: принимаем ID текущей папки из App.tsx
-    article?: Article;
-    onSave: () => void;
-    onCancel: () => void;
-}
+export function ArticleFormPage({ user, onSave, onCancel }: any) {
+    const { articleId, blogId } = useParams(); // Берем ID прямо из URL
+    const navigate = useNavigate();
+    const [article, setArticle] = React.useState<Article | undefined>(undefined);
+    const [loading, setLoading] = React.useState(false);
 
-/**
- * Страница-обертка для формы создания/редактирования статьи.
- */
-export function ArticleFormPage({ user, blogId, article, onSave, onCancel }: ArticleFormPageProps) {
-    
-    const handleSave = async (data: any) => {
-        // ПОРЯДОК: Данные, ID папки (блога), ID статьи (если редактируем)
-        const res = await ArticleApiService.save(
-            data, 
-            blogId ?? undefined, // Берем из пропсов, исправляем null на undefined
-            article?.id
-        );
-
-        if (res.ok) {
-            onSave(); 
-        } else {
-            // Выводим текст ошибки, если сервер ответил 500 или 404
-            const errorText = await res.text();
-            alert("Ошибка сервера: " + errorText);
+    // Если в URL есть articleId, значит мы РЕДАКТИРУЕМ
+    React.useEffect(() => {
+        if (articleId) {
+            setLoading(true);
+            ArticleApiService.fetchOne(Number(articleId))
+                .then(data => {
+                    setArticle(data);
+                    setLoading(false);
+                })
+                .catch(() => {
+                    setLoading(false);
+                    navigate('/portfolio'); // Если статьи нет, уходим
+                });
         }
+    }, [articleId]);
+
+    const handleSave = async (data: any) => {
+        // Если создаем новую — берем blogId из URL (/form/new/:blogId)
+        // Если редактируем — берем оригинальный blog_id из статьи
+        const targetBlogId = blogId ? Number(blogId) : article?.blog_id;
+
+        const res = await ArticleApiService.save(data, targetBlogId, article?.id);
+        if (res.ok) onSave();
     };
 
+    if (loading) return <PremiumLoader />;
+
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <ArticleForm
-                article={article}
-                onSave={handleSave} 
-                onCancel={onCancel}
-            />
-        </div>
+        <ArticleForm 
+            article={article} 
+            onSave={handleSave} 
+            onCancel={onCancel} 
+        />
     );
 }

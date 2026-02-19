@@ -61,6 +61,20 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
         },
     });
 
+    React.useEffect(() => {
+        if (article) {
+            // Заполняем обычные поля
+            setTitle(article.title || '');
+            setTechStack(article.tech_stack || '');
+            setGithubUrl(article.github_url || '');
+
+            // Заполняем редактор TipTap
+            if (editor.getHTML() !== article.content) {
+                editor.commands.setContent(article.content);
+            }
+        }
+    }, [article, editor]);
+
     const setLink = () => {
         const url = window.prompt('Введите URL ссылки:');
         if (url) {
