@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
-use App\Http\Controllers\BlogController; // УБЕДИСЬ, ЧТО ЭТА СТРОКА ЕСТЬ
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
     
     // Комментарии (если они требуют авторизации)
-    Route::post('/articles/{article}/comments', [ArticleController::class, 'storeComment']);
+    Route::post('/articles/{article}/comments', [CommentController::class, 'store']);
+    Route::post('/comments/{comment}/toggle-like', [CommentController::class, 'toggleLike']);
 
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout(); // Выходим из сессии

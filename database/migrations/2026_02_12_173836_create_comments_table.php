@@ -14,9 +14,16 @@ return new class extends Migration
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('article_id')->constrained()->onDelete('cascade');
-            $table->string('author_name');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->text('content');
             $table->timestamps();
+        });
+
+        Schema::create('comment_likes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('comment_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->unique(['comment_id', 'user_id']); // Запрет на дубликат лайка
         });
     }
 
@@ -25,6 +32,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('comment_likes');
         Schema::dropIfExists('comments');
     }
 };

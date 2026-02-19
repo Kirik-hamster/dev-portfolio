@@ -69,12 +69,20 @@ export const ArticleApiService = {
         });
     },
 
-    async addComment(articleId: number, commentData: any) {
-        return fetch(`${BASE_URL}/${articleId}/comments`, {
+    async addComment(articleId: number, content: string) {
+        return fetch(`/api/articles/${articleId}/comments`, {
             method: 'POST',
             headers: getHeaders(),
             credentials: 'include',
-            body: JSON.stringify(commentData)
+            body: JSON.stringify({ content }) // Теперь только контент, юзера сервер возьмет сам
+        });
+    },
+
+    async toggleLike(commentId: number) {
+        return fetch(`/api/comments/${commentId}/toggle-like`, {
+            method: 'POST',
+            headers: getHeaders(),
+            credentials: 'include'
         });
     }
 };

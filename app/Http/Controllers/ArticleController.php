@@ -47,7 +47,17 @@ class ArticleController extends Controller
 
     public function show(Article $article)
     {
-        return $article->load('comments');
+        // Загружаем статью вместе с:
+        // 1. Автором статьи (user)
+        // 2. Комментариями (comments)
+        // 3. Авторами каждого комментария (comments.user)
+        // 4. Количеством лайков для каждого комментария (withCount)
+        
+        $article->load(['user', 'comments.user', 'comments' => function($query) {
+            $query->withCount('likes')->orderBy('likes_count', 'desc')->orderBy('created_at', 'desc');
+        }]);
+
+        return response()->json($article);
     }
 
     public function store(ArticleStoreRequest $request, $blogId)

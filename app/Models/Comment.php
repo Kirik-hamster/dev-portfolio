@@ -4,13 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Comment extends Model
-{
-    // ОБЯЗАТЕЛЬНО: Разрешаем запись этих полей
-    protected $fillable = ['article_id', 'author_name', 'content'];
+class Comment extends Model {
+    protected $fillable = ['article_id', 'user_id', 'content'];
 
-    public function article()
-    {
-        return $this->belongsTo(Article::class);
+    // Кто написал?
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
+
+    // Кто лайкнул?
+    public function likes() {
+        return $this->hasMany(CommentLike::class);
     }
 }

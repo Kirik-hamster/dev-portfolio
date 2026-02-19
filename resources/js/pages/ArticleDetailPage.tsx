@@ -1,20 +1,23 @@
 
 import React, { useEffect, useState } from 'react';
-import { Article } from '../types';
+import { Article, User } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/CommentSection';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 
+
 interface ArticleDetailPageProps {
     articleId: number;
     onBack: () => void;
+    user: User | null;       
+    onNavigateToLogin: () => void; 
 }
 
 /**
  * Страница детального просмотра статьи.
  * Загружает и отображает полную информацию о статье и ее комментарии.
  */
-export function ArticleDetailPage({ articleId, onBack }: ArticleDetailPageProps) {
+export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: ArticleDetailPageProps) {
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -24,7 +27,6 @@ export function ArticleDetailPage({ articleId, onBack }: ArticleDetailPageProps)
             .then(data => {
                 setArticle(data);
                 setLoading(false);
-                window.scrollTo(0, 0);
             })
             .catch(err => {
                 console.error(err);
@@ -32,7 +34,10 @@ export function ArticleDetailPage({ articleId, onBack }: ArticleDetailPageProps)
             });
     };
 
-    useEffect(fetchArticle, [articleId]);
+    useEffect(() => {
+        fetchArticle();
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Плавный скролл при открытии
+    }, [articleId]);
 
     if (loading && !article) {
         return <p>Loading article...</p>;
@@ -67,7 +72,9 @@ export function ArticleDetailPage({ articleId, onBack }: ArticleDetailPageProps)
                 <CommentSection
                     articleId={article.id}
                     comments={article.comments || []}
-                    onCommentAdded={fetchArticle} // Перезагружаем статью после добавления комментария
+                    onCommentAdded={fetchArticle}
+                    user={user} // ПЕРЕДАЕМ ЮЗЕРА
+                    onNavigateToLogin={onNavigateToLogin} // ПЕРЕДАЕМ ПЕРЕХОД
                 />
             </div>
         </div>

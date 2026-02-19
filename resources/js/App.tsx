@@ -197,8 +197,9 @@ function App() {
                 return selectedArticleId ? (
                     <ArticleDetailPage 
                         articleId={selectedArticleId} 
-                        // МЕНЯЕМ navigateToPortfolio на handleBackFromDetail
-                        onBack={handleBackFromDetail} 
+                        onBack={handleBackFromDetail}
+                        user={user}                       // Проверь, что это тут есть
+                        onNavigateToLogin={() => setPage('login')} // И это
                     />
                 ) : (
                     <PortfolioPage 
