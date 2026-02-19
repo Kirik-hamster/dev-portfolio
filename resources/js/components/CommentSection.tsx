@@ -72,13 +72,13 @@ export const CommentSection = ({ articleId, comments, onCommentAdded, user, onNa
                             <span className="text-[9px] font-black uppercase text-gray-500">{user.name}</span>
                         </div>
                         <button 
-    onClick={handleSubmit} 
-    // Условие остается прежним — оно верное
-    disabled={!content.trim() || isSubmitting} 
-    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-[9px] uppercase tracking-widest shadow-lg transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:shadow-none"
->
-    <Send size={12} /> Post
-</button>
+                            onClick={handleSubmit} 
+                            // Условие остается прежним — оно верное
+                            disabled={!content.trim() || isSubmitting} 
+                            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-[9px] uppercase tracking-widest shadow-lg transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:shadow-none"
+                        >
+                            <Send size={12} /> Post
+                        </button>
                     </div>
                 </div>
             )}

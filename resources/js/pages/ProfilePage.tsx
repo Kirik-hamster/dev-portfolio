@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
 import { User as UserType, Blog, Article } from '../types';
 import { UserArticlesList } from '../components/UserArticlesList';
+import { PremiumLoader } from '../components/PremiumLoader';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -38,6 +39,26 @@ export function ProfilePage({
     const [insideBlogId, setInsideBlogId] = useState<number | null>(initialBlogId || null);
     const [insideBlogTitle, setInsideBlogTitle] = useState('');
 
+    // Состояния для теста
+    const [demoLoading, setDemoLoading] = useState(false);
+    const [demoDuration, setDemoDuration] = useState(3); // время в секундах
+    const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
+
+    const startDemo = () => {
+        if (timerId) clearTimeout(timerId); // Сброс, если уже запущено
+        setDemoLoading(true);
+        
+        const id = setTimeout(() => {
+            setDemoLoading(false);
+        }, demoDuration * 1000);
+        
+        setTimerId(id);
+    };
+
+    const cancelDemo = () => {
+        if (timerId) clearTimeout(timerId);
+        setDemoLoading(false);
+    };
 
     useEffect(() => {
         if (insideBlogId && blogs.length > 0) {
@@ -114,6 +135,8 @@ export function ProfilePage({
     };
 
     const renderContent = () => {
+        if (loading) return <PremiumLoader />;
+
         switch (activeTab) {
             case 'profile':
                 return (
@@ -364,19 +387,71 @@ export function ProfilePage({
 
             case 'admin':
                 return (
-                    <div className="bg-blue-600/[0.03] border border-blue-500/10 p-10 rounded-[40px] relative overflow-hidden animate-in fade-in">
-                        <Database className="absolute -right-6 -bottom-6 text-blue-500/5 w-48 h-48" />
-                        <h3 className="text-3xl font-black mb-10 uppercase tracking-tighter text-blue-400 relative z-10">Системная панель</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
-                            <div className="p-6 bg-white/5 border border-white/5 rounded-3xl">
-                                <Users className="text-gray-400 mb-2" size={18}/>
-                                <div className="text-2xl font-bold italic tracking-tighter">Активные сессии</div>
-                            </div>
-                            <div className="p-6 bg-white/5 border border-white/5 rounded-3xl">
-                                <Activity className="text-gray-400 mb-2" size={18}/>
-                                <div className="text-2xl font-bold italic tracking-tighter">{allBlogsCount} Категорий</div>
+                    <div className="space-y-8 animate-in fade-in duration-500">
+                        {/* 1. Блок системной статистики (оставляем как был) */}
+                        <div className="bg-blue-600/[0.03] border border-blue-500/10 p-10 rounded-[40px] relative overflow-hidden">
+                            <Database className="absolute -right-6 -bottom-6 text-blue-500/5 w-48 h-48" />
+                            <h3 className="text-3xl font-black mb-10 uppercase tracking-tighter text-blue-400 relative z-10">Системная панель</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+                                <div className="p-6 bg-white/5 border border-white/5 rounded-3xl">
+                                    <Users className="text-gray-400 mb-2" size={18}/>
+                                    <div className="text-2xl font-bold italic tracking-tighter">Активные сессии</div>
+                                </div>
+                                <div className="p-6 bg-white/5 border border-white/5 rounded-3xl">
+                                    <Activity className="text-gray-400 mb-2" size={18}/>
+                                    <div className="text-2xl font-bold italic tracking-tighter">{allBlogsCount} Категорий</div>
+                                </div>
                             </div>
                         </div>
+
+                        {/* 2. ПАНЕЛЬ УПРАВЛЕНИЯ ТЕСТОМ (Всегда видна) */}
+                        <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[40px] backdrop-blur-xl">
+                            <div className="flex flex-col lg:flex-row justify-between items-center gap-10">
+                                <div className="space-y-2 text-center lg:text-left">
+                                    <h4 className="text-xl font-bold text-white uppercase">Лаборатория загрузки</h4>
+                                    <p className="text-gray-500 text-xs max-w-sm">Настройте время симуляции и проверьте, как Premium Loader вписывается в контентную область.</p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-center gap-6">
+                                    {/* Выбор времени */}
+                                    <div className="flex flex-col gap-2">
+                                        <span className="text-[8px] font-black uppercase text-gray-600 tracking-widest ml-4">Время: {demoDuration} сек.</span>
+                                        <input 
+                                            type="range" min="1" max="10" step="1" 
+                                            value={demoDuration} 
+                                            onChange={(e) => setDemoDuration(Number(e.target.value))}
+                                            className="w-40 accent-blue-600"
+                                        />
+                                    </div>
+
+                                    {/* Кнопки управления */}
+                                    <div className="flex gap-3">
+                                        {!demoLoading ? (
+                                            <button 
+                                                onClick={startDemo}
+                                                className="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-95"
+                                            >
+                                                Запустить
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={cancelDemo}
+                                                className="px-8 py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl font-black uppercase text-[10px] hover:bg-red-500 hover:text-white transition-all active:scale-95 flex items-center gap-2"
+                                            >
+                                                <X size={14} /> Отменить
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. ОБЛАСТЬ ВЫВОДА (Лоадер появляется ТУТ, под настройками) */}
+                        {demoLoading && (
+                            <div className="bg-white/[0.01] border border-dashed border-white/5 rounded-[50px] p-20 animate-in zoom-in-95 duration-500">
+                                <PremiumLoader />
+                            </div>
+                        )}
                     </div>
                 );
 

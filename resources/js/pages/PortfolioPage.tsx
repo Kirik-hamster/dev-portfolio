@@ -3,6 +3,7 @@ import { Search, Edit3, Trash2, Plus } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
 // Импортируем готовые типы вместо локального определения
 import { Article, User } from '../types';
+import { PremiumLoader } from '../components/PremiumLoader';
 
 interface PortfolioPageProps {
     user: User | null; 
@@ -63,10 +64,7 @@ export function PortfolioPage({
 
             {/* СПИСОК СТАТЕЙ */}
             {loading && articles.length === 0 ? (
-                <div className="flex flex-col items-center py-32 opacity-20">
-                    <div className="w-12 h-12 border-2 border-white/10 border-t-blue-500 rounded-full animate-spin mb-6" />
-                    <p className="uppercase text-[10px] font-black tracking-[0.5em]">Получение данных...</p>
-                </div>
+                <PremiumLoader />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {articles.map(article => (

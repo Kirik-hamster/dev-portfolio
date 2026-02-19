@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Article, Blog } from '../types';
 import { LayoutGrid, List, Tag, Folder, X, User as UserIcon, ShieldCheck, ArrowRight, FileText } from 'lucide-react';
+import { PremiumLoader } from '../components/PremiumLoader';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -204,7 +205,7 @@ export function BlogsPage({ user, onNavigateToProfile, onArticleSelect, initialB
                 )}
 
                 {loading ? (
-                    <div className="py-40 text-center opacity-20"><div className="w-10 h-10 border-2 border-t-blue-500 border-white/10 rounded-full animate-spin mx-auto" /></div>
+                    <PremiumLoader />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* РЕЖИМ БЛОГОВ С ТЕГАМИ */}

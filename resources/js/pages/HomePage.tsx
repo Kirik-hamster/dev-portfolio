@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight } from 'lucide-react';
+import { PremiumLoader } from '../components/PremiumLoader';
 
 interface HomePageProps {
     onNavigateToPortfolio: () => void;
@@ -10,6 +11,17 @@ interface HomePageProps {
  * Приветствует пользователя и предлагает перейти к портфолио.
  */
 export function HomePage({ onNavigateToPortfolio }: HomePageProps) {
+    const [loading, setLoading] = useState(false);
+    useEffect(() => {
+    }, []);
+    // 5. "Охранник" загрузки: если грузимся — показываем премиум-анимацию
+    if (loading) {
+        return (
+            <div className="min-h-[70vh] flex items-center justify-center">
+                <PremiumLoader />
+            </div>
+        );
+    }
     return (
         <div className="max-w-6xl mx-auto px-6 w-full flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12 animate-in fade-in zoom-in duration-1000">
             <h1 className="text-6xl md:text-8xl font-bold tracking-tighter bg-gradient-to-b from-white via-white to-gray-500 bg-clip-text text-transparent leading-tight">
