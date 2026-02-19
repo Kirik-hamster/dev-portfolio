@@ -243,42 +243,95 @@ export function ProfilePage({
                         <div className="flex justify-between items-center mb-6 px-2">
                             <h3 className="text-xl font-bold uppercase tracking-tight">Ваши блоги</h3>
                             {!isCreating && (
-                                <button onClick={() => setIsCreating(true)} className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase hover:scale-105 transition-all">
+                                <button 
+                                    onClick={() => { 
+                                        setEditingBlog(null);
+                                        setIsCreating(true);  
+                                    }} 
+                                    className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase hover:scale-105 transition-all"
+                                >
                                     <Plus size={14}/> Создать папку
                                 </button>
                             )}
                         </div>
 
-                        {/* Форма создания */}
-                        {isCreating && (
-                            <div className="bg-white/[0.03] border border-white/10 p-8 rounded-[40px] mb-8 animate-in zoom-in-95">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h4 className="font-black uppercase text-[10px] text-blue-500 tracking-widest">Новая категория</h4>
-                                    <button onClick={() => setIsCreating(false)} className="text-gray-500 hover:text-white"><X size={18}/></button>
-                                </div>
-                                <div className="space-y-4">
-                                    <input type="text" placeholder="Название папки" className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-blue-500/50 text-sm" value={newBlog.title} onChange={e => setNewBlog({...newBlog, title: e.target.value})}/>
-                                    <textarea placeholder="Описание" className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-blue-500/50 text-sm min-h-[100px]" value={newBlog.description} onChange={e => setNewBlog({...newBlog, description: e.target.value})}/>
-                                    <button onClick={handleCreateSubmit} className="w-full py-4 bg-blue-600 rounded-full font-black uppercase text-[10px] tracking-[0.2em]">Создать</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Форма редактирования */}
-                        {editingBlog && (
-                            <div className="bg-white/[0.03] border border-white/10 p-10 rounded-[40px] mb-8 animate-in zoom-in-95 backdrop-blur-xl">
-                                <div className="flex justify-between items-center mb-6">
-                                    <div className="flex items-center gap-3 text-blue-500">
-                                        <Pencil size={14} /><h4 className="font-black uppercase text-[10px] tracking-widest">Редактирование</h4>
+                        {(isCreating || editingBlog) && (
+                            <div className="relative group mb-12 animate-in zoom-in-95 duration-500">
+                                {/* Фоновое "дорогое" свечение */}
+                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-[45px] blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000" />
+                                
+                                <div className="relative bg-[#0a0a0a]/80 border border-white/10 backdrop-blur-3xl p-10 rounded-[40px] shadow-2xl">
+                                    {/* Хедер формы */}
+                                    <div className="flex justify-between items-center mb-10">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                                                {editingBlog ? <Pencil size={18} className="text-blue-500" /> : <Plus size={18} className="text-blue-400" />}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black uppercase text-[11px] text-blue-500 tracking-[0.2em]">
+                                                    {editingBlog ? 'Управление категорией' : 'Новое пространство'}
+                                                </h4>
+                                                <p className="text-[9px] text-gray-600 uppercase font-bold tracking-widest mt-1">
+                                                    {editingBlog ? 'Редактирование существующих данных' : 'Создание нового раздела в вашем блоге'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => { setIsCreating(false); setEditingBlog(null); }} 
+                                            className="p-3 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all"
+                                        >
+                                            <X size={20}/>
+                                        </button>
                                     </div>
-                                    <button onClick={() => setEditingBlog(null)}><X size={18}/></button>
-                                </div>
-                                <div className="space-y-4">
-                                    <input className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-blue-500/50 text-sm" value={editingBlog.title} onChange={e => setEditingBlog({...editingBlog, title: e.target.value})} />
-                                    <textarea className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-blue-500/50 text-sm min-h-[100px]" value={editingBlog.description || ''} onChange={e => setEditingBlog({...editingBlog, description: e.target.value})} />
-                                    <div className="flex gap-4">
-                                        <button onClick={handleUpdateSubmit} className="flex-1 py-4 bg-blue-600 rounded-full font-black uppercase text-[10px]">Сохранить</button>
-                                        <button onClick={() => setEditingBlog(null)} className="px-8 py-4 bg-white/5 rounded-full font-black uppercase text-[10px]">Отмена</button>
+
+                                    {/* Поля ввода */}
+                                    <div className="space-y-8">
+                                        <div className="relative group/input">
+                                            <label className="absolute -top-2.5 left-6 px-3 py-0.5 bg-[#0d0d0d] rounded-full text-[8px] font-black uppercase tracking-[0.2em] text-gray-600 shadow-sm z-10">
+                                                Название
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Назовите вашу папку..." 
+                                                className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 focus:bg-white/[0.04] transition-all text-sm font-medium placeholder:text-gray-800" 
+                                                value={isCreating ? newBlog.title : editingBlog?.title} 
+                                                onChange={e => isCreating 
+                                                    ? setNewBlog({...newBlog, title: e.target.value}) 
+                                                    : setEditingBlog({...editingBlog!, title: e.target.value})
+                                                }
+                                            />
+                                        </div>
+
+                                        <div className="relative group/input">
+                                            <label className="absolute -top-2.5 left-6 px-3 py-0.5 bg-[#0d0d0d] rounded-full text-[8px] font-black uppercase tracking-[0.2em] text-gray-600 shadow-sm z-10">
+                                                Описание
+                                            </label>
+                                            <textarea 
+                                                placeholder="О чем этот раздел? Краткое описание для читателей..." 
+                                                className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 focus:bg-white/[0.04] transition-all text-sm font-medium min-h-[120px] placeholder:text-gray-800 leading-relaxed" 
+                                                value={isCreating ? newBlog.description : editingBlog?.description || ''} 
+                                                onChange={e => isCreating 
+                                                    ? setNewBlog({...newBlog, description: e.target.value}) 
+                                                    : setEditingBlog({...editingBlog!, description: e.target.value})
+                                                }
+                                            />
+                                        </div>
+
+                                        {/* Кнопки действий */}
+                                        <div className="flex gap-4 pt-4">
+                                            <button 
+                                                onClick={editingBlog ? handleUpdateSubmit : handleCreateSubmit} 
+                                                className="flex-1 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-[22px] font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                            >
+                                                {editingBlog ? 'Сохранить изменения' : 'Создать раздел'}
+                                            </button>
+                                            <button 
+                                                onClick={() => { setIsCreating(false); setEditingBlog(null); }} 
+                                                className="px-10 py-5 bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 hover:text-white rounded-[22px] font-black uppercase text-[10px] tracking-[0.2em] transition-all"
+                                            >
+                                                Отмена
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -289,19 +342,36 @@ export function ProfilePage({
                             {blogs.map(blog => (
                                 <div key={blog.id} onClick={() => onBlogSelect(blog.id)} className="group p-8 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-blue-500/30 cursor-pointer transition-all flex flex-col gap-6 relative overflow-hidden">
                                     <div className="absolute -right-4 -bottom-4 opacity-[0.02] transform rotate-6 pointer-events-none text-white"><Folder size={120} /></div>
-                                    <div className="flex items-center justify-between relative z-10 w-full">
-                                        <div className="flex items-center gap-5">
-                                            <div className="p-4 bg-white/5 rounded-3xl text-gray-400 group-hover:text-blue-500 transition-colors border border-white/5"><Folder size={24}/></div>
-                                            <div>
-                                                <h4 className="font-bold text-xl tracking-tight text-white/90 leading-tight">{blog.title}</h4>
-                                                <p className="text-[8px] text-blue-500/50 uppercase font-black tracking-widest mt-1">{blog.is_portfolio ? 'Системный раздел' : 'Ваш блог'}</p>
+                                    <div className="flex items-start justify-between relative z-10 w-full gap-4">
+                                        
+                                        {/* ЛЕВАЯ ЧАСТЬ: Иконка + Текст */}
+                                        <div className="flex items-center gap-5 min-w-0"> 
+                                            {/* shrink-0 чтобы иконку не сжимало при длинном тексте */}
+                                            <div className="p-4 bg-white/5 rounded-3xl text-gray-400 group-hover:text-blue-500 transition-colors border border-white/5 shrink-0">
+                                                <Folder size={24}/>
+                                            </div>
+                                            
+                                            {/* min-w-0 критически важен для работы line-clamp внутри флекса */}
+                                            <div className="min-w-0">
+                                                {/* line-clamp-2 перенесет на 2 строку и добавит "..." */}
+                                                <h4 className="font-bold text-xl tracking-tight text-white/90 leading-tight break-words line-clamp-2">
+                                                    {blog.title}
+                                                </h4>
+                                                <p className="text-[8px] text-blue-500/50 uppercase font-black tracking-widest mt-1">
+                                                    {blog.is_portfolio ? 'Системный раздел' : 'Ваш блог'}
+                                                </p>
                                             </div>
                                         </div>
-                                        {/* ВОТ ОНИ - КНОПКИ УПРАВЛЕНИЯ */}
+
+                                        {/* ПРАВАЯ ЧАСТЬ: Кнопки (shrink-0 чтобы кнопки всегда были видны) */}
                                         {!blog.is_portfolio && (
-                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 relative z-20">
-                                                <button onClick={(e) => { e.stopPropagation(); setEditingBlog(blog); }} className="p-3 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-2xl border border-white/5 transition-all"><Pencil size={14} /></button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteBlog(blog.id); }} className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-2xl border border-white/5 transition-all"><Trash2 size={14} /></button>
+                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 relative z-20 shrink-0">
+                                                <button onClick={(e) => { e.stopPropagation(); setEditingBlog(blog); }} className="p-3 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-2xl border border-white/5 transition-all">
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteBlog(blog.id); }} className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-2xl border border-white/5 transition-all">
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
                                         )}
                                     </div>
