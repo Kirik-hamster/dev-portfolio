@@ -1,4 +1,4 @@
-import { Article } from '../types';
+import { Article, ArticleInput } from '../types';
 
 const getXsrfToken = () => {
     const value = `; ${document.cookie}`;
@@ -8,7 +8,6 @@ const getXsrfToken = () => {
 };
 
 const BASE_URL = '/api/articles';
-const BLOG_URL = '/api/blogs'; // Добавили базовый путь для блогов
 
 const getHeaders = () => ({
     'Content-Type': 'application/json',
@@ -17,7 +16,7 @@ const getHeaders = () => ({
 });
 
 export const ArticleApiService = {
-    // 1. Получить статьи системного портфолио
+    // Получить статьи системного портфолио
     async fetchPortfolio(query = ''): Promise<Article[]> {
         const response = await fetch(`/api/portfolio?search=${query}`, {
             headers: { 'Accept': 'application/json' }
@@ -25,9 +24,9 @@ export const ArticleApiService = {
         return response.ok ? response.json() : [];
     },
 
-    // 2. Получить статьи конкретного блога (папки)
+    // Получить статьи конкретного блога (папки)
     async fetchByBlog(blogId: number, query = ''): Promise<Article[]> {
-        const response = await fetch(`${BLOG_URL}/${blogId}/articles?search=${query}`, {
+        const response = await fetch(`/api/blogs/${blogId}/articles?search=${query}`, {
             headers: { 'Accept': 'application/json' }
         });
         return response.ok ? response.json() : [];
@@ -39,8 +38,8 @@ export const ArticleApiService = {
         return response.json();
     },
 
-    // 3. Обновленный метод сохранения
-    async save(data: any, blogId?: number, id?: number) {
+    // Обновленный метод сохранения
+    async save(data: ArticleInput, blogId?: number, id?: number) {
         if (!id && !blogId) {
             console.error("ОШИБКА: blogId потерялся перед отправкой!");
             alert("Ошибка: Не выбрана папка. Вернитесь в профиль и выберите папку снова.");
@@ -49,7 +48,7 @@ export const ArticleApiService = {
 
         const url = id 
             ? `${BASE_URL}/${id}` 
-            : `${BLOG_URL}/${blogId}/articles`;
+            : `/api/blogs/${blogId}/articles`;
         
         const method = id ? 'PUT' : 'POST';
 
@@ -74,7 +73,7 @@ export const ArticleApiService = {
             method: 'POST',
             headers: getHeaders(),
             credentials: 'include',
-            body: JSON.stringify({ content }) // Теперь только контент, юзера сервер возьмет сам
+            body: JSON.stringify({ content })
         });
     },
 

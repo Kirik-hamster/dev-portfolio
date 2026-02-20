@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Send, Heart, ShieldCheck, User as UserIcon, Lock } from 'lucide-react';
-import { ArticleApiService } from '../services/ArticleApiService';
-import { User } from '../types';
+import { User, Comment } from '../types';
+import { CommentApiService } from '@/services/CommentApiService';
 
-export const CommentSection = ({ articleId, comments, onCommentAdded, user, onNavigateToLogin }: any) => {
+interface CommentSectionProps {
+    articleId: number;
+    comments: Comment[];
+    onCommentAdded: () => void;
+    user: User | null;
+    onNavigateToLogin: () => void;
+}
+
+export const CommentSection: React.FC<CommentSectionProps> = ({ 
+    articleId, 
+    comments, 
+    onCommentAdded, 
+    user, 
+    onNavigateToLogin 
+}) => {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    // 1. ЛОКАЛЬНОЕ СОСТОЯНИЕ: Чтобы список не прыгал при лайках
-    const [localComments, setLocalComments] = useState(comments);
+ 
+    const [localComments, setLocalComments] = useState<Comment[]>(comments);
 
     // Синхронизируем, если пришли новые комменты от родителя (например, при заходе в статью)
     useEffect(() => {
@@ -18,7 +31,7 @@ export const CommentSection = ({ articleId, comments, onCommentAdded, user, onNa
     const handleSubmit = async () => {
         if (!content.trim() || isSubmitting) return;
         setIsSubmitting(true);
-        const res = await ArticleApiService.addComment(articleId, content);
+        const res = await CommentApiService.add(articleId, content);
         if (res.ok) {
             setContent('');
             onCommentAdded(); // Тут полная перезагрузка ок — новый коммент должен появиться
@@ -29,14 +42,15 @@ export const CommentSection = ({ articleId, comments, onCommentAdded, user, onNa
     const handleLike = async (commentId: number) => {
         if (!user) return onNavigateToLogin();
 
-        const response = await ArticleApiService.toggleLike(commentId);
-        if (response.ok) {
-            const data = await response.json();
+        try {
+            // Новый сервис возвращает сразу данные
+            const data = await CommentApiService.toggleLike(commentId);
             
-            // ОБНОВЛЯЕМ ТОЛЬКО ЦИФРУ: Порядок в массиве localComments остается прежним!
-            setLocalComments((prev: any) => prev.map((c: any) => 
+            setLocalComments((prev) => prev.map((c) => 
                 c.id === commentId ? { ...c, likes_count: data.likes_count } : c
             ));
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -85,7 +99,7 @@ export const CommentSection = ({ articleId, comments, onCommentAdded, user, onNa
 
             {/* СПИСОК (Используем localComments) */}
             <div className="space-y-6">
-                {localComments.map((comment: any) => (
+                {localComments.map((comment) => (
                     <div key={comment.id} className="group bg-white/[0.01] border border-white/5 p-8 rounded-[35px] hover:border-white/10 transition-all relative">
                         <div className="flex justify-between items-start mb-6">
                             <div className="flex items-center gap-4">

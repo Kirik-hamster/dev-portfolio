@@ -6,20 +6,40 @@ import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { 
     Bold, Italic, List, Code, Tag,
-    Heading1, Heading2, Undo, Redo, Type, Underline as UnderlineIcon,
+    Heading1, Heading2, Undo, Redo, Underline as UnderlineIcon,
     AlignLeft, AlignCenter, Link as LinkIcon
 } from 'lucide-react'; 
-import { Article } from '../types';
-import { ArticleApiService } from '../services/ArticleApiService';
+import { Article, ArticleInput } from '../types';
 
-// ОБЯЗАТЕЛЬНО: Описание пропсов должно быть тут
-interface Props {
+interface ArticleFormProps {
     article: Article | undefined;
-    onSave: (data: any) => void;
+    onSave: (data: ArticleInput) => void;
     onCancel: () => void;
 }
 
-const MenuButton = ({ onClick, isActive, children, title }: any) => (
+interface MenuButtonProps {
+    onClick: () => void;
+    isActive?: boolean;
+    children: React.ReactNode;
+    title?: string;
+}
+
+const EDITOR_EXTENSIONS = [
+    StarterKit,
+    Underline,
+    Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+            class: 'text-blue-400 underline cursor-pointer',
+        },
+    }),
+    TextAlign.configure({
+        types: ['heading', 'paragraph'],
+    }),
+];
+
+
+const MenuButton: React.FC<MenuButtonProps> = ({ onClick, isActive, children, title }) => (
     <button
         onClick={(e) => { e.preventDefault(); onClick(); }}
         title={title}
@@ -33,29 +53,17 @@ const MenuButton = ({ onClick, isActive, children, title }: any) => (
     </button>
 );
 
-export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
+export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCancel }) => {
     const [title, setTitle] = useState(article?.title || '');
     const [techStack, setTechStack] = useState(article?.tech_stack || '');
     const [githubUrl, setGithubUrl] = useState(article?.github_url || '');
 
+
     const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Underline,
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: {
-                    class: 'text-blue-400 underline cursor-pointer',
-                },
-            }),
-            TextAlign.configure({
-                types: ['heading', 'paragraph'],
-            }),
-        ],
+        extensions: EDITOR_EXTENSIONS,
         content: article?.content || '',
         editorProps: {
             attributes: {
-                // Класс 'prose-invert' — ключ к красивому тексту на темном фоне
                 class: 'prose-editor focus:outline-none max-w-none min-h-[450px] p-10 text-xl leading-relaxed selection:bg-blue-500/30',
             },
         },
@@ -86,7 +94,7 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
 
     const handleSave = () => {
         if (!editor || !title.trim()) return;
-        const payload = { 
+        const payload: ArticleInput = { 
             title, 
             content: editor.getHTML(), 
             tech_stack: techStack, 
@@ -195,7 +203,7 @@ export const ArticleForm: React.FC<Props> = ({ article, onSave, onCancel }) => {
                     disabled={!title.trim()}
                     className="px-12 py-5 bg-white text-black rounded-full font-bold hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-[0_10px_30px_rgba(255,255,255,0.1)]"
                 >
-                    {article ? 'Update Entry' : 'Publish to World'}
+                    {article ? 'Обновить пост' : 'Опубликовать пост'}
                 </button>
             </div>
         </div>

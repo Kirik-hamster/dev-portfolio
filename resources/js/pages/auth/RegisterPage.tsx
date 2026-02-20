@@ -1,3 +1,4 @@
+import { User } from '@/types';
 import React, { useState } from 'react';
 
 // Используем ту же функцию для куки
@@ -11,7 +12,7 @@ export function RegisterPage({
         onRegisterSuccess, 
         onNavigateToLogin
     }: {
-        onRegisterSuccess: (user: any) => void,
+        onRegisterSuccess: (user: User) => void,
         onNavigateToLogin: () => void
     }) {
     const [name, setName] = useState('');

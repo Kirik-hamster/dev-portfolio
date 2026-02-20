@@ -2,11 +2,17 @@
 import { ArticleForm } from '@/components/ArticleForm';
 import { PremiumLoader } from '@/components/PremiumLoader';
 import { ArticleApiService } from '@/services/ArticleApiService';
-import { Article } from '@/types';
+import { Article, ArticleInput, User } from '@/types';
 import React from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 
-export function ArticleFormPage({ user, onSave, onCancel }: any) {
+interface ArticleFormPageProps {
+    user: User | null;
+    onSave: () => void;
+    onCancel: () => void;
+}
+
+export function ArticleFormPage({ user, onSave, onCancel }: ArticleFormPageProps) {
     if (!user) return <Navigate to="/login" replace />;
     const { articleId, blogId } = useParams(); // Берем ID прямо из URL
     const navigate = useNavigate();
@@ -36,7 +42,7 @@ export function ArticleFormPage({ user, onSave, onCancel }: any) {
         }
     }, [articleId]);
 
-    const handleSave = async (data: any) => {
+    const handleSave = async (data: ArticleInput) => {
         // Если создаем новую — берем blogId из URL (/form/new/:blogId)
         // Если редактируем — берем оригинальный blog_id из статьи
         const targetBlogId = blogId ? Number(blogId) : article?.blog_id;

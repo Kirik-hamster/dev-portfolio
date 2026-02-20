@@ -5,6 +5,7 @@ import { User as UserType, Blog, Article } from '../types';
 import { UserArticlesList } from '../components/UserArticlesList';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { AdminPanel } from '@/components/AdminPanel';
+import { BlogApiService } from '../services/BlogApiService';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -105,11 +106,7 @@ export function ProfilePage({
 
     const handleCreateSubmit = async () => {
         if (!newBlog.title) return alert("Введите название папки!");
-        const res = await fetch('/api/blogs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': getXsrfToken() },
-            body: JSON.stringify(newBlog)
-        });
+        const res = await BlogApiService.save(newBlog);
         if (res.ok) {
             setIsCreating(false);
             setNewBlog({ title: '', description: '' });
@@ -119,11 +116,10 @@ export function ProfilePage({
 
     const handleUpdateSubmit = async () => {
         if (!editingBlog) return;
-        const res = await fetch(`/api/blogs/${editingBlog.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': getXsrfToken() },
-            body: JSON.stringify(editingBlog)
-        });
+        const res = await BlogApiService.save({
+            title: editingBlog.title,
+            description: editingBlog.description ?? '' 
+        }, editingBlog.id);
         if (res.ok) {
             setEditingBlog(null);
             fetchBlogs();
