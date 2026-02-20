@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { User, Article, Blog } from '../types';
 import { LayoutGrid, List, Tag, Folder, X, User as UserIcon, ShieldCheck, ArrowRight, FileText } from 'lucide-react';
 import { PremiumLoader } from '../components/PremiumLoader';
+import { useNavigate } from 'react-router-dom';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -33,6 +34,8 @@ export function BlogsPage({ user, onNavigateToProfile, onArticleSelect, initialB
     const [blogs, setBlogs] = useState<BlogWithUser[]>([]);
     const [articles, setArticles] = useState<ArticleWithBlog[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const navigate = useNavigate();
 
     // 1. ПОЧЕМУ ЭТОТ EFFECT СЛЕДИТ ЗА initialBlogId?
     // Чтобы если ты вернулся со статьи, страница знала, какую папку открыть.
@@ -135,9 +138,9 @@ export function BlogsPage({ user, onNavigateToProfile, onArticleSelect, initialB
                     {selectedBlogId && (
                         <button 
                             onClick={() => {
-                                setSelectedBlogId(null); 
-                                onBlogSelect?.(null); // Сообщаем App.tsx, что папка закрыта
-                                setViewMode('blogs'); // Возвращаемся к сетке папок
+                                navigate('/blogs');
+                                setSelectedBlogId(null);
+                                setViewMode('blogs');
                             }} 
                             className="text-[10px] font-black uppercase text-gray-500 flex items-center gap-2 border border-white/5 bg-white/[0.02] px-5 py-2.5 rounded-xl hover:text-white hover:bg-white/5 transition-all"
                         >
@@ -212,7 +215,13 @@ export function BlogsPage({ user, onNavigateToProfile, onArticleSelect, initialB
                         {viewMode === 'blogs' && filteredBlogs.map(blog => {
                             const tags = getTopTagsForBlog(blog.id);
                             return (
-                                <div key={blog.id} onClick={() => {setSelectedBlogId(blog.id); onBlogSelect?.(blog.id); setViewMode('posts');}} className="group p-8 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-blue-500/30 transition-all cursor-pointer relative overflow-hidden flex flex-col h-80">
+                                <div 
+                                    key={blog.id} 
+                                    onClick={() => {
+                                        navigate(`/blogs/${blog.id}`);
+                                    }} 
+                                    className="group p-8 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-blue-500/30 transition-all cursor-pointer relative overflow-hidden flex flex-col h-80"
+                                >
                                     <div className="p-4 bg-white/5 w-14 h-14 rounded-2xl mb-6 text-gray-400 group-hover:text-blue-500 transition-colors"><Folder size={24}/></div>
                                     <h3 className="text-xl font-bold mb-4">{blog.title}</h3>
                                     {/* Добавляем описание (Requirement 1) */}
