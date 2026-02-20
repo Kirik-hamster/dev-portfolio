@@ -1,3 +1,4 @@
+import { User } from '@/types';
 import React, { useState } from 'react';
 
 // 1. Вспомогательная функция для чтения куки
@@ -11,7 +12,7 @@ export function LoginPage({
         onLoginSuccess, 
         onNavigateToRegister
     }: { 
-        onLoginSuccess: (user: any) => void,
+        onLoginSuccess: (user: User) => void,
         onNavigateToRegister: () => void
     }) {
     const [email, setEmail] = useState('kir.myak@bk.ru');

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Database, Settings, Layout, X, Activity, Users } from 'lucide-react';
-import { PremiumLoader } from './PremiumLoader';
-import { useSettings } from '../context/SettingsContext';
+import { PremiumLoader } from '../PremiumLoader';
+import { useSettings } from '../../context/SettingsContext';
 
 export const AdminPanel = ({ 
     allBlogsCount, 

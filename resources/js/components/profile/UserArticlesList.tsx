@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Edit3, Trash2, Plus, Folder, FileText} from 'lucide-react';
-import { useArticles } from '../hooks/useArticles';
-import { Article, User } from '../types';
+import { useArticles } from '../../hooks/useArticles';
+import { Article, User } from '../../types';
 
 interface Props {
     user: User | null;

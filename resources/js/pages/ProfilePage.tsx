@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
 import { User as UserType, Blog, Article } from '../types';
-import { UserArticlesList } from '../components/UserArticlesList';
 import { PremiumLoader } from '../components/PremiumLoader';
-import { AdminPanel } from '@/components/AdminPanel';
+import { AdminPanel } from '@/components/profile/AdminPanel';
 import { BlogApiService } from '../services/BlogApiService';
+import { UserBlogsList } from '../components/profile/UserBlogsList';
+import { ProfileInfo } from '../components/profile/ProfileInfo';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -19,7 +20,6 @@ interface ProfilePageProps {
 export function ProfilePage({ 
     user, 
     onBlogSelect, 
-    onNavigateToPortfolio, 
     onTriggerCreate,
     onEditArticle,
     onArticleSelect
@@ -145,46 +145,7 @@ export function ProfilePage({
 
         switch (activeTab) {
             case 'profile':
-                return (
-                    <div className="max-w-6xl animate-in fade-in duration-700">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Карточка данных */}
-                            <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[40px] shadow-2xl shadow-black/20 backdrop-blur-3xl relative overflow-hidden group">
-                                <div className="absolute -right-20 -top-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors" />
-                                <h3 className="text-xl font-black mb-10 uppercase tracking-tighter text-white/90 border-b border-white/5 pb-6 flex items-center gap-3">
-                                    <UserCircle size={20} className="text-blue-500/50" /> Личные данные
-                                </h3>
-                                <div className="space-y-6 text-sm relative z-10">
-                                    <div className="flex justify-between items-center border-b border-white/5 pb-5">
-                                        <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Имя</span>
-                                        <span className="text-white font-medium text-lg tracking-tight">{user.name}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center border-b border-white/5 pb-5">
-                                        <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Email</span>
-                                        <span className="text-gray-300 font-medium">{user.email}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center pt-2">
-                                        <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Роль</span>
-                                        <span className="px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-tighter">{user.role}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Карточка безопасности */}
-                            <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[40px] shadow-2xl shadow-black/20 backdrop-blur-3xl relative overflow-hidden">
-                                <div className="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
-                                    <div className="p-3 bg-white/5 rounded-2xl border border-white/10 shadow-inner">
-                                        <Shield className="text-blue-500" size={24}/>
-                                    </div>
-                                    <h3 className="text-xl font-bold uppercase tracking-tight text-white/90">Безопасность</h3>
-                                </div>
-                                <div className="space-y-6">
-                                    <p className="text-[12px] text-gray-500 leading-relaxed italic">Управляйте доступом к вашему аккаунту. Мы рекомендуем регулярно обновлять пароль.</p>
-                                    <button className="w-full py-5 bg-white/5 border border-white/10 rounded-[22px] text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300">Сбросить текущий пароль</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
+                return <ProfileInfo user={user!} />;
             
             case 'comments':
                 return (
@@ -200,185 +161,26 @@ export function ProfilePage({
                 );
 
             case 'blog':
-                // ЕСЛИ МЫ ВНУТРИ ПАПКИ
-                if (insideBlogId) {
-                    const currentBlog = blogs.find(b => b.id === Number(insideBlogId));
-                    return (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                            <div className="p-12 bg-white/[0.01] border border-white/5 rounded-[50px] relative overflow-hidden backdrop-blur-3xl">
-                                <div className="absolute -right-10 -top-10 opacity-[0.02] transform rotate-12 pointer-events-none"><Folder size={300} /></div>
-                                <div className="relative z-10">
-                                    <button onClick={() => navigate('/profile/blog')} className="mb-10 p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-gray-400 transition-all border border-white/5">
-                                        <ChevronRight size={20} className="rotate-180"/>
-                                    </button>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                                        <div>
-                                            <span className="text-[8px] font-black uppercase text-blue-500/60 block mb-4 tracking-[0.2em]">Название категории:</span>
-                                            <h3 className="text-5xl font-black uppercase tracking-tighter text-white mb-8">{insideBlogTitle}</h3>
-                                            <span className="text-[8px] font-black uppercase text-gray-600 block mb-4 tracking-[0.2em]">Описание:</span>
-                                            <p className="text-[14px] text-gray-400/80 leading-7 font-medium border-l border-white/10 pl-6 whitespace-pre-line italic">
-                                                {currentBlog?.description || "Описание пока не добавлено."}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <UserArticlesList 
-                                user={user}
-                                blogId={insideBlogId}
-                                onArticleSelect={onArticleSelect}
-                                onEditArticle={onEditArticle}
-                                onCreateArticle={() => onTriggerCreate(insideBlogId)}
-                            />
-                        </div>
-                    );
-                }
-
-                // СПИСОК ВСЕХ ПАПОК
                 return (
-                    <div className="space-y-6 animate-in fade-in duration-500">
-                        <div className="flex justify-between items-center mb-6 px-2">
-                            <h3 className="text-xl font-bold uppercase tracking-tight">Ваши блоги</h3>
-                            {!isCreating && (
-                                <button 
-                                    onClick={() => { 
-                                        setEditingBlog(null);
-                                        setIsCreating(true);  
-                                    }} 
-                                    className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase hover:scale-105 transition-all"
-                                >
-                                    <Plus size={14}/> Создать папку
-                                </button>
-                            )}
-                        </div>
-
-                        {(isCreating || editingBlog) && (
-                            <div className="relative group mb-12 animate-in zoom-in-95 duration-500">
-                                {/* Фоновое "дорогое" свечение */}
-                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-[45px] blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000" />
-                                
-                                <div className="relative bg-[#0a0a0a]/80 border border-white/10 backdrop-blur-3xl p-10 rounded-[40px] shadow-2xl">
-                                    {/* Хедер формы */}
-                                    <div className="flex justify-between items-center mb-10">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                                                {editingBlog ? <Pencil size={18} className="text-blue-500" /> : <Plus size={18} className="text-blue-400" />}
-                                            </div>
-                                            <div>
-                                                <h4 className="font-black uppercase text-[11px] text-blue-500 tracking-[0.2em]">
-                                                    {editingBlog ? 'Управление категорией' : 'Новое пространство'}
-                                                </h4>
-                                                <p className="text-[9px] text-gray-600 uppercase font-bold tracking-widest mt-1">
-                                                    {editingBlog ? 'Редактирование существующих данных' : 'Создание нового раздела в вашем блоге'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => { setIsCreating(false); setEditingBlog(null); }} 
-                                            className="p-3 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all"
-                                        >
-                                            <X size={20}/>
-                                        </button>
-                                    </div>
-
-                                    {/* Поля ввода */}
-                                    <div className="space-y-8">
-                                        <div className="relative group/input">
-                                            <label className="absolute -top-2.5 left-6 px-3 py-0.5 bg-[#0d0d0d] rounded-full text-[8px] font-black uppercase tracking-[0.2em] text-gray-600 shadow-sm z-10">
-                                                Название
-                                            </label>
-                                            <input 
-                                                type="text" 
-                                                placeholder="Назовите вашу папку..." 
-                                                className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 focus:bg-white/[0.04] transition-all text-sm font-medium placeholder:text-gray-800" 
-                                                value={isCreating ? newBlog.title : editingBlog?.title} 
-                                                onChange={e => isCreating 
-                                                    ? setNewBlog({...newBlog, title: e.target.value}) 
-                                                    : setEditingBlog({...editingBlog!, title: e.target.value})
-                                                }
-                                            />
-                                        </div>
-
-                                        <div className="relative group/input">
-                                            <label className="absolute -top-2.5 left-6 px-3 py-0.5 bg-[#0d0d0d] rounded-full text-[8px] font-black uppercase tracking-[0.2em] text-gray-600 shadow-sm z-10">
-                                                Описание
-                                            </label>
-                                            <textarea 
-                                                placeholder="О чем этот раздел? Краткое описание для читателей..." 
-                                                className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 focus:bg-white/[0.04] transition-all text-sm font-medium min-h-[120px] placeholder:text-gray-800 leading-relaxed" 
-                                                value={isCreating ? newBlog.description : editingBlog?.description || ''} 
-                                                onChange={e => isCreating 
-                                                    ? setNewBlog({...newBlog, description: e.target.value}) 
-                                                    : setEditingBlog({...editingBlog!, description: e.target.value})
-                                                }
-                                            />
-                                        </div>
-
-                                        {/* Кнопки действий */}
-                                        <div className="flex gap-4 pt-4">
-                                            <button 
-                                                onClick={editingBlog ? handleUpdateSubmit : handleCreateSubmit} 
-                                                className="flex-1 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-[22px] font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
-                                            >
-                                                {editingBlog ? 'Сохранить изменения' : 'Создать раздел'}
-                                            </button>
-                                            <button 
-                                                onClick={() => { setIsCreating(false); setEditingBlog(null); }} 
-                                                className="px-10 py-5 bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 hover:text-white rounded-[22px] font-black uppercase text-[10px] tracking-[0.2em] transition-all"
-                                            >
-                                                Отмена
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Сетка папок */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {blogs.map(blog => (
-                                <div key={blog.id} onClick={() => onBlogSelect(blog.id)} className="group p-8 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-blue-500/30 cursor-pointer transition-all flex flex-col gap-6 relative overflow-hidden">
-                                    <div className="absolute -right-4 -bottom-4 opacity-[0.02] transform rotate-6 pointer-events-none text-white"><Folder size={120} /></div>
-                                    <div className="flex items-start justify-between relative z-10 w-full gap-4">
-                                        
-                                        {/* ЛЕВАЯ ЧАСТЬ: Иконка + Текст */}
-                                        <div className="flex items-center gap-5 min-w-0"> 
-                                            {/* shrink-0 чтобы иконку не сжимало при длинном тексте */}
-                                            <div className="p-4 bg-white/5 rounded-3xl text-gray-400 group-hover:text-blue-500 transition-colors border border-white/5 shrink-0">
-                                                <Folder size={24}/>
-                                            </div>
-                                            
-                                            {/* min-w-0 критически важен для работы line-clamp внутри флекса */}
-                                            <div className="min-w-0">
-                                                {/* line-clamp-2 перенесет на 2 строку и добавит "..." */}
-                                                <h4 className="font-bold text-xl tracking-tight text-white/90 leading-tight break-words line-clamp-2">
-                                                    {blog.title}
-                                                </h4>
-                                                <p className="text-[8px] text-blue-500/50 uppercase font-black tracking-widest mt-1">
-                                                    {blog.is_portfolio ? 'Системный раздел' : 'Ваш блог'}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* ПРАВАЯ ЧАСТЬ: Кнопки (shrink-0 чтобы кнопки всегда были видны) */}
-                                        {!blog.is_portfolio && (
-                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 relative z-20 shrink-0">
-                                                <button onClick={(e) => { e.stopPropagation(); setEditingBlog(blog); }} className="p-3 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-2xl border border-white/5 transition-all">
-                                                    <Pencil size={14} />
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteBlog(blog.id); }} className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-2xl border border-white/5 transition-all">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <p className="text-[12px] text-gray-500 leading-relaxed italic border-l border-white/5 pl-4 line-clamp-2 h-9 overflow-hidden relative z-10">
-                                        {blog.description || "Описание не добавлено..."}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <UserBlogsList 
+                        user={user!}
+                        blogs={blogs}
+                        insideBlogId={insideBlogId}
+                        insideBlogTitle={insideBlogTitle}
+                        isCreating={isCreating}
+                        editingBlog={editingBlog}
+                        newBlog={newBlog}
+                        setIsCreating={setIsCreating}
+                        setEditingBlog={setEditingBlog}
+                        setNewBlog={setNewBlog}
+                        handleCreateSubmit={handleCreateSubmit}
+                        handleUpdateSubmit={handleUpdateSubmit}
+                        handleDeleteBlog={handleDeleteBlog}
+                        onBlogSelect={onBlogSelect}
+                        onArticleSelect={onArticleSelect}
+                        onEditArticle={onEditArticle}
+                        onTriggerCreate={onTriggerCreate}
+                    />
                 );
 
             case 'admin':
