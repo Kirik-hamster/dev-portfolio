@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { Article, User } from '../types';
+import { Article, User, Comment } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
-import { CommentSection } from '../components/CommentSection';
+import { CommentSection } from '../components/comments/CommentSection';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { PremiumLoader } from '../components/PremiumLoader';
 
@@ -21,6 +21,13 @@ interface ArticleDetailPageProps {
 export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: ArticleDetailPageProps) {
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const getTotalCommentsCount = (comments: Comment[]): number => {
+        return comments.reduce((sum, comment) => {
+            const repliesCount = comment.replies ? getTotalCommentsCount(comment.replies) : 0;
+            return sum + 1 + repliesCount;
+        }, 0);
+    };
 
     const fetchArticle = () => {
         setLoading(true);
@@ -62,7 +69,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-600/20 rounded-full text-[10px] font-black uppercase text-blue-400 hover:bg-blue-600 hover:text-white transition-all shadow-[0_0_20px_rgba(37,99,235,0.1)]"
                 >
                     <MessageSquare size={12} />
-                    {article.comments?.length || 0} Comments
+                    {getTotalCommentsCount(article.comments || [])} Комментариев
                 </button>
                 <div className="h-px flex-1 bg-white/5"></div>
             </div>

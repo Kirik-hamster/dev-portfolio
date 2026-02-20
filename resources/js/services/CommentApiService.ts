@@ -8,12 +8,29 @@ const getHeaders = () => ({
 
 export const CommentApiService = {
     // Добавить комментарий
-    async add(articleId: number, content: string): Promise<Response> {
+    async add(articleId: number, content: string, parentId: number | null = null): Promise<Response> {
         return fetch(`/api/articles/${articleId}/comments`, {
             method: 'POST',
             headers: getHeaders(),
             credentials: 'include',
+            body: JSON.stringify({ content, parent_id: parentId })
+        });
+    },
+
+    async update(commentId: number, content: string): Promise<Response> {
+        return fetch(`/api/comments/${commentId}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            credentials: 'include',
             body: JSON.stringify({ content })
+        });
+    },
+
+    async delete(commentId: number): Promise<Response> {
+        return fetch(`/api/comments/${commentId}`, {
+            method: 'DELETE',
+            headers: getHeaders(),
+            credentials: 'include'
         });
     },
 

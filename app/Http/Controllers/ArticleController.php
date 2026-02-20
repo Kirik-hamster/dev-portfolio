@@ -47,18 +47,19 @@ class ArticleController extends Controller
 
     public function show(Article $article)
     {
-        // Загружаем статью вместе с:
-        // 1. Автором статьи (user)
-        // 2. Комментариями (comments)
-        // 3. Авторами каждого комментария (comments.user)
-        // 4. Количеством лайков для каждого комментария (withCount)
-        
-        $article->load(['user', 'comments.user', 'comments' => function($query) {
-            $query->withCount('likes')->orderBy('likes_count', 'desc')->orderBy('created_at', 'desc');
+        // Загружаем статью с отфильтрованными комментариями
+        $article->load(['user', 'comments' => function($query) {
+            $query->whereNull('parent_id') 
+                ->withCount('likes')
+                ->with(['user:id,name,role', 'replies' => function($q) {
+                    $q->withCount('likes')->orderBy('likes_count', 'desc')->orderBy('created_at', 'desc');
+                }])
+                ->orderBy('likes_count', 'desc')
+                ->orderBy('created_at', 'desc');
         }]);
 
         return response()->json($article);
-    }
+}
 
     public function store(ArticleStoreRequest $request, $blogId)
     {

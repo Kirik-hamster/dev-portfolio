@@ -10,10 +10,14 @@ export interface Comment {
     id: number;
     user_id: number;
     article_id: number;
+    parent_id: number | null;
     content: string;
+    is_edited: boolean;
+    edited_at: string | null;
     likes_count: number;
     created_at: string;
-    user?: User; // Данные автора комментария
+    user?: User;
+    replies?: Comment[];
 }
 
 export interface Blog {
