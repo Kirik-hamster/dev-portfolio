@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Heart, ShieldCheck, User as UserIcon, Trash2, Pencil, ChevronDown, ChevronUp, Undo2 } from 'lucide-react';
 import { User, Comment } from '../../types';
 import { CommentApiService } from '@/services/CommentApiService';
+import { ConfirmModal } from '../ui/ConfirmModel';
 
 interface ItemProps {
     comment: Comment;
@@ -14,6 +15,7 @@ interface ItemProps {
 
 export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onAction, handleLike }) => {
     const [isEditing, setIsEditing] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
     const [showReplies, setShowReplies] = useState(false);
     const [editText, setEditText] = useState(comment.content);
@@ -40,6 +42,12 @@ export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onActio
         }
     };
 
+    const handleConfirmDelete = async () => {
+        await CommentApiService.delete(comment.id);
+        setIsDeleteModalOpen(false);
+        onAction();
+    };
+
     return (
         <div className="w-full">
             <div className={`group relative p-6 rounded-[35px] bg-[#0a0a0a]/60 border border-white/5 hover:border-white/10 transition-all duration-300 mb-2`}>
@@ -55,9 +63,9 @@ export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onActio
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[9px] text-gray-700 font-medium uppercase">{new Date(comment.created_at).toLocaleDateString()}</span>
-                                {!!comment.is_edited && (
+                                {comment.is_edited ? (
                                     <span className="text-[8px] text-blue-500/30 font-black italic uppercase tracking-tighter">(изменено)</span>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </div>
@@ -73,11 +81,20 @@ export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onActio
                                         </button>
                                     )}
                                     {canDelete && (
-                                        <button onClick={() => { if(window.confirm("Delete?")) CommentApiService.delete(comment.id).then(() => onAction()) }} 
-                                            className={`p-2 transition-all ${user.role === 'admin' && !isOwner ? 'text-red-500/40 hover:text-red-500' : 'text-gray-600 hover:text-red-500'}`}>
+                                        <button 
+                                            onClick={() => setIsDeleteModalOpen(true)} // Просто открываем окно
+                                            className={`p-2 transition-all ${user.role === 'admin' && !isOwner ? 'text-red-500/40 hover:text-red-500' : 'text-gray-600 hover:text-red-500'}`}
+                                        >
                                             <Trash2 size={15} />
                                         </button>
                                     )}
+                                    <ConfirmModal 
+                                        isOpen={isDeleteModalOpen}
+                                        title="Удалить комментарий?"
+                                        message="Это действие нельзя отменить. Комментарий и все ответы на него (если они есть) исчезнут."
+                                        onConfirm={handleConfirmDelete}
+                                        onCancel={() => setIsDeleteModalOpen(false)}
+                                    />
                                 </div>
                                 
                                 {/* НОВАЯ ИКОНКА ОТВЕТА (Undo2) */}
@@ -111,7 +128,7 @@ export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onActio
             {/* ФОРМА ОТВЕТА */}
             {isReplying && (
                 <div className="mt-2 mb-6 flex gap-3 animate-in slide-in-from-top-2 duration-300">
-                    <div className="w-px h-8 bg-white/10 ml-5" />
+                    <div className="w-px h-8 bg-white/10 ml-4" />
                     <input autoFocus value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write a reply..." className="flex-1 bg-[#050505] border border-white/5 rounded-full px-6 py-2.5 text-sm outline-none focus:border-blue-500/10 text-white" />
                     <button onClick={handleReply} disabled={!replyText.trim()} className="px-6 bg-blue-600 text-white rounded-full text-[9px] font-black uppercase transition-all active:scale-95">Reply</button>
                 </div>

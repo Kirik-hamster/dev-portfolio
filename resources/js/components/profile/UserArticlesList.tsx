@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Edit3, Trash2, Plus, Folder, FileText} from 'lucide-react';
 import { useArticles } from '../../hooks/useArticles';
 import { Article, User } from '../../types';
+import { ConfirmModal } from '../ui/ConfirmModel';
 
 interface Props {
     user: User | null;
@@ -15,12 +16,24 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
     const [searchQuery, setSearchQuery] = useState('');
     const { articles, loading, deleteArticle } = useArticles(searchQuery, blogId);
 
-    const canManage = !!user;
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
 
-    const handleDelete = (e: React.MouseEvent, id: number) => {
+    // 1. Функция, которая только открывает окно
+    const handleDeleteTrigger = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (confirm('Удалить запись?')) deleteArticle(id);
+        setArticleToDelete(id);
+        setIsDeleteModalOpen(true);
     };
+
+    // 2. Функция, которая реально удаляет после подтверждения
+    const handleConfirmDelete = () => {
+        if (articleToDelete) {
+            deleteArticle(articleToDelete);
+            setIsDeleteModalOpen(false);
+            setArticleToDelete(null);
+        }
+    }
 
     if (loading) {
         return (
@@ -77,29 +90,27 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
                         </div>
 
                         <div className="flex justify-between items-start relative z-10">
-                            <div className="flex-1 pr-20">
-                                <h4 className="font-black text-2xl tracking-tighter text-white/90 group-hover:text-blue-400 transition-colors leading-tight mb-3">
+                            <div className="flex-1 min-w-0 pr-6"> 
+                                <h4 className="font-black text-2xl tracking-tighter text-white/90 group-hover:text-blue-400 transition-colors leading-tight mb-3 break-all">
                                     {article.title}
                                 </h4>
-                                
-                                {/* ПРЕВЬЮ КОНТЕНТА (CSS Truncate) */}
-                                <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-3 max-w-xl">
+                                <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-2 break-all opacity-60">
                                     {article.content?.replace(/<[^>]*>/g, '') || "Нет текста для предварительного просмотра..."}
                                 </p>
                             </div>
 
                             {/* КНОПКИ УПРАВЛЕНИЯ (Стильные) */}
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto relative z-20">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); onEditArticle(article); }} 
-                                    className="p-3 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-2xl border border-white/5 transition-all"
+                                    className="p-3 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-2xl border border-white/5 transition-all active:scale-90"
                                     title="Редактировать"
                                 >
                                     <Edit3 size={16}/>
                                 </button>
                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); handleDelete(e, article.id); }} 
-                                    className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-2xl border border-white/5 transition-all"
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteTrigger(e, article.id); }} 
+                                    className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-2xl border border-white/5 transition-all active:scale-90"
                                     title="Удалить"
                                 >
                                     <Trash2 size={16}/>
@@ -118,6 +129,13 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
                     </div>
                 ))}
             </div>
+            <ConfirmModal 
+                isOpen={isDeleteModalOpen}
+                title="Удаление записи"
+                message="Вы уверены, что хотите безвозвратно удалить эту статью? Это действие нельзя отменить."
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setIsDeleteModalOpen(false)}
+            />
         </div>
     );
 }

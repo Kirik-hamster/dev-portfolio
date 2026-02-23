@@ -7,6 +7,7 @@ import { AdminPanel } from '@/components/profile/AdminPanel';
 import { BlogApiService } from '../services/BlogApiService';
 import { UserBlogsList } from '../components/profile/UserBlogsList';
 import { ProfileInfo } from '../components/profile/ProfileInfo';
+import { ConfirmModal } from '@/components/ui/ConfirmModel';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -27,6 +28,9 @@ export function ProfilePage({
     const navigate = useNavigate();
     const location = useLocation();
     
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [blogToDelete, setBlogToDelete] = useState<number | null>(null);
+
     // --- 1. СИНХРОНИЗАЦИЯ С URL (Источник правды) ---
     const getActiveTabFromUrl = () => {
         const path = location.pathname;
@@ -126,13 +130,29 @@ export function ProfilePage({
         }
     };
 
-    const handleDeleteBlog = async (id: number) => {
-        if (!window.confirm("Удалить папку и ВСЕ статьи внутри?")) return;
-        const res = await fetch(`/api/blogs/${id}`, {
+    // 1. Эта функция передается в UserBlogsList и просто открывает модалку
+    const handleDeleteBlog = (id: number) => {
+        setBlogToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    // 2. Эта функция вызывается кнопкой "Удалить" в самой модалке
+    const confirmDeleteBlog = async () => {
+        if (!blogToDelete) return;
+
+        const res = await fetch(`/api/blogs/${blogToDelete}`, {
             method: 'DELETE',
-            headers: { 'Accept': 'application/json', 'X-XSRF-TOKEN': getXsrfToken() }
+            headers: { 
+                'Accept': 'application/json', 
+                'X-XSRF-TOKEN': getXsrfToken() 
+            }
         });
-        if (res.ok) fetchBlogs();
+
+        if (res.ok) {
+            setIsDeleteModalOpen(false);
+            setBlogToDelete(null);
+            fetchBlogs(); // Обновляем список после удаления
+        }
     };
 
     if (!user) return <div className="text-center py-20 text-gray-600 uppercase text-[10px] font-black tracking-widest">Доступ запрещен</div>;
@@ -242,6 +262,13 @@ export function ProfilePage({
                 </div>
                 {renderContent()}
             </main>
+            <ConfirmModal 
+                isOpen={isDeleteModalOpen}
+                title="Удаление папки"
+                message="Вы уверены? Это действие безвозвратно удалит папку и ВСЕ статьи, которые в ней находятся."
+                onConfirm={confirmDeleteBlog}
+                onCancel={() => setIsDeleteModalOpen(false)}
+            />
         </div>
     );
 }

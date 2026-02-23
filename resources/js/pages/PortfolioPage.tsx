@@ -4,6 +4,7 @@ import { useArticles } from '../hooks/useArticles';
 // Импортируем готовые типы вместо локального определения
 import { Article, User } from '../types';
 import { PremiumLoader } from '../components/PremiumLoader';
+import { ConfirmModal } from '@/components/ui/ConfirmModel';
 
 interface PortfolioPageProps {
     user: User | null; 
@@ -22,14 +23,25 @@ export function PortfolioPage({
     onCreateArticle 
 }: PortfolioPageProps) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
     
     // Передаем blogId в хук. Если он undefined, хук загрузит /api/portfolio
     const { articles, loading, deleteArticle } = useArticles(searchQuery, blogId ?? undefined);
 
-    const handleDelete = (e: React.MouseEvent, id: number) => {
+    // Вызывается при клике на иконку Trash
+    const handleDeleteTrigger = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (confirm('Удалить статью?')) {
-            deleteArticle(id);
+        setArticleToDelete(id); // Запоминаем ID
+        setIsDeleteModalOpen(true); // Открываем окно
+    };
+
+    // Вызывается при нажатии "Удалить" в модалке
+    const handleConfirmDelete = () => {
+        if (articleToDelete) {
+            deleteArticle(articleToDelete);
+            setIsDeleteModalOpen(false);
+            setArticleToDelete(null);
         }
     };
 
@@ -85,8 +97,8 @@ export function PortfolioPage({
                                     >
                                         <Edit3 size={16} />
                                     </button>
-                                    <button
-                                        onClick={(e) => handleDelete(e, article.id)}
+                                    <button 
+                                        onClick={(e) => handleDeleteTrigger(e, article.id)} 
                                         className="p-3 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white rounded-full transition shadow-2xl"
                                     >
                                         <Trash2 size={16} />
@@ -111,6 +123,13 @@ export function PortfolioPage({
                     ))}
                 </div>
             )}
+            <ConfirmModal 
+                isOpen={isDeleteModalOpen}
+                title="Удалить проект?"
+                message="Вы уверены, что хотите удалить эту работу из портфолио? Это действие нельзя будет отменить."
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setIsDeleteModalOpen(false)}
+            />
         </div>
     );
 }

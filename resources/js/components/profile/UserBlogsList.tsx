@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Folder, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { Blog, User, Article, BlogInput } from '../../types';
@@ -143,7 +143,15 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                             {!blog.is_portfolio && (
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 shrink-0">
                                     <button onClick={(e) => { e.stopPropagation(); setEditingBlog(blog); }} className="p-2.5 bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-500 rounded-xl border border-white/5 transition-all"><Pencil size={13} /></button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteBlog(blog.id); }} className="p-2.5 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-xl border border-white/5 transition-all"><Trash2 size={13} /></button>
+                                    <button 
+                                        onClick={(e) => { 
+                                            e.stopPropagation();
+                                            handleDeleteBlog(blog.id);
+                                        }} 
+                                        className="p-2.5 bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-xl border border-white/5 transition-all"
+                                    >
+                                        <Trash2 size={13} />
+                                    </button>
                                 </div>
                             )}
                         </div>
