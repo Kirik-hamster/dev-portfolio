@@ -10,6 +10,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { SettingsProvider } from './context/SettingsContext';
 import { AppRoutes } from './router/AppRoutes';
+import { VerifyCodePage } from './pages/auth/VerifyCodePage';
 
 
 /**
@@ -46,6 +47,25 @@ function AppContent() {
         window.location.reload();
     };
 
+    const refreshUser = async (): Promise<void> => {
+        try {
+            const res = await fetch('/api/user', { credentials: 'include' });
+            const userData = res.ok ? await res.json() : null;
+            setUser(userData);
+            
+            if (userData?.role === 'admin' && userData.email_verified_at) {
+                const blogRes = await fetch('/api/blogs?my_only=1');
+                const blogs = await blogRes.json();
+                const p = blogs.find((b: Blog) => b.is_portfolio);
+                if (p) setPortfolioBlogId(p.id);
+            }
+        } catch (e) {
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Проверка авторизации
     useEffect(() => {
         fetch('/api/user', { credentials: 'include' })
@@ -67,6 +87,7 @@ function AppContent() {
 
     // Эффект для "магического" свечения за курсором
     useEffect(() => {
+        refreshUser();
         const handleMouseMove = (e: MouseEvent) => {
             if (glowRef.current) {
                 glowRef.current.style.left = `${e.clientX}px`;
@@ -86,6 +107,25 @@ function AppContent() {
         );
     }
 
+    if (user && !user.email_verified_at) {
+        return (
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+                {/* Твои красивые эффекты фона */}
+                <div ref={glowRef} className="pointer-events-none fixed -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px] z-0" />
+                
+                <main className="relative z-10 w-full">
+                    <VerifyCodePage onVerified={refreshUser} />
+                    <button 
+                        onClick={handleLogout}
+                        className="w-full mt-4 text-[10px] text-gray-500 hover:text-white uppercase font-black tracking-widest transition-colors"
+                    >
+                        Выйти и ввести другую почту
+                    </button>
+                </main>
+            </div>
+        );
+    }
+
     return (
         <div className="relative min-h-screen bg-[#050505] text-white font-sans flex flex-col selection:bg-blue-500/30 overflow-x-hidden">
             <div ref={glowRef} className="pointer-events-none fixed -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px] z-0" />
@@ -96,6 +136,7 @@ function AppContent() {
                     user={user} 
                     portfolioBlogId={portfolioBlogId} 
                     setUser={setUser} 
+                    refreshUser={refreshUser}
                 />
             </main>
             <Footer />

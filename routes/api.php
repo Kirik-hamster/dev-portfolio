@@ -4,6 +4,7 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Auth\VerifyCodeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -15,12 +16,17 @@ Route::get('/articles/{article}', [ArticleController::class, 'show']); // Дет
 Route::get('/community-articles', [ArticleController::class, 'community']);
 Route::get('/portfolio', [ArticleController::class, 'portfolio']);
 
+
+Route::post('/verify-code', VerifyCodeController::class)->middleware('auth:sanctum');
+Route::post('/verify-resend', [VerifyCodeController::class, 'resend'])
+    ->middleware('auth:sanctum', 'throttle:1,1');
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
 // 2. Закрытые маршруты (только после логина)
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Получение данных текущего юзера
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    
 
     Route::post('/blogs', [BlogController::class, 'store']);
     Route::put('/blogs/{blog}', [BlogController::class, 'update']); // Обновление

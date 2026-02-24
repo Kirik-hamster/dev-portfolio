@@ -11,12 +11,14 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { BlogsPage } from '../pages/BlogsPage'; 
 import { ProfilePage } from '../pages/ProfilePage';
+import { VerifyCodePage } from '../pages/auth/VerifyCodePage';
 
 // Типы для пропсов
 interface AppRoutesProps {
     user: User | null;
     portfolioBlogId: number | null;
     setUser: (user: User | null) => void;
+    refreshUser: () => Promise<void>;
 }
 
 interface WrapperProps {
@@ -51,7 +53,7 @@ const ArticleDetailPageWrapper: React.FC<WrapperProps> = ({ user, navigate }) =>
     );
 };
 
-export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, setUser }) => {
+export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, setUser, refreshUser }) => {
     const navigate = useNavigate();
 
     return (
@@ -69,14 +71,11 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, set
             } />
 
             <Route path="/profile/*" element={
-                <ProfilePage 
-                    user={user}
-                    onBlogSelect={(id) => navigate(`/profile/blog/${id}`)}
-                    onNavigateToPortfolio={() => navigate('/portfolio')}
-                    onTriggerCreate={(blogId) => navigate(`/form/new/${blogId}`)}
-                    onEditArticle={(a) => navigate(`/form/edit/${a.id}`)}
-                    onArticleSelect={(a) => navigate(`/article/${a.id}`)}
-                />
+                user ? (
+                    user.email_verified_at 
+                        ? <ProfilePage user={user} onBlogSelect={(id) => navigate(`/profile/blog/${id}`)} onNavigateToPortfolio={() => navigate('/portfolio')} onTriggerCreate={(blogId) => navigate(`/form/new/${blogId}`)} onEditArticle={(a) => navigate(`/form/edit/${a.id}`)} onArticleSelect={(a) => navigate(`/article/${a.id}`)} />
+                        : <VerifyCodePage onVerified={refreshUser} /> // Показываем код только здесь!
+                ) : <Navigate to="/login" />
             } />
 
             {/* Вложенные роуты для блогов */}
@@ -86,7 +85,11 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, set
 
             <Route path="/article/:id" element={<ArticleDetailPageWrapper user={user} navigate={navigate} />} />
 
-            <Route path="/form/new/:blogId" element={<ArticleFormPage user={user} onSave={() => navigate(-1)} onCancel={() => navigate(-1)} />} />
+            <Route path="/form/new/:blogId" element={
+                user?.email_verified_at 
+                    ? <ArticleFormPage user={user} onSave={() => navigate(-1)} onCancel={() => navigate(-1)} />
+                    : <VerifyCodePage onVerified={refreshUser} />
+            } />
             <Route path="/form/edit/:articleId" element={<ArticleFormPage user={user} onSave={() => navigate(-1)} onCancel={() => navigate(-1)} />} />
             
             <Route path="/login" element={<LoginPage onLoginSuccess={(u) => { setUser(u); navigate('/'); }} onNavigateToRegister={() => navigate('/register')} />} />

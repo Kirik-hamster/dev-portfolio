@@ -10,6 +10,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use App\Notifications\VerifyEmailCode;
 
 class RegisteredUserController extends Controller
 {
@@ -26,13 +27,17 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $code = rand(100000, 999999); // Генерируем 6 цифр
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->string('password')),
+            'verification_code' => $code, // Сохраняем код
         ]);
 
-        event(new Registered($user));
+        // Отправляем наше новое уведомление с кодом
+        $user->notify(new VerifyEmailCode($code));
 
         Auth::login($user);
 
