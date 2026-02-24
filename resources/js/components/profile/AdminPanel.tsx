@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Database, Settings, Layout, X, Activity, Users } from 'lucide-react';
 import { PremiumLoader } from '../PremiumLoader';
 import { useSettings } from '../../context/SettingsContext';
+import { SettingsApiService } from '@/services/SettingsApiService';
+import { MailSettings } from '@/types';
 
 export const AdminPanel = ({ 
     allBlogsCount, 
@@ -13,6 +15,40 @@ export const AdminPanel = ({
 }: any) => {
     const [activeSubTab, setActiveSubTab] = useState<'config' | 'content'>('config');
     const { settings, setSettings } = useSettings();
+
+    const [mailConfig, setMailConfig] = useState<MailSettings>({
+        mail_host: '',
+        mail_port: '465',
+        mail_username: '',
+        mail_password: '',
+        mail_from_name: ''
+    });
+    const [testEmail, setTestEmail] = useState('');
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const data = await SettingsApiService.getMail();
+                setMailConfig(data);
+            } catch (error) {
+                console.error("Не удалось загрузить настройки SMTP");
+            }
+        };
+
+        fetchSettings();
+    }, []);
+
+    // 2. Функции обработки
+    const handleSave = async () => {
+        const res = await SettingsApiService.updateMail(mailConfig);
+        if (res.ok) alert("Настройки зашифрованы и сохранены!");
+    };
+
+    const handleTest = async () => {
+        const res = await SettingsApiService.testMail(testEmail);
+        const data = await res.json();
+        alert(res.ok ? "Письмо улетело!" : "Ошибка: " + data.error);
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -29,18 +65,56 @@ export const AdminPanel = ({
             </div>
 
             {activeSubTab === 'config' ? (
-                <div className="bg-blue-600/[0.03] border border-blue-500/10 p-10 rounded-[40px] relative overflow-hidden">
-                    <Settings className="absolute -right-6 -bottom-6 text-blue-500/5 w-48 h-48" />
-                    <h3 className="text-2xl font-black mb-6 uppercase text-blue-400">Системные настройки</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="p-6 bg-white/5 border border-white/5 rounded-3xl opacity-50">
-                            <label className="text-[8px] font-black uppercase text-gray-500 block mb-2">SMTP Host</label>
-                            <div className="text-sm font-mono">smtp.mail.ru (заглушка)</div>
-                        </div>
-                        <div className="p-6 bg-white/5 border border-white/5 rounded-3xl opacity-50">
-                            <label className="text-[8px] font-black uppercase text-gray-500 block mb-2">Pattern</label>
-                            <div className="text-sm font-mono">RESTful API Architecture</div>
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="space-y-4">
+                        <input 
+                            placeholder="SMTP Host (e.g. smtp.mail.ru)" 
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none focus:border-blue-500/50"
+                            value={mailConfig.mail_host}
+                            onChange={e => setMailConfig({...mailConfig, mail_host: e.target.value})}
+                        />
+                        <input 
+                            placeholder="SMTP Port (465 or 587)" 
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none"
+                            value={mailConfig.mail_port}
+                            onChange={e => setMailConfig({...mailConfig, mail_port: e.target.value})}
+                        />
+                        <input 
+                            placeholder="Username (email)" 
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none"
+                            value={mailConfig.mail_username}
+                            onChange={e => setMailConfig({...mailConfig, mail_username: e.target.value})}
+                        />
+                        <input 
+                            type="password"
+                            placeholder="Password (App Password)" 
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none"
+                            value={mailConfig.mail_password}
+                            onChange={e => setMailConfig({...mailConfig, mail_password: e.target.value})}
+                        />
+                        <input 
+                            placeholder="Имя отправителя (например, Kirill Portfolio)" 
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none"
+                            value={mailConfig.mail_from_name}
+                            onChange={e => setMailConfig({...mailConfig, mail_from_name: e.target.value})}
+                        />
+                        <button onClick={handleSave} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest">
+                            Сохранить конфигурацию
+                        </button>
+                    </div>
+
+                    {/* Блок теста */}
+                    <div className="p-8 bg-blue-500/5 border border-blue-500/10 rounded-[30px] flex flex-col justify-center">
+                        <h4 className="text-white font-bold mb-4 uppercase text-xs">Проверка связи</h4>
+                        <input 
+                            placeholder="Куда отправить тест?" 
+                            className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-sm outline-none mb-4"
+                            value={testEmail}
+                            onChange={e => setTestEmail(e.target.value)}
+                        />
+                        <button onClick={handleTest} className="w-full py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest">
+                            Отправить тест
+                        </button>
                     </div>
                 </div>
             ) : (

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\Admin\SettingController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,5 +41,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $request->session()->invalidate(); // Уничтожаем сессию
         $request->session()->regenerateToken(); // Сбрасываем CSRF токен
         return response()->json(['message' => 'Logged out']);
+    });
+
+    Route::prefix('admin/settings')->group(function () {
+        Route::get('/mail', [SettingController::class, 'getMail']);
+        Route::post('/mail', [SettingController::class, 'updateMail']);
+        Route::post('/mail-test', [SettingController::class, 'testMail']);
     });
 });

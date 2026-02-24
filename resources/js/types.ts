@@ -57,3 +57,11 @@ export interface ArticleInput {
     image_url?: string;
     is_published?: boolean;
 }
+
+export interface MailSettings {
+    mail_host: string;
+    mail_port: string;
+    mail_username: string;
+    mail_password?: string;
+    mail_from_name: string;
+}
