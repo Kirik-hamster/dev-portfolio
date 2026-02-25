@@ -2,6 +2,10 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
+
+// Запускаем очистку каждый день в полночь
+Schedule::command('users:clear-unverified')->daily();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
