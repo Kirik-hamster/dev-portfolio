@@ -121,7 +121,7 @@ return (
                 <h2 className="relative z-10 text-4xl font-black mb-2 uppercase tracking-tighter text-white">
                     Верификация
                 </h2>
-                <p className="relative z-10 text-gray-500 mb-10 text-[11px] font-bold uppercase tracking-[0.3em] leading-relaxed">
+                <p className="relative z-10 text-white/70 mb-10 text-[11px] font-bold uppercase tracking-[0.3em] leading-relaxed">
                     Введите 6-значный ключ, <br/> отправленный на почту
                 </p>
                 
@@ -171,9 +171,9 @@ return (
 
                     <button 
                         onClick={() => handleResend()}
-                        disabled={timeLeft > 0 || isResending} // Не даем спамить, пока таймер идет
+                        disabled={timeLeft > 0 || isResending}
                         className={`block w-full text-[10px] uppercase font-black tracking-[0.2em] transition-all
-                            ${timeLeft > 0 ? 'text-gray-800 cursor-not-allowed' : 'text-gray-400 hover:text-blue-400'}`}
+                            ${timeLeft > 0 ? 'text-blue-400 cursor-not-allowed drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'text-gray-400 hover:text-blue-400'}`}
                     >
                         {timeLeft > 0 ? `Повтор через ${timeLeft}с` : 'Отправить код повторно'}
                     </button>

@@ -68,9 +68,9 @@
                                     </span>
                                 </div>
 
-                                <p style="color: #666666; font-size: 12px; line-height: 1.6; margin: 0 0 30px 0; font-weight: 500;">
+                                <p style="color: #aaaaaa; font-size: 13px; line-height: 1.7; margin: 0 0 30px 0; font-weight: 500;">
                                     Введите этот 6-значный код на странице подтверждения. <br>
-                                    Ключ действителен в течение <span style="color: #ffffff;">60 секунд</span>.
+                                    Ключ действителен в течение <span style="color: #3b82f6; font-weight: 800; text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);">60 секунд</span>.
                                 </p>
 
                                 <table width="100%" border="0" cellspacing="0" cellpadding="0">

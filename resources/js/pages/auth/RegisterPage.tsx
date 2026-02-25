@@ -1,53 +1,61 @@
 import { User } from '@/types';
 import React, { useState } from 'react';
-
-// Используем ту же функцию для куки
-function getCookie(name: string) {
-    let value = "; " + document.cookie;
-    let parts = value.split("; " + name + "=");
-    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(";").shift() || '');
-}
+import { AuthApiService } from '@/services/AuthApiService';
+import { StatusModal } from '@/components/ui/StatusModal';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function RegisterPage({ 
-        onRegisterSuccess, 
-        onNavigateToLogin
-    }: {
-        onRegisterSuccess: (user: User) => void,
-        onNavigateToLogin: () => void
-    }) {
+    onRegisterSuccess, 
+    onNavigateToLogin
+}: {
+    onRegisterSuccess: (user: User) => void,
+    onNavigateToLogin: () => void
+}) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [password_confirmation, setPasswordConfirmation] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    // Возможность посмотреть пароль
+    const [showPasswords, setShowPasswords] = useState(false);
+
+    const [modal, setModal] = useState({
+        isOpen: false,
+        type: 'error' as 'success' | 'error',
+        title: '',
+        message: ''
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
         
-        // 1. Получаем CSRF-cookie
-        await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
-        
-        // 2. Отправляем данные на регистрацию
-        const response = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Accept': 'application/json',
-                'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') || '' 
-            },
-            credentials: 'include',
-            body: JSON.stringify({ name, email, password, password_confirmation })
-        });
+        try {
+            const response = await AuthApiService.register({ name, email, password, password_confirmation });
 
-        if (response.ok) {
-            // После регистрации Laravel сразу логинит юзера. Запрашиваем данные.
-            const userResponse = await fetch('/api/user', { credentials: 'include' });
-            if (userResponse.ok) {
-                const userData = await userResponse.json();
-                onRegisterSuccess(userData);
+            if (response.ok) {
+                const userResponse = await AuthApiService.getUser();
+                if (userResponse.ok) {
+                    onRegisterSuccess(await userResponse.json());
+                }
+            } else {
+                const errorData = await response.json();
+                setModal({
+                    isOpen: true,
+                    type: 'error',
+                    title: 'Ошибка регистрации',
+                    message: errorData.message || 'Проверьте правильность введенных данных.'
+                });
             }
-        } else {
-            const errorData = await response.json();
-            alert('Ошибка регистрации: ' + JSON.stringify(errorData.errors));
+        } catch (e) {
+            setModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка связи',
+                message: 'Сервер недоступен. Попробуйте позже.'
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -57,10 +65,43 @@ export function RegisterPage({
             <form onSubmit={handleSubmit} className="space-y-4 bg-white/[0.02] p-8 rounded-[30px] border border-white/5">
                 <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all" placeholder="Имя" required />
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all" placeholder="Email" required />
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all" placeholder="Пароль" required />
-                <input type="password" value={password_confirmation} onChange={e => setPasswordConfirmation(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all" placeholder="Подтвердите пароль" required />
-                <button type="submit" className="w-full py-4 bg-white text-black rounded-full font-bold uppercase text-xs tracking-widest hover:scale-105 transition-all">Создать аккаунт</button>
+                <div className="relative group">
+                    <input 
+                        type={showPasswords ? "text" : "password"} 
+                        value={password} 
+                        onChange={e => setPassword(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pr-12 text-white outline-none focus:border-blue-500 transition-all" 
+                        placeholder="Пароль" 
+                        required 
+                    />
+                    <button type="button" onClick={() => setShowPasswords(!showPasswords)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                        {showPasswords ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                </div>
+                <div className="relative group">
+                    <input 
+                        type={showPasswords ? "text" : "password"} 
+                        value={password_confirmation} 
+                        onChange={e => setPasswordConfirmation(e.target.value)} 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pr-12 text-white outline-none focus:border-blue-500 transition-all" 
+                        placeholder="Подтвердите пароль" 
+                        required 
+                    />
+                    <button type="button" onClick={() => setShowPasswords(!showPasswords)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                        {showPasswords ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                </div>
+                <button type="submit" disabled={isLoading} className="w-full py-4 bg-white text-black rounded-full font-bold uppercase text-xs tracking-widest hover:scale-105 transition-all">
+                    {isLoading ? 'Создание...' : 'Создать аккаунт'}
+                </button>
             </form>
+            <StatusModal 
+                isOpen={modal.isOpen}
+                type={modal.type}
+                title={modal.title}
+                message={modal.message}
+                onClose={() => setModal({ ...modal, isOpen: false })}
+            />
             <div className="mt-6 text-center">
                 <p className="text-gray-500 text-xs uppercase tracking-widest font-bold">Уже есть аккаунт?</p>
                 <button 

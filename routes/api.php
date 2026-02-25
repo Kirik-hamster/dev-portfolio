@@ -5,6 +5,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Auth\VerifyCodeController;
+use App\Http\Controllers\Auth\PasswordUpdateController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Получение данных текущего юзера
     
+    // Обновление пароля
+    // Этап 1: Запрос кода на почту
+    Route::post('/password/request-code', [PasswordUpdateController::class, 'requestCode']);
+    // Этап 2: Обновление пароля по коду
+    Route::post('/password/update', [PasswordUpdateController::class, 'update']);
 
     Route::post('/blogs', [BlogController::class, 'store']);
     Route::put('/blogs/{blog}', [BlogController::class, 'update']); // Обновление
