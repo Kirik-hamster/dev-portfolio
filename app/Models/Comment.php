@@ -35,4 +35,10 @@ class Comment extends Model {
     public function likes() {
         return $this->hasMany(CommentLike::class);
     }
+
+    // Связь со статьей (чтобы знать, под каким постом комент)
+    public function article()
+    {
+        return $this->belongsTo(Article::class);
+    }
 }

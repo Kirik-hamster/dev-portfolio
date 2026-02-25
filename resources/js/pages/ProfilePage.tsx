@@ -8,6 +8,7 @@ import { BlogApiService } from '../services/BlogApiService';
 import { UserBlogsList } from '../components/profile/UserBlogsList';
 import { ProfileInfo } from '../components/profile/ProfileInfo';
 import { ConfirmModal } from '@/components/ui/ConfirmModel';
+import { UserCommentsList } from '../components/profile/UserCommentsList';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -168,17 +169,7 @@ export function ProfilePage({
                 return <ProfileInfo user={user!} />;
             
             case 'comments':
-                return (
-                    <div className="bg-white/[0.02] border border-white/5 rounded-[50px] relative overflow-hidden animate-in fade-in duration-500 min-h-[500px] flex flex-col items-center justify-center text-center p-10">
-                        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none transform -rotate-12"><MessageSquare size={400} /></div>
-                        <div className="relative z-10 flex flex-col items-center">
-                            <div className="w-28 h-28 bg-blue-500/10 rounded-full flex items-center justify-center mb-10 border border-blue-500/20 shadow-2xl shadow-blue-500/10"><MessageSquare size={48} className="text-blue-500" /></div>
-                            <h3 className="text-3xl font-black uppercase tracking-tighter text-white mb-6">Раздел в разработке</h3>
-                            <p className="text-gray-500 text-sm max-w-md leading-relaxed mb-10 font-medium">Скоро здесь появится история всех ваших комментариев.</p>
-                            <span className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 cursor-wait hover:bg-white/10 transition-colors">Coming Soon</span>
-                        </div>
-                    </div>
-                );
+                return <UserCommentsList />;
 
             case 'blog':
                 return (

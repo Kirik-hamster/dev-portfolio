@@ -32,9 +32,9 @@ export const ArticleApiService = {
         return response.ok ? response.json() : [];
     },
 
-    async fetchOne(id: number): Promise<Article> {
-        const response = await fetch(`${BASE_URL}/${id}`);
-        if (!response.ok) throw new Error('Статья не найдена');
+    async fetchOne(id: string | number): Promise<Article> {
+        const response = await fetch(`/api/articles/${id}`);
+        if (!response.ok) throw new Error('Article not found');
         return response.json();
     },
 

@@ -22,6 +22,17 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // 1. Добавляем состояние для ID комментария-цели
+    const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
+
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#comment-')) {
+            const id = parseInt(hash.replace('#comment-', ''), 10);
+            if (!isNaN(id)) setTargetCommentId(id);
+        }
+    }, []);
+
     const getTotalCommentsCount = (comments: Comment[]): number => {
         return comments.reduce((sum, comment) => {
             const repliesCount = comment.replies ? getTotalCommentsCount(comment.replies) : 0;
@@ -80,6 +91,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                 <CommentSection
                     articleId={article.id}
                     comments={article.comments || []}
+                    targetCommentId={targetCommentId}
                     onCommentAdded={fetchArticle}
                     user={user} // ПЕРЕДАЕМ ЮЗЕРА
                     onNavigateToLogin={onNavigateToLogin} // ПЕРЕДАЕМ ПЕРЕХОД

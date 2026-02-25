@@ -47,6 +47,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/comments/{comment}/toggle-like', [CommentController::class, 'toggleLike']);
     Route::put('/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::get('/user/comments', [CommentController::class, 'userHistory']);
 
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout(); // Выходим из сессии

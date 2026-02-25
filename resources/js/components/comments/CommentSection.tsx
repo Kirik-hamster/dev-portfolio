@@ -7,6 +7,7 @@ import { CommentItem } from './CommentItem';
 interface CommentSectionProps {
     articleId: number;
     comments: Comment[];
+    targetCommentId: number | null;
     onCommentAdded: () => void;
     user: User | null;
     onNavigateToLogin: () => void;
@@ -15,6 +16,7 @@ interface CommentSectionProps {
 export const CommentSection: React.FC<CommentSectionProps> = ({ 
     articleId, 
     comments, 
+    targetCommentId, 
     onCommentAdded, 
     user, 
     onNavigateToLogin 
@@ -125,6 +127,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                         comment={comment} 
                         user={user} 
                         depth={0}
+                        targetCommentId={targetCommentId}
                         onAction={onCommentAdded} 
                         handleLike={handleLike} 
                     />

@@ -1,25 +1,63 @@
-// resources/js/components/comments/CommentItem.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Heart, ShieldCheck, User as UserIcon, Trash2, Pencil, ChevronDown, ChevronUp, Undo2 } from 'lucide-react';
 import { User, Comment } from '../../types';
 import { CommentApiService } from '@/services/CommentApiService';
 import { ConfirmModal } from '../ui/ConfirmModel';
 
+const GLOW_DURATION = 3000; // 3 секунды светит ярко
+const FADE_DURATION = "3s"; // 3 секунды плавно затухает
+
 interface ItemProps {
     comment: Comment;
     user: User | null;
     depth: number;
+    targetCommentId?: number | null | undefined;
     onAction: () => void;
     handleLike: (id: number) => void;
 }
 
-export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onAction, handleLike }) => {
+const hasTargetChild = (comment: Comment, targetId: number): boolean => {
+    if (comment.id === targetId) return true;
+    if (!comment.replies || comment.replies.length === 0) return false;
+    return comment.replies.some(reply => hasTargetChild(reply, targetId));
+};
+
+export const CommentItem: React.FC<ItemProps> = ({ 
+    comment, user, depth, onAction, handleLike, targetCommentId
+}) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
     const [showReplies, setShowReplies] = useState(false);
     const [editText, setEditText] = useState(comment.content);
     const [replyText, setReplyText] = useState('');
+    const [isActiveGlow, setIsActiveGlow] = useState(false);
+    const commentRef = useRef<HTMLDivElement>(null);
+
+    const isTarget = targetCommentId === comment.id;
+
+    // Логика автораскрытия (если цель внутри)
+    useEffect(() => {
+        if (targetCommentId && hasTargetChild(comment, targetCommentId)) {
+            setShowReplies(true);
+        }
+    }, [targetCommentId, comment]);
+
+    // Логика скролла (только если ЭТОТ комментарий — цель)
+    useLayoutEffect(() => {
+    if (isTarget && commentRef.current) {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                commentRef.current?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                setIsActiveGlow(true);
+                setTimeout(() => setIsActiveGlow(false), GLOW_DURATION);
+            });
+        });
+    }
+}, [isTarget, showReplies]);
 
     const isAdminAuthor = comment.user?.role === 'admin';
     const isOwner = user?.id === comment.user_id;
@@ -49,8 +87,26 @@ export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onActio
     };
 
     return (
-        <div className="w-full">
-            <div className={`group relative p-6 rounded-[35px] bg-[#0a0a0a]/60 border border-white/5 hover:border-white/10 transition-all duration-300 mb-2`}>
+        <div className="w-full" ref={commentRef}>
+            <div
+                id={`comment-${comment.id}`}
+                className="group relative p-6 rounded-[35px] mb-2 bg-[#0a0a0a]/60 border transition-all"
+                style={{
+                    // Мягкий бордер (почти не меняем цвет, только легкий акцент)
+                    borderColor: isActiveGlow 
+                        ? 'rgba(37, 99, 235, 0.25)' 
+                        : 'rgba(255, 255, 255, 0.05)',
+                    
+                    // "Дорогое" свечение: очень широкое, но очень прозрачное (Glow эффект)
+                    boxShadow: isActiveGlow 
+                        ? '0 0 60px rgba(37, 99, 235, 0.12), inset 0 0 20px rgba(37, 99, 235, 0.05)' 
+                        : 'none',
+                    
+                    // Очень длинный и мягкий переход для затухания
+                    transition: isActiveGlow ? 'none' : `all ${FADE_DURATION} ease-in-out`,
+                    zIndex: isActiveGlow ? 10 : 1
+                }}
+            >
                 <div className="flex justify-between items-start mb-5">
                     <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5 ${isAdminAuthor ? 'border-blue-500/30' : ''}`}>
@@ -121,7 +177,9 @@ export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onActio
                         </div>
                     </div>
                 ) : (
-                    <p className="text-gray-400/80 text-[13px] leading-relaxed font-medium pl-1 italic">{comment.content}</p>
+                    <p className="text-gray-400/80 text-[13px] leading-relaxed font-medium pl-1 italic">
+                        {comment.content}
+                    </p>
                 )}
             </div>
 
@@ -144,7 +202,15 @@ export const CommentItem: React.FC<ItemProps> = ({ comment, user, depth, onActio
                     </button>
 
                     {showReplies && comment.replies.map(reply => (
-                        <CommentItem key={reply.id} comment={reply} user={user} depth={depth + 1} onAction={onAction} handleLike={handleLike} />
+                        <CommentItem 
+                            key={reply.id} 
+                            comment={reply} 
+                            user={user} 
+                            depth={depth + 1}
+                            targetCommentId={targetCommentId} 
+                            onAction={onAction} 
+                            handleLike={handleLike} 
+                        />
                     ))}
                 </div>
             )}

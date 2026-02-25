@@ -77,4 +77,40 @@ class CommentController extends Controller {
             'likes_count' => $comment->likes()->count()
         ]);
     }
+
+    public function userHistory(Request $request) 
+    {
+        // 1. Берем только комментарии авторизованного пользователя
+        $query = $request->user()->comments()
+            // 2. Жадная загрузка статьи и её тегов (чтобы не было 100500 запросов к БД)
+            ->with(['article']) 
+            // 3. Считаем лайки и ответы для каждого комментария
+            ->withCount(['likes', 'replies']);
+
+        // 4. Поиск по названию статьи (если пришел параметр search)
+        if ($request->filled('search')) {
+            $query->whereHas('article', function($q) use ($request) {
+                $q->where('title', 'like', "%{$request->search}%");
+            });
+        }
+
+        // 5. Фильтр по тегам статьи
+        if ($request->filled('tag')) {
+            $query->whereHas('article.tags', function($q) use ($request) {
+                $q->where('slug', $request->tag);
+            });
+        }
+
+        // 6. Сортировка: по популярности (лайки), активности (ответы) или новые
+        if ($request->sort === 'popular') {
+            $query->orderByDesc('likes_count');
+        } elseif ($request->sort === 'active') {
+            $query->orderByDesc('replies_count');
+        } else {
+            $query->latest();
+        }
+
+        // 7. Отдаем с пагинацией по 10 штук
+        return $query->paginate(10);
+    }
 }

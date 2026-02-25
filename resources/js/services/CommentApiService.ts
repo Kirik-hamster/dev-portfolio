@@ -6,6 +6,14 @@ const getHeaders = () => ({
     'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
 });
 
+// Тип для параметров фильтрации
+export interface HistoryParams {
+    search?: string;
+    tag?: string;
+    sort?: 'latest' | 'popular' | 'active';
+    page?: number;
+}
+
 export const CommentApiService = {
     // Добавить комментарий
     async add(articleId: number, content: string, parentId: number | null = null): Promise<Response> {
@@ -43,5 +51,16 @@ export const CommentApiService = {
         });
         if (!response.ok) throw new Error('Ошибка лайка');
         return response.json(); // Возвращаем сразу объект с цифрой
+    },
+
+    async getHistory(params: HistoryParams) {
+        // Формируем query string из объекта
+        const query = new URLSearchParams(params as any).toString();
+        const response = await fetch(`/api/user/comments?${query}`, {
+            headers: getHeaders(),
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Ошибка загрузки истории');
+        return response.json(); // Возвращает LengthAwarePaginator из Laravel
     }
 };
