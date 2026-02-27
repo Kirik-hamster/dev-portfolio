@@ -55,8 +55,10 @@ function AppContent() {
             
             if (userData?.role === 'admin' && userData.email_verified_at) {
                 const blogRes = await fetch('/api/blogs?my_only=1');
-                const blogs = await blogRes.json();
-                const p = blogs.find((b: Blog) => b.is_portfolio);
+                const responseData = await blogRes.json();
+                const blogsArray = Array.isArray(responseData) ? responseData : (responseData.data || []);
+                const p = blogsArray.find((b: Blog) => b.is_portfolio);
+                
                 if (p) setPortfolioBlogId(p.id);
             }
         } catch (e) {
@@ -75,8 +77,9 @@ function AppContent() {
                 if (userData?.role === 'admin') {
                     fetch('/api/blogs?my_only=1')
                         .then(res => res.json())
-                        .then(blogs => {
-                            const p = blogs.find((b: Blog) => b.is_portfolio);
+                        .then(responseData => {
+                            const blogsArray = Array.isArray(responseData) ? responseData : (responseData.data || []);
+                            const p = blogsArray.find((b: Blog) => b.is_portfolio);
                             if (p) setPortfolioBlogId(p.id);
                         });
                 }

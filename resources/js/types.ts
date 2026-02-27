@@ -29,6 +29,15 @@ export interface Blog {
     is_portfolio: boolean;
 }
 
+
+export interface BlogPagination {
+    data: Blog[]; // Массив блогов для текущей страницы
+    current_page: number;
+    last_page: number;
+    total: number;
+    per_page: number;
+}
+
 // Данные для создания/редактирования папки (блога)
 export interface BlogInput {
     title: string;

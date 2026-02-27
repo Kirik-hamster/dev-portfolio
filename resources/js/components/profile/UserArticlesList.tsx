@@ -3,6 +3,7 @@ import { Search, Edit3, Trash2, Plus, Folder, FileText} from 'lucide-react';
 import { useArticles } from '../../hooks/useArticles';
 import { Article, User } from '../../types';
 import { ConfirmModal } from '../ui/ConfirmModel';
+import { PremiumLoader } from '../PremiumLoader';
 
 interface Props {
     user: User | null;
@@ -13,8 +14,10 @@ interface Props {
 }
 
 export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle, onCreateArticle }: Props) {
+    
+    
     const [searchQuery, setSearchQuery] = useState('');
-    const { articles, loading, deleteArticle } = useArticles(searchQuery, blogId);
+    const { articles, pagination, currentPage, setCurrentPage, loading, deleteArticle } = useArticles(searchQuery, blogId);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
@@ -35,14 +38,7 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
         }
     }
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center py-20 opacity-20">
-                <div className="w-10 h-10 border-2 border-white/10 border-t-blue-500 rounded-full animate-spin mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-widest">Загрузка...</p>
-            </div>
-        );
-    }
+    if (loading) return <PremiumLoader />;
 
     // 2. ЕСЛИ ЗАГРУЗКА КОНЧИЛАСЬ, А СТАТЕЙ 0 — ПОКАЗЫВАЕМ КНОПКУ (Кирюша её увидит!)
     if (articles.length === 0) {
@@ -78,7 +74,7 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
-                {articles.map(article => (
+                {articles.map((article: Article) => (
                     <div 
                         key={article.id} 
                         onClick={() => onArticleSelect(article)} 
@@ -120,8 +116,8 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
 
                         {/* ТЕГИ (Нижняя часть) */}
                         <div className="mt-auto flex flex-wrap gap-2 relative z-10">
-                            {article.tech_stack?.split(',').map(tag => (
-                                <span key={tag} className="text-[8px] px-2.5 py-1 bg-white/5 border border-white/5 text-gray-500 rounded-lg uppercase font-black tracking-tighter group-hover:border-blue-500/10 transition-colors">
+                            {article.tech_stack?.split(',').map((tag: string) => (
+                                <span key={tag} className="...">
                                     {tag.trim()}
                                 </span>
                             ))}
@@ -136,6 +132,21 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setIsDeleteModalOpen(false)}
             />
+            {/* ПАГИНАЦИЯ ВНУТРИ ПРОФИЛЯ */}
+            {pagination && pagination.last_page > 1 && (
+                <div className="flex justify-center gap-2 mt-10">
+                    {[...Array(pagination.last_page)].map((_, i) => (
+                        <button 
+                            key={i}
+                            onClick={() => setCurrentPage(i + 1)}
+                            className={`w-8 h-8 rounded-lg text-[10px] font-black ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500'}`}
+                        >
+                            {String(i + 1).padStart(2, '0')}
+                        </button>
+                    ))}
+                </div>
+            )}
+            
         </div>
     );
 }

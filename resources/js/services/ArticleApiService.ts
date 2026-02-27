@@ -16,21 +16,24 @@ const getHeaders = () => ({
 });
 
 export const ArticleApiService = {
+     // Получить статьи конкретного блога (папки)
+    async fetchByBlog(blogId: number, query = '', page = 1): Promise<any> {
+        const response = await fetch(`/api/blogs/${blogId}/articles?search=${query}&page=${page}`, {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'include'
+        });
+        return response.ok ? response.json() : { data: [], last_page: 1 };
+    },
     // Получить статьи системного портфолио
-    async fetchPortfolio(query = ''): Promise<Article[]> {
-        const response = await fetch(`/api/portfolio?search=${query}`, {
+    async fetchPortfolio(query = '', page = 1): Promise<any> {
+        const response = await fetch(`/api/portfolio?search=${query}&page=${page}`, {
             headers: { 'Accept': 'application/json' }
         });
-        return response.ok ? response.json() : [];
+        // Теперь всегда возвращает объект пагинации
+        return response.ok ? response.json() : { data: [], last_page: 1 };
     },
 
-    // Получить статьи конкретного блога (папки)
-    async fetchByBlog(blogId: number, query = ''): Promise<Article[]> {
-        const response = await fetch(`/api/blogs/${blogId}/articles?search=${query}`, {
-            headers: { 'Accept': 'application/json' }
-        });
-        return response.ok ? response.json() : [];
-    },
+   
 
     async fetchOne(id: string | number): Promise<Article> {
         const response = await fetch(`/api/articles/${id}`);

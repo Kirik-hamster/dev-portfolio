@@ -32,17 +32,29 @@ class ArticleController extends Controller
             })
             ->with(['blog', 'user'])
             ->latest()
-            ->get();
+            ->paginate(12);
     }
 
     public function portfolio()
     {
-        // А здесь — ТОЛЬКО статьи из системного блога
+        // Ищем системную папку портфолио
         $portfolioBlog = Blog::where('is_portfolio', true)->first();
         
-        if (!$portfolioBlog) return response()->json([], 200);
+        // Если папки нет, возвращаем пустую структуру пагинации
+        if (!$portfolioBlog) {
+            return response()->json([
+                'data' => [],
+                'last_page' => 1,
+                'current_page' => 1,
+                'total' => 0
+            ], 200);
+        }
 
-        return $portfolioBlog->articles()->latest()->get();
+        // ВАЖНО: Вместо get() пишем paginate(12)
+        return $portfolioBlog->articles()
+            ->with(['blog', 'user'])
+            ->latest()
+            ->paginate(12); 
     }
 
     public function show(Article $article)
@@ -86,7 +98,7 @@ class ArticleController extends Controller
         })
         ->with(['blog', 'user']) // Загружаем автора и папку!
         ->latest()
-        ->get();
+        ->paginate(12);
     }
 
     // Используем наш новый Form Request для валидации

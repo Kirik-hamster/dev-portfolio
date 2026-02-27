@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Folder, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
-import { Blog, User, Article, BlogInput } from '../../types';
+import { Blog, User, Article, BlogInput, BlogPagination } from '../../types';
 import { UserArticlesList } from './UserArticlesList';
 
 interface UserBlogsListProps {
@@ -22,6 +22,8 @@ interface UserBlogsListProps {
     onArticleSelect: (a: Article) => void;
     onEditArticle: (a: Article) => void;
     onTriggerCreate: (blogId: number | null) => void;
+    blogPagination: BlogPagination | null; 
+    onPageChange: (page: number) => void; 
 }
 
 export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
@@ -30,7 +32,8 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
         user, blogs, insideBlogId, insideBlogTitle, isCreating, editingBlog, 
         newBlog, setIsCreating, setEditingBlog, setNewBlog, 
         handleCreateSubmit, handleUpdateSubmit, handleDeleteBlog,
-        onBlogSelect, onArticleSelect, onEditArticle, onTriggerCreate 
+        onBlogSelect, onArticleSelect, onEditArticle, onTriggerCreate,
+        blogPagination, onPageChange
     } = props;
 
     // --- 1. ВИД ВНУТРИ ПАПКИ ---
@@ -161,6 +164,20 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                     </div>
                 ))}
             </div>
+            {blogPagination && blogPagination.last_page > 1 && (
+                <div className="flex justify-center gap-2 mt-10">
+                    {[...Array(blogPagination.last_page)].map((_, i) => (
+                        <button 
+                            key={i} 
+                            onClick={() => onPageChange(i + 1)}
+                            className={`w-8 h-8 rounded-lg text-[10px] font-black ${blogPagination.current_page === i + 1 ? 'bg-blue-600' : 'bg-white/5'}`}
+                        >
+                            {String(i + 1).padStart(2, '0')}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
+    
 };

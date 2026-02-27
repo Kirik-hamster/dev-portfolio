@@ -1,40 +1,46 @@
 // resources/js/hooks/useArticles.ts
 import { useState, useEffect, useCallback } from 'react';
-import { Article } from '../types';
+import { Article, BlogPagination } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 
 export function useArticles(searchQuery: string, blogId?: number) {
-    const [articles, setArticles] = useState<Article[]>([]);
+    // Явно указываем тип для пагинации
+    const [pagination, setPagination] = useState<BlogPagination | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState<boolean>(true);
 
-    // Оборачиваем в useCallback, чтобы функция не создавалась заново зря
-    const fetchArticles = useCallback(async (query = '') => {
+    const fetchArticles = useCallback(async (query = '', page = 1) => {
         setLoading(true);
         try {
-            // Решаем, куда стучаться
             const data = blogId 
-                ? await ArticleApiService.fetchByBlog(blogId, query) 
-                : await ArticleApiService.fetchPortfolio(query);
+                ? await ArticleApiService.fetchByBlog(blogId, query, page) 
+                : await ArticleApiService.fetchPortfolio(query, page);
             
-            setArticles(data);
+            setPagination(data);
         } catch (err) {
             console.error("Ошибка при получении статей:", err);
-            setArticles([]); // Если ошибка — считаем, что пусто
+            setPagination(null);
         } finally {
-            // ВЫКЛЮЧАЕМ ЗАГРУЗКУ В ЛЮБОМ СЛУЧАЕ!
             setLoading(false);
         }
     }, [blogId]);
 
-    // ОСНОВНОЙ ТРИГГЕР: срабатывает при входе в папку или поиске
     useEffect(() => {
-        fetchArticles(searchQuery);
-    }, [fetchArticles, searchQuery]);
+        fetchArticles(searchQuery, currentPage);
+    }, [fetchArticles, searchQuery, currentPage]);
 
     const deleteArticle = async (id: number) => {
         const res = await ArticleApiService.delete(id);
-        if (res.ok) fetchArticles(searchQuery);
+        if (res.ok) fetchArticles(searchQuery, currentPage);
     };
 
-    return { articles, loading, fetchArticles, deleteArticle };
+    return { 
+        // Безопасно достаем массив статей
+        articles: (pagination?.data as unknown as Article[]) || [], 
+        pagination, 
+        currentPage, 
+        setCurrentPage, 
+        loading, 
+        deleteArticle 
+    };
 }

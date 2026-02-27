@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
-import { User as UserType, Blog, Article } from '../types';
+import { User as UserType, Blog, Article, BlogPagination } from '../types';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { AdminPanel } from '@/components/profile/AdminPanel';
 import { BlogApiService } from '../services/BlogApiService';
@@ -60,6 +60,8 @@ export function ProfilePage({
     const [demoLoading, setDemoLoading] = useState(false);
     const [demoDuration, setDemoDuration] = useState(3);
     const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
+    const [blogPagination, setBlogPagination] = useState<BlogPagination | null>(null);
+    const [currentBlogPage, setCurrentBlogPage] = useState(1);
 
     const startDemo = () => {
         if (timerId) clearTimeout(timerId);
@@ -81,20 +83,21 @@ export function ProfilePage({
         }
     }, [blogs, insideBlogId]);
 
-    const fetchBlogs = () => {
+    const fetchBlogs = (page = 1) => {
         setLoading(true);
-        fetch('/api/blogs?my_only=1') 
+        fetch(`/api/blogs?my_only=1&page=${page}`) // Добавляем page в запрос
             .then(res => res.json())
             .then(data => {
-                setAllBlogsCount(data.length);
-                setBlogs(data);
+                setBlogPagination(data); // Сохраняем весь объект пагинации
+                setBlogs(data.data || []); // А сюда только массив для совместимости
+                setAllBlogsCount(data.total || 0);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
     };
 
     useEffect(() => {
-        if (activeTab === 'blog' || activeTab === 'admin') fetchBlogs();
+        if (activeTab === 'blog' || activeTab === 'admin') fetchBlogs(currentBlogPage);
     }, [activeTab]);
 
     // --- 4. ОБРАБОТЧИКИ ---
@@ -191,6 +194,8 @@ export function ProfilePage({
                         onArticleSelect={onArticleSelect}
                         onEditArticle={onEditArticle}
                         onTriggerCreate={onTriggerCreate}
+                        blogPagination={blogPagination}
+                        onPageChange={setCurrentBlogPage}
                     />
                 );
 

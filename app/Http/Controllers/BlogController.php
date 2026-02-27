@@ -12,13 +12,27 @@ class BlogController extends Controller
     {
         $query = Blog::query()->with('user')->withCount('articles');
 
+        if ($request->filled('tag')) {
+            $query->whereHas('articles', function($q) use ($request) {
+                $q->where('tech_stack', 'like', "%{$request->tag}%");
+            });
+        }
+
+        $query->latest();
+
         // Для профиля (свои)
         if ($request->has('my_only')) {
-            return $query->where('user_id', Auth::id())->latest()->get();
+            return $query->where('user_id', Auth::id())->paginate(12);
         }
 
         // Для Сообщества (все чужие + свои, НО БЕЗ системного портфолио)
-        return $query->where('is_portfolio', false)->latest()->get();
+        return $query->where('is_portfolio', false)->paginate(9);
+    }
+    // Получить один блог с автором этого блога
+    public function show(Blog $blog)
+    {
+        // Возвращаем блог и сразу подгружаем автора (user)
+        return $blog->load('user');
     }
 
     public function update(Request $request, Blog $blog)

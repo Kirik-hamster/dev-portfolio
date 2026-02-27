@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/blogs', [BlogController::class, 'index']); // Список всех "папок" (блогов пользователей)
+Route::get('/blogs/{blog}', [BlogController::class, 'show']);
 Route::get('/blogs/{blog}/articles', [ArticleController::class, 'index']); // Все статьи конкретного блога
 Route::get('/articles/{article}', [ArticleController::class, 'show']); // Деталка статьи
 // Публичная лента всех блогов сообщества

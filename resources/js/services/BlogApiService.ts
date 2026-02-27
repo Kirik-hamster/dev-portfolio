@@ -1,4 +1,4 @@
-import { Blog, BlogInput } from '../types';
+import { Blog, BlogInput, BlogPagination } from '../types';
 
 const BLOG_URL = '/api/blogs';
 
@@ -10,9 +10,26 @@ const getHeaders = () => ({
 });
 
 export const BlogApiService = {
-    async fetchAll(): Promise<Blog[]> {
-        const res = await fetch(`${BLOG_URL}?my_only=1`);
+    async fetchAll(page: number = 1, tag: string | null = null): Promise<BlogPagination> {
+        const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
+        const res = await fetch(`${BLOG_URL}?page=${page}${tagParam}`, {
+            credentials: 'include'
+        });
         return res.json();
+    },
+
+    async fetchOne(id: number): Promise<any> {
+        const res = await fetch(`${BLOG_URL}/${id}`, { 
+            headers: getHeaders(),
+            credentials: 'include' 
+        });
+        if (!res.ok) throw new Error('Blog metadata not found');
+        return res.json(); // Возвращает объект {id, title, description, user: {...}}
+    },
+
+    async fetchMyBlogs(page: number = 1): Promise<BlogPagination> {
+        const res = await fetch(`${BLOG_URL}?my_only=1&page=${page}`, { credentials: 'include' });
+        return res.json(); // Теперь возвращает объект с .data и .last_page
     },
 
     async save(data: BlogInput, id?: number): Promise<Response> {
