@@ -15,6 +15,7 @@ class CleanupTestData extends Command
         $count = User::where('email', 'like', '%@test.loc')->count();
         if ($this->confirm("Удалить {$count} тестовых юзеров и ВСЕ их данные?")) {
             User::where('email', 'like', '%@test.loc')->delete();
+            \App\Models\Tag::whereDoesntHave('articles')->delete();
             $this->info('База очищена.');
         }
     }

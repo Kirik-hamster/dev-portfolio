@@ -13,9 +13,7 @@ class BlogController extends Controller
         $query = Blog::query()->with('user')->withCount('articles');
 
         if ($request->filled('tag')) {
-            $query->whereHas('articles', function($q) use ($request) {
-                $q->where('tech_stack', 'like', "%{$request->tag}%");
-            });
+            $query->whereJsonContains('top_tags', $request->tag);
         }
 
         $query->latest();

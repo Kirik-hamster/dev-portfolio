@@ -41,6 +41,18 @@ export const ArticleApiService = {
         return response.json();
     },
 
+    /**
+     * Получить статьи сообщества (лента всех блогов)
+     */
+    async fetchCommunity(page = 1, tag = ''): Promise<any> {
+        const tagParam = tag ? `&tag=${tag}` : '';
+        const response = await fetch(`/api/community-articles?page=${page}${tagParam}`, {
+            headers: getHeaders(),
+        });
+        // Всегда возвращаем структуру пагинации, чтобы не ломать фронт
+        return response.ok ? response.json() : { data: [], last_page: 1 };
+    },
+
     // Обновленный метод сохранения
     async save(data: ArticleInput, blogId?: number, id?: number) {
         if (!id && !blogId) {

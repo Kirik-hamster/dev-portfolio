@@ -6,6 +6,8 @@ import { LayoutGrid, List, Tag, Folder, X, User as UserIcon, ShieldCheck, ArrowR
 import { PremiumLoader } from '../components/PremiumLoader';
 import { useNavigate } from 'react-router-dom';
 import { BlogApiService } from '../services/BlogApiService';
+import { ArticleApiService } from '../services/ArticleApiService';
+import { TagApiService } from '../services/TagApiService';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -40,6 +42,8 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
+    const [globalTags, setGlobalTags] = useState<string[]>([]);
+
     const navigate = useNavigate();
 
     // Вспомогательная функция для числовой пагинации
@@ -55,13 +59,17 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         return pages;
     };
 
+    useEffect(() => {
+        // Используем сервис вместо прямого fetch
+        TagApiService.fetchTopTags().then(setGlobalTags);
+    }, []);
+
     // Загружаем статьи один раз только для формирования облака тегов (topTags)
     useEffect(() => {
         const loadTagsData = async () => {
             try {
                 const res = await fetch('/api/community-articles');
                 const responseData = await res.json();
-                // ВАЖНО: Если сервер включил пагинацию, берем .data, если нет - берем как есть
                 const cleanArticles = Array.isArray(responseData) ? responseData : (responseData.data || []);
                 setArticles(cleanArticles);
             } catch (e) { console.error("Fetch error in tags:",e); }
@@ -76,12 +84,9 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
             if (viewMode === 'blogs') {
                 data = await BlogApiService.fetchAll(currentPage, selectedTag);
             } else if (selectedBlogId) {
-                const res = await fetch(`/api/blogs/${selectedBlogId}/articles?page=${currentPage}`);
-                data = await res.json();
+                data = await ArticleApiService.fetchByBlog(selectedBlogId, '', currentPage);
             } else {
-                const tagParam = selectedTag ? `&tag=${selectedTag}` : '';
-                const res = await fetch(`/api/community-articles?page=${currentPage}${tagParam}`);
-                data = await res.json();
+               data = await ArticleApiService.fetchCommunity(currentPage, selectedTag || '');
             }
             setPagination(data);
         } catch (err) {
@@ -127,19 +132,6 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
     };
 
-    //FIXIT
-    const topTags = useMemo(() => {
-        const counts: Record<string, number> = {};
-        articles.forEach(a => {
-            a.tech_stack?.split(',').forEach(t => {
-                const tag = t.trim();
-                if (tag) counts[tag] = (counts[tag] || 0) + 1;
-            });
-        });
-        return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
-    }, [articles]);
-    //FIXIT
-
     return (
         <div className="pb-20 animate-in fade-in duration-700">
             {/* ТЕГ-КАПСУЛА */}
@@ -152,14 +144,27 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                 {isSearchMode ? (
                                     <input 
                                         autoFocus type="text" placeholder="Поиск тега..." value={searchQuery}
-                                        onChange={(e) => { setSearchQuery(e.target.value); setSelectedTag(e.target.value || null); setCurrentPage(1); }}
+                                        onChange={(e) => { 
+                                            const val = e.target.value;
+                                            setSearchQuery(val); 
+                                            setSelectedTag(val || null); 
+                                            
+                                            // ВАЖНО: При любом изменении фильтра возвращаемся на старт
+                                            setCurrentPage(1); 
+                                        }}
                                         className="bg-transparent border-none outline-none text-[10px] font-bold uppercase text-white w-full placeholder:text-gray-600"
                                     />
                                 ) : (
                                     <>
                                         <button onClick={() => {setSelectedTag(null); setCurrentPage(1);}} className={`text-[9px] font-black uppercase tracking-widest ${!selectedTag ? 'text-white' : 'text-gray-500'}`}>All</button>
-                                        {topTags.map(tag => (
-                                            <button key={tag} onClick={() => {setSelectedTag(tag); setCurrentPage(1);}} className={`text-[9px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${selectedTag === tag ? 'text-blue-400' : 'text-gray-500 hover:text-white'}`}>{tag}</button>
+                                        {globalTags.map((tag: string) => ( // Добавили : string, чтобы ушла ошибка "any"
+                                            <button 
+                                                key={tag} 
+                                                onClick={() => {setSelectedTag(tag); setCurrentPage(1);}} 
+                                                className={`text-[9px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${selectedTag === tag ? 'text-blue-400' : 'text-gray-500 hover:text-white'}`}
+                                            >
+                                                {tag}
+                                            </button>
                                         ))}
                                     </>
                                 )}
@@ -234,7 +239,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                             <div className="flex flex-col gap-4 mt-10">
                                 <span className="text-[10px] font-black uppercase text-gray-600 block italic">Теги постов</span>
                                 <div className="flex flex-wrap gap-2.5">
-                                    {selectedBlogId && getTopTagsForBlog(selectedBlogId).map(tag => (
+                                    {activeBlog?.top_tags?.map((tag: string) => (
                                         <span key={tag} className="px-3 py-1.5 bg-blue-500/5 border border-blue-500/10 text-blue-400/80 text-[8px] font-black uppercase rounded-lg">
                                             {tag}
                                         </span>
@@ -264,11 +269,13 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                         <div className="p-4 bg-white/5 w-14 h-14 rounded-2xl mb-6 text-gray-400 group-hover:text-blue-500 transition-colors"><Folder size={24}/></div>
                                         <h3 className="text-xl font-bold mb-4">{blog.title}</h3>
                                         <p className="text-[11px] text-gray-500 line-clamp-2 mb-4 italic">{blog.description || "Нет описания..."}</p>
-                                        {/*FIXIT*/}
                                         <div className="flex flex-wrap gap-2 mb-4">
-                                            {tags.map(t => <span key={t} className="text-[7px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded uppercase font-bold">{t}</span>)}
+                                            {blog.top_tags?.map((t: string) => (
+                                                <span key={t} className="text-[7px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded uppercase font-bold">
+                                                    {t}
+                                                </span>
+                                            ))}
                                         </div>
-                                        {/*FIXIT*/}
                                         <div className="absolute -right-6 -bottom-6 opacity-[0.03] transform rotate-12"><Folder size={160} /></div>
                                         
                                         <div className="mt-auto flex items-center gap-3 pt-4 border-t border-white/5">
@@ -286,27 +293,52 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
                             {/* РЕЖИМ ПУБЛИКАЦИЙ */}
                             {viewMode === 'posts' && pagination?.data.map((article: any) => (
-                                <div key={article.id} onClick={() => onArticleSelect(article)} className="group p-8 bg-white/[0.01] border border-white/5 rounded-[40px] hover:border-blue-500/20 transition-all cursor-pointer h-80 flex flex-col relative overflow-hidden">
-                                    <div className="absolute top-8 right-8 opacity-0 group-hover:opacity-100 transition-all"><ArrowRight size={20} className="text-blue-500" /></div>
-                                    <h3 className="text-2xl font-black mb-4 group-hover:text-blue-400 pr-10">{article.title}</h3>
+                                <div 
+                                    key={article.id} 
+                                    onClick={() => onArticleSelect(article)} 
+                                    className="group p-8 bg-white/[0.01] border border-white/5 rounded-[40px] hover:border-blue-500/20 transition-all cursor-pointer h-[400px] flex flex-col relative overflow-hidden"
+                                >
+                                    {/* 1. АВТОР СВЕРХУ */}
+                                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
+                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                                            {article.user?.role === 'admin' 
+                                                ? <ShieldCheck size={14} className="text-blue-500"/> 
+                                                : <UserIcon size={14} className="text-gray-400"/>
+                                            }
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black uppercase text-white/90 leading-none">{article.user?.name}</span>
+                                            <span className="text-[7px] font-bold uppercase text-gray-500 tracking-widest">{article.user?.role || 'member'}</span>
+                                        </div>
+                                        <div className="ml-auto opacity-0 group-hover:opacity-100 transition-all">
+                                            <ArrowRight size={18} className="text-blue-500" />
+                                        </div>
+                                    </div>
+
+                                    {/* 2. КОНТЕНТ */}
+                                    <h3 className="text-2xl font-black mb-4 group-hover:text-blue-400 line-clamp-2">{article.title}</h3>
                                     <p className="text-xs text-gray-500 line-clamp-3 mb-6 flex-grow">
                                         {article.content?.replace(/<[^>]*>/g, '').substring(0, 120)}...
                                     </p>
 
-                                    <div className="absolute -right-6 -bottom-6 opacity-[0.03] transform -rotate-12"><FileText size={160} /></div>
-                                    
-                                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                                                {article.user?.role === 'admin' ? <ShieldCheck size={12} className="text-blue-500"/> : <UserIcon size={12} className="text-gray-400"/>}
-                                            </div>
-                                            <span className="text-[9px] font-black uppercase text-gray-400">{article.user?.name}</span>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            {article.tech_stack?.split(',').slice(0, 2).map((t: string) => (
-                                                <span key={t} className="text-[7px] px-1.5 py-0.5 bg-white/5 rounded text-gray-500 uppercase font-bold">{t.trim()}</span>
+                                    {/* 3. ТЕГИ СНИЗУ (Все в один ряд с переносом) */}
+                                    <div className="mt-auto pt-4 border-t border-white/5">
+                                        <div className="flex flex-wrap gap-1.5 max-h-12 overflow-hidden relative">
+                                            {/* Парсим tech_stack или берем из объекта, если добавили в API */}
+                                            {article.tech_stack?.split(',').map((t: string, i: number) => (
+                                                <span 
+                                                    key={i} 
+                                                    title={t.trim()} // Всплывающая подсказка при наведении
+                                                    className="text-[7px] px-2 py-1 bg-white/5 rounded-md text-gray-400 uppercase font-black hover:text-blue-400 hover:bg-blue-500/10 transition-all whitespace-nowrap"
+                                                >
+                                                    {t.trim()}
+                                                </span>
                                             ))}
                                         </div>
+                                    </div>
+
+                                    <div className="absolute -right-6 -bottom-6 opacity-[0.02] transform -rotate-12 pointer-events-none">
+                                        <FileText size={180} />
                                     </div>
                                 </div>
                             ))}

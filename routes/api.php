@@ -6,6 +6,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Auth\VerifyCodeController;
 use App\Http\Controllers\Auth\PasswordUpdateController;
+use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,7 @@ Route::get('/articles/{article}', [ArticleController::class, 'show']); // Дет
 Route::get('/community-articles', [ArticleController::class, 'community']);
 Route::get('/portfolio', [ArticleController::class, 'portfolio']);
 
+Route::get('/top-tags', [TagController::class, 'top']);
 
 Route::post('/verify-code', VerifyCodeController::class)->middleware('auth:sanctum');
 Route::post('/verify-resend', [VerifyCodeController::class, 'resend'])

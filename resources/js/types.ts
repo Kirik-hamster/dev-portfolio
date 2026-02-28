@@ -27,6 +27,7 @@ export interface Blog {
     title: string;
     description?: string;
     is_portfolio: boolean;
+    top_tags?: string[];
 }
 
 

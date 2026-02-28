@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('comment_likes', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::create('blog_tag', function (Blueprint $table) {
+            $table->foreignId('blog_id')->constrained()->onDelete('cascade');
+            $table->foreignId('tag_id')->constrained()->onDelete('cascade');
+            
+            $table->primary(['blog_id', 'tag_id']);
         });
     }
 
@@ -22,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('comment_likes');
+        Schema::dropIfExists('blogs_tag');
     }
 };
