@@ -83,33 +83,28 @@ export function ProfilePage({
         }
     }, [blogs, insideBlogId]);
 
-    const fetchBlogs = (page = 1) => {
+    const fetchBlogs = async (page = 1) => {
         setLoading(true);
-        fetch(`/api/blogs?my_only=1&page=${page}`) // Добавляем page в запрос
-            .then(res => res.json())
-            .then(data => {
-                setBlogPagination(data); // Сохраняем весь объект пагинации
-                setBlogs(data.data || []); // А сюда только массив для совместимости
-                setAllBlogsCount(data.total || 0);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+        try {
+            // Используем сервис вместо прямого fetch
+            const data = await BlogApiService.fetchMyBlogs(page);
+            setBlogPagination(data);
+            setBlogs(data.data || []);
+            setAllBlogsCount(data.total || 0);
+        } catch (err) {
+            console.error("Ошибка загрузки блогов:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
         if (activeTab === 'blog' || activeTab === 'admin') fetchBlogs(currentBlogPage);
-    }, [activeTab]);
+    }, [activeTab, currentBlogPage]);
 
     // --- 4. ОБРАБОТЧИКИ ---
     const switchTab = (tab: string) => {
         navigate(`/profile/${tab === 'profile' ? '' : tab}`);
-    };
-
-    const getXsrfToken = () => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; XSRF-TOKEN=`);
-        if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-        return '';
     };
 
     const handleCreateSubmit = async () => {
@@ -134,28 +129,24 @@ export function ProfilePage({
         }
     };
 
-    // 1. Эта функция передается в UserBlogsList и просто открывает модалку
+    // Эта функция передается в UserBlogsList и просто открывает модалку
     const handleDeleteBlog = (id: number) => {
         setBlogToDelete(id);
         setIsDeleteModalOpen(true);
     };
 
-    // 2. Эта функция вызывается кнопкой "Удалить" в самой модалке
+    // Эта функция вызывается кнопкой "Удалить" в самой модалке
     const confirmDeleteBlog = async () => {
         if (!blogToDelete) return;
 
-        const res = await fetch(`/api/blogs/${blogToDelete}`, {
-            method: 'DELETE',
-            headers: { 
-                'Accept': 'application/json', 
-                'X-XSRF-TOKEN': getXsrfToken() 
-            }
-        });
+        // Используем сервис для удаления
+        const res = await BlogApiService.delete(blogToDelete);
 
         if (res.ok) {
             setIsDeleteModalOpen(false);
             setBlogToDelete(null);
-            fetchBlogs(); // Обновляем список после удаления
+            // Если удалили последний элемент на странице, можно откатиться на страницу назад
+            fetchBlogs(currentBlogPage); 
         }
     };
 

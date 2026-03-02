@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Folder, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { Blog, User, Article, BlogInput, BlogPagination } from '../../types';
 import { UserArticlesList } from './UserArticlesList';
+import { Pagination } from '../ui/Pagination';
 
 interface UserBlogsListProps {
     user: User;
@@ -164,18 +165,16 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                     </div>
                 ))}
             </div>
-            {blogPagination && blogPagination.last_page > 1 && (
-                <div className="flex justify-center gap-2 mt-10">
-                    {[...Array(blogPagination.last_page)].map((_, i) => (
-                        <button 
-                            key={i} 
-                            onClick={() => onPageChange(i + 1)}
-                            className={`w-8 h-8 rounded-lg text-[10px] font-black ${blogPagination.current_page === i + 1 ? 'bg-blue-600' : 'bg-white/5'}`}
-                        >
-                            {String(i + 1).padStart(2, '0')}
-                        </button>
-                    ))}
-                </div>
+            {blogPagination && (
+                <Pagination 
+                    currentPage={blogPagination.current_page} 
+                    lastPage={blogPagination.last_page} 
+                    onPageChange={(p) => {
+                        onPageChange(p);
+                        // Чтобы не оставаться внизу страницы после клика
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }} 
+                />
             )}
         </div>
     );

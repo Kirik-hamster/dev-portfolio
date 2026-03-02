@@ -42,6 +42,8 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     const isTarget = targetCommentId === comment.id;
 
+    const isTargetInside = targetCommentId && hasTargetChild(comment, targetCommentId);
+
     const loadReplies = async (isInitial = false) => {
         setRepliesLoading(true);
         const targetPage = isInitial ? 1 : replyPage;
@@ -82,10 +84,10 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     // Логика автораскрытия (если цель внутри)
     useEffect(() => {
-        if (targetCommentId && hasTargetChild(comment, targetCommentId)) {
-            setShowReplies(true);
+        if (isTargetInside && !showReplies && !repliesLoading) {
+            loadReplies(true);
         }
-    }, [targetCommentId, comment]);
+    }, [targetCommentId, isTargetInside]);
 
     // Логика скролла (только если ЭТОТ комментарий — цель)
     useLayoutEffect(() => {

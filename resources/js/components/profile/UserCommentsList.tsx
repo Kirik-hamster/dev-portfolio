@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, ThumbsUp, Search, ArrowUpRight, Clock, Hash, ChevronDown } from 'lucide-react';
 import { CommentApiService, HistoryParams } from '../../services/CommentApiService';
+import { Pagination } from '../ui/Pagination';
 import { PremiumLoader } from '../PremiumLoader';
 
 export const UserCommentsList: React.FC = () => {
     const [comments, setComments] = useState<any[]>([]); // Тип можно уточнить в types.ts
     const [loading, setLoading] = useState(true);
     const [isSortOpen, setIsSortOpen] = useState(false);
+
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
     const [filters, setFilters] = useState<HistoryParams>({
         search: '',
         sort: 'latest',
@@ -21,8 +26,9 @@ export const UserCommentsList: React.FC = () => {
     const fetchHistory = async () => {
         setLoading(true);
         try {
-            const data = await CommentApiService.getHistory(filters);
-            setComments(data.data); // data.data, так как Laravel присылает пагинацию
+            const data = await CommentApiService.getHistory({ ...filters, page });
+            setComments(data.data);
+            setTotalPages(data.last_page); // Сохраняем общее кол-во страниц
         } catch (e) {
             console.error(e);
         } finally {
@@ -30,11 +36,15 @@ export const UserCommentsList: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        setPage(1);
+    }, [filters.search, filters.sort, filters.tag]);
+
     // Подгружаем данные при изменении фильтров (с небольшой задержкой для поиска)
     useEffect(() => {
         const timer = setTimeout(fetchHistory, 400);
         return () => clearTimeout(timer);
-    }, [filters.search, filters.sort, filters.tag]);
+    }, [filters.search, filters.sort, filters.tag, page]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -64,27 +74,27 @@ export const UserCommentsList: React.FC = () => {
 
                     {isSortOpen && (
                         <div className="absolute top-[calc(100%+12px)] right-0 w-full bg-white/[0.01] border border-white/[0.05] rounded-[32px] overflow-hidden z-50 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.8)] backdrop-blur-3xl animate-in fade-in zoom-in-95 duration-300">
-    <div className="p-2 space-y-1">
-        {sortOptions.map(option => (
-            <button
-                key={option.id}
-                onClick={() => { setFilters({...filters, sort: option.id as any}); setIsSortOpen(false); }}
-                className={`w-full px-6 py-4 rounded-[24px] text-left text-[9px] font-black uppercase tracking-[0.25em] transition-all duration-500 flex items-center justify-between group/item ${
-                    filters.sort === option.id 
-                    ? 'text-blue-500 bg-blue-500/[0.03]' // Едва заметный оттенок вместо глухой заливки
-                    : 'text-gray-500 hover:text-white hover:bg-white/[0.02]'
-                }`}
-            >
-                <span>{option.label}</span>
-                
-                {/* Элегантный индикатор вместо изменения всего фона */}
-                {filters.sort === option.id && (
-                    <div className="w-1 h-1 bg-blue-500 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.8)]" />
-                )}
-            </button>
-        ))}
-    </div>
-</div>
+                            <div className="p-2 space-y-1">
+                                {sortOptions.map(option => (
+                                    <button
+                                        key={option.id}
+                                        onClick={() => { setFilters({...filters, sort: option.id as any}); setIsSortOpen(false); }}
+                                        className={`w-full px-6 py-4 rounded-[24px] text-left text-[9px] font-black uppercase tracking-[0.25em] transition-all duration-500 flex items-center justify-between group/item ${
+                                            filters.sort === option.id 
+                                            ? 'text-blue-500 bg-blue-500/[0.03]' // Едва заметный оттенок вместо глухой заливки
+                                            : 'text-gray-500 hover:text-white hover:bg-white/[0.02]'
+                                        }`}
+                                    >
+                                        <span>{option.label}</span>
+                                        
+                                        {/* Элегантный индикатор вместо изменения всего фона */}
+                                        {filters.sort === option.id && (
+                                            <div className="w-1 h-1 bg-blue-500 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.8)]" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -152,6 +162,15 @@ export const UserCommentsList: React.FC = () => {
                     <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Комментариев не найдено</p>
                 </div>
             )}
+            {/* 3. ИСПОЛЬЗУЕМ ОБЩИЙ UI КОМПОНЕНТ */}
+            <Pagination 
+                currentPage={page} 
+                lastPage={totalPages} 
+                onPageChange={(p) => {
+                    setPage(p);
+                    window.scrollTo({ top: 0, behavior: 'smooth' }); // Приятный скролл вверх
+                }} 
+            />
         </div>
     );
 };

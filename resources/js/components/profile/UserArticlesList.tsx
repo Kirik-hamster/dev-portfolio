@@ -3,6 +3,7 @@ import { Search, Edit3, Trash2, Plus, Folder, FileText} from 'lucide-react';
 import { useArticles } from '../../hooks/useArticles';
 import { Article, User } from '../../types';
 import { ConfirmModal } from '../ui/ConfirmModel';
+import { Pagination } from '../ui/Pagination';
 import { PremiumLoader } from '../PremiumLoader';
 
 interface Props {
@@ -133,20 +134,17 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
                 onCancel={() => setIsDeleteModalOpen(false)}
             />
             {/* ПАГИНАЦИЯ ВНУТРИ ПРОФИЛЯ */}
-            {pagination && pagination.last_page > 1 && (
-                <div className="flex justify-center gap-2 mt-10">
-                    {[...Array(pagination.last_page)].map((_, i) => (
-                        <button 
-                            key={i}
-                            onClick={() => setCurrentPage(i + 1)}
-                            className={`w-8 h-8 rounded-lg text-[10px] font-black ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500'}`}
-                        >
-                            {String(i + 1).padStart(2, '0')}
-                        </button>
-                    ))}
-                </div>
+            {pagination && (
+                <Pagination 
+                    currentPage={currentPage} 
+                    lastPage={pagination.last_page} 
+                    onPageChange={(p) => {
+                        setCurrentPage(p);
+                        // Плавный возврат к началу списка статей
+                        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                    }} 
+                />
             )}
-            
         </div>
     );
 }

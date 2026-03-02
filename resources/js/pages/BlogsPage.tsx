@@ -1,8 +1,7 @@
-// resources/js/pages/BlogsPage.tsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Article, Blog, BlogPagination } from '../types';
 import { LayoutGrid, List, Tag, Folder, X, User as UserIcon, ShieldCheck, ArrowRight, FileText, Search } from 'lucide-react';
+import { Pagination } from '../components/ui/Pagination';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { useNavigate } from 'react-router-dom';
 import { BlogApiService } from '../services/BlogApiService';
@@ -45,19 +44,6 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     const [globalTags, setGlobalTags] = useState<string[]>([]);
 
     const navigate = useNavigate();
-
-    // Вспомогательная функция для числовой пагинации
-    const getPages = (current: number, last: number): (number | string)[] => {
-        const pages: (number | string)[] = [];
-        for (let i = 1; i <= last; i++) {
-            if (i === 1 || i === last || (i >= current - 1 && i <= current + 1)) {
-                pages.push(i);
-            } else if (pages[pages.length - 1] !== '...') {
-                pages.push('...');
-            }
-        }
-        return pages;
-    };
 
     useEffect(() => {
         // Используем сервис вместо прямого fetch
@@ -346,22 +332,15 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
                         {/* ЧИСЛОВАЯ ПАГИНАЦИЯ */}
                         {pagination && pagination.last_page > 1 && (
-                            <div className="mt-16 flex items-center justify-center gap-3">
-                                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-3 rounded-xl bg-white/5 hover:bg-blue-500/20 disabled:opacity-10 transition-all text-gray-500">
-                                    <ArrowRight className="rotate-180" size={14} />
-                                </button>
-                                <div className="flex items-center gap-2">
-                                    {getPages(currentPage, pagination.last_page).map((p: number | string, idx: number) => (
-                                        p === '...' ? <span key={`dots-${idx}`} className="text-gray-600 px-2 font-black">...</span> :
-                                        <button key={`pg-${p}`} onClick={() => setCurrentPage(Number(p))} className={`w-10 h-10 rounded-xl font-black text-[11px] transition-all border ${currentPage === p ? 'bg-blue-500 border-blue-400 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/5 text-gray-500 hover:text-white'}`}>
-                                            {String(p).padStart(2, '0')}
-                                        </button>
-                                    ))}
-                                </div>
-                                <button disabled={currentPage === pagination.last_page} onClick={() => setCurrentPage(p => p + 1)} className="p-3 rounded-xl bg-white/5 hover:bg-blue-500/20 disabled:opacity-10 transition-all text-gray-500">
-                                    <ArrowRight size={14} />
-                                </button>
-                            </div>
+                            <Pagination 
+                                currentPage={currentPage} 
+                                lastPage={pagination.last_page} 
+                                onPageChange={(p) => {
+                                    setCurrentPage(p);
+                                    // Плавный скролл к началу контента при смене страницы
+                                    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                                }} 
+                            />
                         )}
                     </>
                 )}

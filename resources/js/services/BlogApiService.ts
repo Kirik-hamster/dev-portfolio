@@ -28,8 +28,10 @@ export const BlogApiService = {
     },
 
     async fetchMyBlogs(page: number = 1): Promise<BlogPagination> {
-        const res = await fetch(`${BLOG_URL}?my_only=1&page=${page}`, { credentials: 'include' });
-        return res.json(); // Теперь возвращает объект с .data и .last_page
+        const res = await fetch(`${BLOG_URL}?my_only=1&page=${page}`, { 
+            credentials: 'include' 
+        });
+        return res.json();
     },
 
     async save(data: BlogInput, id?: number): Promise<Response> {
