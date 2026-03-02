@@ -7,19 +7,55 @@ use App\Models\CommentLike;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller {
-    // 1. Получить список (с сортировкой по лайкам)
-    public function index(Article $article) {
-        return $article->comments()
+    // Получить список комментариев
+    public function index(Request $request, Article $article) {
+        $query = $article->comments()
             ->whereNull('parent_id')
             ->with([
                 'user:id,name,role', 
                 'replies.user:id,name,role',
                 'replies.replies.user:id,name,role' 
             ])
-            ->withCount('likes') // Laravel сам добавит поле likes_count
-            ->orderBy('likes_count', 'desc') // Самые залайканные сверху
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->withCount(['likes', 'replies']);
+
+        switch ($request->query('sort')) {
+            case 'popular':
+                $query->orderByDesc('likes_count');
+                break;
+            case 'discussed':
+                $query->orderByDesc('replies_count');
+                break;
+            case 'new':
+            default:
+                $query->latest();
+                break;
+        }
+
+        return $query->paginate(15);
+    }
+
+    public function replies(Request $request, Comment $comment)
+    {
+        // Начинаем запрос к ответам этого комментария
+        $query = $comment->replies()
+            ->with(['user:id,name,role'])
+            ->withCount(['likes', 'replies']); // Важно для счетчиков на фронте
+
+        // Применяем фильтр
+        switch ($request->query('sort')) {
+            case 'popular':
+                $query->orderByDesc('likes_count')->orderByDesc('created_at');
+                break;
+            case 'discussed':
+                $query->orderByDesc('replies_count')->orderByDesc('created_at');
+                break;
+            case 'new':
+            default:
+                $query->latest();
+                break;
+        }
+
+        return $query->paginate(10); // Порции по 10 штук
     }
 
     // 2. Оставить комментарий

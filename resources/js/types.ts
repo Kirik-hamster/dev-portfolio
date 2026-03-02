@@ -16,6 +16,7 @@ export interface Comment {
     is_edited: boolean;
     edited_at: string | null;
     likes_count: number;
+    replies_count: number;
     created_at: string;
     user?: User;
     replies?: Comment[];
@@ -56,6 +57,7 @@ export interface Article {
     tech_stack?: string;
     github_url?: string;
     comments?: Comment[];
+    comments_count?: number;
 }
 
 // Данные для создания/редактирования статьи

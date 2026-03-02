@@ -15,6 +15,12 @@ Route::get('/blogs', [BlogController::class, 'index']); // Список всех
 Route::get('/blogs/{blog}', [BlogController::class, 'show']);
 Route::get('/blogs/{blog}/articles', [ArticleController::class, 'index']); // Все статьи конкретного блога
 Route::get('/articles/{article}', [ArticleController::class, 'show']); // Деталка статьи
+
+// Публичный роут для получения комментариев
+Route::get('/articles/{article}/comments', [CommentController::class, 'index']);
+// Публичный роут для получения веток ответов
+Route::get('/comments/{comment}/replies', [CommentController::class, 'replies']);
+
 // Публичная лента всех блогов сообщества
 Route::get('/community-articles', [ArticleController::class, 'community']);
 Route::get('/portfolio', [ArticleController::class, 'portfolio']);

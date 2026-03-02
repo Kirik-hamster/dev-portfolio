@@ -62,5 +62,19 @@ export const CommentApiService = {
         });
         if (!response.ok) throw new Error('Ошибка загрузки истории');
         return response.json(); // Возвращает LengthAwarePaginator из Laravel
+    },
+
+    async fetchComments(articleId: number, sort = 'new', page = 1) {
+        const response = await fetch(`/api/articles/${articleId}/comments?sort=${sort}&page=${page}`, {
+            headers: getHeaders(),
+        });
+        return response.json();
+    },
+
+    async fetchReplies(commentId: number, page = 1, sort = 'new') {
+        const response = await fetch(`/api/comments/${commentId}/replies?page=${page}&sort=${sort}`, {
+            headers: getHeaders(),
+        });
+        return response.json();
     }
 };

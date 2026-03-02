@@ -80,7 +80,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-600/20 rounded-full text-[10px] font-black uppercase text-blue-400 hover:bg-blue-600 hover:text-white transition-all shadow-[0_0_20px_rgba(37,99,235,0.1)]"
                 >
                     <MessageSquare size={12} />
-                    {getTotalCommentsCount(article.comments || [])} Комментариев
+                    {article.comments_count || 0} Комментариев
                 </button>
                 <div className="h-px flex-1 bg-white/5"></div>
             </div>

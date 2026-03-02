@@ -91,12 +91,4 @@ export const ArticleApiService = {
             body: JSON.stringify({ content })
         });
     },
-
-    async toggleLike(commentId: number) {
-        return fetch(`/api/comments/${commentId}/toggle-like`, {
-            method: 'POST',
-            headers: getHeaders(),
-            credentials: 'include'
-        });
-    }
 };

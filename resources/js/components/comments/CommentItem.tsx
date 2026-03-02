@@ -11,6 +11,8 @@ interface ItemProps {
     comment: Comment;
     user: User | null;
     depth: number;
+    sort: string;
+    onAuthRequired: () => void;
     targetCommentId?: number | null | undefined;
     onAction: () => void;
     handleLike: (id: number) => void;
@@ -23,11 +25,15 @@ const hasTargetChild = (comment: Comment, targetId: number): boolean => {
 };
 
 export const CommentItem: React.FC<ItemProps> = ({ 
-    comment, user, depth, onAction, handleLike, targetCommentId
+    comment, user, depth, onAction, handleLike, targetCommentId, sort, onAuthRequired
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
+    const [replies, setReplies] = useState<Comment[]>([]);
+    const [replyPage, setReplyPage] = useState(1);
+    const [hasMoreReplies, setHasMoreReplies] = useState(false);
+    const [repliesLoading, setRepliesLoading] = useState(false);
     const [showReplies, setShowReplies] = useState(false);
     const [editText, setEditText] = useState(comment.content);
     const [replyText, setReplyText] = useState('');
@@ -35,6 +41,44 @@ export const CommentItem: React.FC<ItemProps> = ({
     const commentRef = useRef<HTMLDivElement>(null);
 
     const isTarget = targetCommentId === comment.id;
+
+    const loadReplies = async (isInitial = false) => {
+        setRepliesLoading(true);
+        const targetPage = isInitial ? 1 : replyPage;
+        const res = await CommentApiService.fetchReplies(comment.id, targetPage, sort);
+        
+        setReplies(prev => isInitial ? res.data : [...prev, ...res.data]);
+        setHasMoreReplies(res.current_page < res.last_page);
+        setReplyPage(res.current_page + 1);
+        setRepliesLoading(false);
+        setShowReplies(true);
+    };
+
+    const handleReplyLike = async (id: number) => {
+        if (!user) return onAuthRequired();
+
+        try {
+            const data = await CommentApiService.toggleLike(id);
+            
+            // Обновляем только локальный стейт ответов этого компонента
+            setReplies(prev => {
+                const updateRecursive = (list: Comment[]): Comment[] => {
+                    return list.map(c => {
+                        if (c.id === id) {
+                            return { ...c, likes_count: data.likes_count };
+                        }
+                        if (c.replies && c.replies.length > 0) {
+                            return { ...c, replies: updateRecursive(c.replies) };
+                        }
+                        return c;
+                    });
+                };
+                return updateRecursive(prev);
+            });
+        } catch (err) {
+            console.error("Ошибка лайка ответа:", err);
+        }
+    };
 
     // Логика автораскрытия (если цель внутри)
     useEffect(() => {
@@ -71,12 +115,20 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     const handleReply = async () => {
         if (!replyText.trim()) return;
-        const res = await CommentApiService.add(comment.article_id, replyText, comment.id);
-        if (res.ok) { 
-            setReplyText(''); 
-            setIsReplying(false); 
-            setShowReplies(true);
-            onAction(); 
+        
+        try {
+            const res = await CommentApiService.add(comment.article_id, replyText, comment.id);
+            if (res.ok) {
+                const newReply = await res.json();
+                
+                setReplyText(''); 
+                setIsReplying(false); 
+                setShowReplies(true);
+                
+                setReplies(prev => [newReply, ...prev]);
+            }
+        } catch (e) {
+            console.error("Ошибка ответа:", e);
         }
     };
 
@@ -118,10 +170,20 @@ export const CommentItem: React.FC<ItemProps> = ({
                                 {isAdminAuthor && <span className="text-[7px] px-1.5 py-0.5 border border-blue-500/20 text-blue-500/50 rounded font-black uppercase tracking-widest">Admin</span>}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[9px] text-gray-700 font-medium uppercase">{new Date(comment.created_at).toLocaleDateString()}</span>
-                                {comment.is_edited ? (
-                                    <span className="text-[8px] text-blue-500/30 font-black italic uppercase tracking-tighter">(изменено)</span>
-                                ) : null}
+                                {/* Дата публикации */}
+                                <span className="text-[9px] text-gray-700 font-medium uppercase">
+                                    {new Date(comment.created_at).toLocaleDateString()}
+                                </span>
+
+                                {/* Проверка: показываем только если редактирование РЕАЛЬНО было */}
+                                {!!comment.is_edited && (
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-gray-800 text-[8px]">•</span> 
+                                        <span className="text-[8px] text-blue-500/40 font-black italic uppercase tracking-tighter">
+                                            отредактировано
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -192,26 +254,63 @@ export const CommentItem: React.FC<ItemProps> = ({
                 </div>
             )}
 
-            {/* ВЛОЖЕННОСТЬ: Свернуто по умолчанию (showReplies=false выше) */}
-            {comment.replies && comment.replies.length > 0 && (
+            {/* --- БЛОК ВЛОЖЕННОСТИ --- */}
+            {(comment.replies_count > 0 || replies.length > 0) && (
                 <div className={`mt-4 ${depth < 5 ? 'ml-5 border-l border-white/10 pl-5' : 'ml-0 pl-0'}`}>
-                    <button onClick={() => setShowReplies(!showReplies)} className="mb-4 flex items-center gap-2 text-[8px] font-black uppercase text-gray-700 hover:text-blue-500 transition-colors tracking-[0.2em]">
-                        <div className="w-4 h-px bg-current opacity-20" />
-                        {showReplies ? `Скрыть ответы` : `Показать ответы (${comment.replies.length})`}
-                        {showReplies ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                    </button>
+                    
+                    {/* 1. Кнопка "Раскрыть" (если еще не загрузили) */}
+                    {!showReplies ? (
+                        <button 
+                            onClick={() => loadReplies(true)} 
+                            disabled={repliesLoading}
+                            className="mb-4 flex items-center gap-2 text-[8px] font-black uppercase text-gray-700 hover:text-blue-500 transition-colors tracking-[0.2em]"
+                        >
+                            <div className="w-4 h-px bg-current opacity-20" />
+                            {repliesLoading ? 'Загрузка...' : `Показать ответы (${comment.replies_count})`}
+                            <ChevronDown size={10} />
+                        </button>
+                    ) : (
+                        <>
+                            {/* 2. Список загруженных ответов из ЛОКАЛЬНОГО стейта */}
+                            <div className="space-y-4">
+                                {replies.map(reply => (
+                                    <CommentItem 
+                                        key={reply.id} 
+                                        comment={reply} 
+                                        sort={sort}
+                                        onAuthRequired={onAuthRequired}
+                                        user={user} 
+                                        depth={depth + 1}
+                                        targetCommentId={targetCommentId} 
+                                        onAction={onAction} 
+                                        handleLike={handleReplyLike} 
+                                    />
+                                ))}
+                            </div>
 
-                    {showReplies && comment.replies.map(reply => (
-                        <CommentItem 
-                            key={reply.id} 
-                            comment={reply} 
-                            user={user} 
-                            depth={depth + 1}
-                            targetCommentId={targetCommentId} 
-                            onAction={onAction} 
-                            handleLike={handleLike} 
-                        />
-                    ))}
+                            {/* 3. Кнопка "СМОТРЕТЬ ЕЩЕ ОТВЕТЫ" (если есть другие страницы) */}
+                            {hasMoreReplies && (
+                                <button 
+                                    onClick={() => loadReplies()} 
+                                    disabled={repliesLoading}
+                                    className="mt-6 ml-4 text-[8px] font-black uppercase text-blue-500/40 hover:text-blue-500 transition-all flex items-center gap-2"
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                                    {repliesLoading ? 'Загружаем...' : 'Еще ответы'}
+                                </button>
+                            )}
+
+                            {/* Кнопка "Свернуть все" */}
+                            <button 
+                                onClick={() => setShowReplies(false)}
+                                className="mt-6 flex items-center gap-2 text-[8px] font-black uppercase text-gray-800 hover:text-red-500/60 transition-colors tracking-[0.2em]"
+                            >
+                                <div className="w-4 h-px bg-current opacity-20" />
+                                Свернуть ответы
+                                <ChevronUp size={10} />
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
         </div>
