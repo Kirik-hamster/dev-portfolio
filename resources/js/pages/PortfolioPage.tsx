@@ -4,6 +4,8 @@ import { useArticles } from '../hooks/useArticles';
 import { Article, User } from '../types';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { ConfirmModal } from '@/components/ui/ConfirmModel';
+import { Pagination } from '../components/ui/Pagination';
+import { ScrollToTop } from '../components/ui/ScrollToTop';
 
 interface PortfolioPageProps {
     user: User | null; 
@@ -36,6 +38,7 @@ export function PortfolioPage({ user, blogId, onArticleSelect, onEditArticle, on
 
     return (
         <div className="max-w-6xl mx-auto px-6 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <ScrollToTop />
             {/* ПАНЕЛЬ УПРАВЛЕНИЯ */}
             <div className="flex justify-between items-center gap-4 mb-12">
                 <div className="flex-1 max-w-md relative group">
@@ -85,25 +88,15 @@ export function PortfolioPage({ user, blogId, onArticleSelect, onEditArticle, on
                     </div>
 
                     {/* ПАГИНАЦИЯ ПОРТФОЛИО */}
-                    {pagination && pagination.last_page > 1 && (
-                        <div className="flex justify-center gap-2 mt-20">
-                            {[...Array(pagination.last_page)].map((_, i) => (
-                                <button 
-                                    key={i} 
-                                    onClick={() => {
-                                        setCurrentPage(i + 1);
-                                        window.scrollTo({ top: 0, behavior: 'smooth' }); // Плавный скролл вверх
-                                    }}
-                                    className={`w-10 h-10 rounded-2xl font-black text-[11px] transition-all border ${
-                                        currentPage === i + 1 
-                                            ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]' 
-                                            : 'bg-white/5 border-white/5 text-gray-500 hover:text-white'
-                                    }`}
-                                >
-                                    {String(i + 1).padStart(2, '0')}
-                                </button>
-                            ))}
-                        </div>
+                    {pagination && (
+                        <Pagination 
+                            currentPage={currentPage} 
+                            lastPage={pagination.last_page} 
+                            onPageChange={(p) => {
+                                setCurrentPage(p);
+                                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                            }} 
+                        />
                     )}
                 </>
             )}

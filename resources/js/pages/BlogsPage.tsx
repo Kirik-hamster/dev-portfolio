@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { BlogApiService } from '../services/BlogApiService';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { TagApiService } from '../services/TagApiService';
+import { ScrollToTop } from '../components/ui/ScrollToTop';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -120,6 +121,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
     return (
         <div className="pb-20 animate-in fade-in duration-700">
+            <ScrollToTop />
             {/* ТЕГ-КАПСУЛА */}
             <div className="sticky top-24 z-40 mb-16 px-6">
                 <div className="max-w-2xl mx-auto bg-black/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 px-8 flex items-center justify-between shadow-2xl transition-all duration-500">

@@ -9,6 +9,7 @@ import { UserBlogsList } from '../components/profile/UserBlogsList';
 import { ProfileInfo } from '../components/profile/ProfileInfo';
 import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { UserCommentsList } from '../components/profile/UserCommentsList';
+import { ScrollToTop } from '../components/ui/ScrollToTop';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -206,6 +207,7 @@ export function ProfilePage({
 
     return (
         <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row gap-10 lg:gap-16 pt-10 px-6 md:px-12 pb-20">
+            <ScrollToTop />
             {/* САЙДБАР */}
             <aside className="w-full md:w-72 flex-shrink-0 space-y-12">
                 <div className="flex flex-col items-start px-6">

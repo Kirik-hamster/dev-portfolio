@@ -5,6 +5,7 @@ import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/comments/CommentSection';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { PremiumLoader } from '../components/PremiumLoader';
+import { ScrollToTop } from '../components/ui/ScrollToTop';
 
 
 interface ArticleDetailPageProps {
@@ -68,6 +69,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
 
     return (
         <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <ScrollToTop />
             <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-white mb-12 transition-colors group">
                 <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Back to entries
             </button>
