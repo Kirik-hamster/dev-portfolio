@@ -82,13 +82,16 @@ export const Header: React.FC<HeaderProps> = ({ user, navigate, onLogout }) => {
 
                 {/* МОБИЛЬНОЕ МЕНЮ (Выпадает вниз внутри того же хэдера) */}
                 {isMenuOpen && (
-                    <div className="md:hidden pb-10 flex flex-col gap-8 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="md:hidden px-4 pt-3 pb-10 flex flex-col gap-8 animate-in fade-in slide-in-from-top-2 duration-300"> 
+                        {/* Добавлен px-4 для выравнивания с логотипом */}
+                        
                         <button onClick={() => handleNavigate('/portfolio')} 
-                            className={`text-sm font-bold uppercase text-left ${location.pathname === '/portfolio' ? 'text-blue-500' : 'text-gray-400'}`}>
+                            className={`text-sm font-bold uppercase text-left transition-colors ${location.pathname === '/portfolio' ? 'text-blue-500' : 'text-gray-400 hover:text-white'}`}>
                             Портфолио
                         </button>
+                        
                         <button onClick={() => handleNavigate('/blogs')} 
-                            className={`text-sm font-bold uppercase text-left ${location.pathname.startsWith('/blogs') ? 'text-blue-500' : 'text-gray-400'}`}>
+                            className={`text-sm font-bold uppercase text-left transition-colors ${location.pathname.startsWith('/blogs') ? 'text-blue-500' : 'text-gray-400 hover:text-white'}`}>
                             Блоги
                         </button>
 
@@ -96,10 +99,16 @@ export const Header: React.FC<HeaderProps> = ({ user, navigate, onLogout }) => {
                             {user ? (
                                 <div className="flex flex-col gap-6">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm font-black uppercase text-white">{user.name}</span>
+                                        {/* Теперь имя — это кнопка перехода в профиль */}
+                                        <button onClick={() => handleNavigate('/profile')} className="flex flex-col items-start group">
+                                            <span className={`text-sm font-black uppercase transition-colors ${location.pathname.startsWith('/profile') ? 'text-blue-500' : 'text-white group-hover:text-blue-400'}`}>
+                                                {user.name}
+                                            </span>
+                                            <span className="text-[8px] text-gray-600 font-bold uppercase tracking-wider">Перейти в кабинет</span>
+                                        </button>
                                         <span className="text-[10px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md text-blue-500 font-black tracking-wider uppercase">{user.role}</span>
                                     </div>
-                                    <button onClick={onLogout} className="text-sm font-bold uppercase text-red-500/80 text-left">Выход</button>
+                                    <button onClick={onLogout} className="text-sm font-bold uppercase text-red-500/80 text-left hover:text-red-500 transition-colors">Выход</button>
                                 </div>
                             ) : (
                                 <button onClick={() => handleNavigate('/login')} className="w-full py-4 border border-white/10 rounded-2xl text-sm font-bold uppercase text-center active:bg-white active:text-black transition-all">Вход</button>
