@@ -13,7 +13,7 @@ class TagController extends Controller
     public function top()
     {
         return Tag::orderByDesc('usage_count')
-            ->limit(5)
+            ->limit(15)
             ->pluck('name');
     }
 }
