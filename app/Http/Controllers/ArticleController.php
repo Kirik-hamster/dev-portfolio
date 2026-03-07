@@ -23,16 +23,30 @@ class ArticleController extends Controller
 
     public function index(Request $request, Blog $blog)
     {
-        $search = $request->query('search');
-
-        // Берем статьи ТОЛЬКО этой конкретной папки ($blog)
-        return $blog->articles()
-            ->when($search, function($query) use ($search) {
-                $query->where('title', 'like', "%{$search}%");
-            })
+        // Добавляем подсчет лайков, избранного и комментариев
+        $query = $blog->articles()
             ->with(['blog', 'user'])
-            ->latest()
-            ->paginate(12);
+            ->withCount(['likes', 'favorites', 'comments']); 
+
+        // ПОИСК
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where('title', 'like', "%{$search}%");
+        }
+
+        // ТОЛЬКО ИЗБРАННОЕ (внутри этого блога)
+        if ($request->boolean('favorites_only') && auth()->check()) {
+            $query->whereHas('favorites', fn($q) => $q->where('user_id', auth()->id()));
+        }
+
+        // СОРТИРОВКА
+        if ($request->get('sort') === 'popular') {
+            $query->orderByDesc('likes_count');
+        } else {
+            $query->latest();
+        }
+
+        return $query->paginate(12);
     }
 
     public function portfolio()
@@ -121,22 +135,53 @@ class ArticleController extends Controller
         return $updatedArticle;
     }
 
-    public function community(Request $request) // Добавили Request
-    {
-        $query = Article::whereHas('blog', function($query) {
-            $query->where('is_portfolio', false);
-        });
+    public function toggleLike(Article $article) {
+        $article->likes()->toggle(auth()->id());
+        return response()->json(['is_liked' => $article->is_liked, 'likes_count' => $article->likes()->count()]);
+    }
 
-        // ФИЛЬТР: Ищем статьи по тегу через article_tag
-        if ($request->filled('tag')) {
-            $query->whereHas('tags', function($q) use ($request) {
-                $q->where('name', $request->tag);
+    public function toggleFavorite(Article $article) {
+        $article->favorites()->toggle(auth()->id());
+        return response()->json(['is_favorited' => $article->is_favorited]);
+    }
+
+    public function community(Request $request) 
+    {
+        $query = Article::whereHas('blog', fn($q) => $q->where('is_portfolio', false))
+            ->withCount(['likes', 'favorites', 'comments']);
+
+        // ПОИСК
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $type = $request->get('search_type', 'title');
+
+            $query->where(function($q) use ($search, $type) {
+                if ($type === 'author') {
+                    $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                } else {
+                    $q->where('title', 'like', "%{$search}%");
+                }
             });
         }
 
-        return $query->with(['blog', 'user'])
-            ->latest()
-            ->paginate(12);
+        // ТЕГИ
+        if ($request->filled('tag')) {
+            $tag = mb_strtolower($request->tag);
+            $query->whereHas('tags', function($q) use ($tag) {
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$tag}%"]);
+            });
+        }
+
+        // ТОЛЬКО ИЗБРАННОЕ
+        if ($request->boolean('favorites_only') && auth()->check()) {
+            $query->whereHas('favorites', fn($q) => $q->where('user_id', auth()->id()));
+        }
+
+        $sort = $request->get('sort', 'latest');
+        if ($sort === 'popular') $query->orderByDesc('likes_count');
+        else $query->latest();
+
+        return $query->with(['blog', 'user'])->paginate(12);
     }
 
     // Используем наш новый Form Request для валидации

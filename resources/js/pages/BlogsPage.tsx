@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Article, Blog, BlogPagination } from '../types';
-import { LayoutGrid, List, Tag, Folder, X, User as UserIcon, ShieldCheck, ArrowRight, FileText, Search } from 'lucide-react';
+import { LayoutGrid, List, Tag, Folder, X, User as UserIcon, ShieldCheck, ArrowRight, FileText, 
+    Search, Heart, Star } from 'lucide-react';
 import { Pagination } from '../components/ui/Pagination';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +9,9 @@ import { BlogApiService } from '../services/BlogApiService';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { TagApiService } from '../services/TagApiService';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
+import { FilterBar } from '../components/ui/FilterBar';
+import { StatusModal } from '../components/ui/StatusModal';
+import { TagsModal } from '../components/ui/blogPage/TagsModal';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -44,6 +48,23 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
     const [globalTags, setGlobalTags] = useState<string[]>([]);
 
+    const [searchType, setSearchType] = useState<'title' | 'author'>('title');
+    const [sort, setSort] = useState<'latest' | 'popular'>('latest');
+    const [favoritesOnly, setFavoritesOnly] = useState(false);
+
+    const [modal, setModal] = useState({ 
+        isOpen: false, 
+        type: 'error' as 'success' | 'error', 
+        title: '', 
+        message: '' 
+    });
+
+    const [tagsModal, setTagsModal] = useState<{ isOpen: boolean; tags: string[]; title: string }>({
+        isOpen: false,
+        tags: [],
+        title: ''
+    });
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -68,16 +89,33 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         setLoading(true);
         try {
             let data;
-            if (viewMode === 'blogs') {
-                data = await BlogApiService.fetchAll(currentPage, selectedTag);
-            } else if (selectedBlogId) {
-                data = await ArticleApiService.fetchByBlog(selectedBlogId, '', currentPage);
-            } else {
-               data = await ArticleApiService.fetchCommunity(currentPage, selectedTag || '');
+            const params = {
+                page: currentPage, 
+                tag: selectedTag || '',
+                search: searchQuery,
+                search_type: searchType,
+                sort: sort,
+                favorites_only: favoritesOnly
+            };
+
+            // 1. САМЫЙ ВЫСОКИЙ ПРИОРИТЕТ: Если в URL есть ID блога
+            // Мы игнорируем viewMode. Если мы в блоге, нам нужны ТОЛЬКО посты этого автора.
+            if (initialBlogId) {
+                data = await ArticleApiService.fetchByBlog(Number(initialBlogId), params);
+            } 
+            // 2. Если мы на общем URL (/blogs) и выбран режим "Папки"
+            else if (viewMode === 'blogs') {
+                data = await BlogApiService.fetchAll(params);
+            } 
+            // 3. Если мы на общем URL (/blogs) и выбран режим "Публикации" (Community)
+            else {
+                data = await ArticleApiService.fetchCommunity(params);
             }
+            
             setPagination(data);
         } catch (err) {
             console.error("Fetch error:", err);
+            setPagination({ data: [], current_page: 1, last_page: 1, total: 0, per_page: 9 });
         } finally {
             setLoading(false);
         }
@@ -85,38 +123,75 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
     useEffect(() => {
         loadContent();
-    }, [currentPage, selectedTag, viewMode, selectedBlogId]);
-
+    }, [currentPage, selectedTag, viewMode, selectedBlogId, searchType, sort, favoritesOnly, searchQuery, initialBlogId]);
+        
     useEffect(() => {
-        setPagination(null); 
-        setCurrentPage(1);
-        setActiveBlog(null); // Сбрасываем старую шапку при переходе
-
-        if (initialBlogId) {
+        if (!initialBlogId) {
+            setSelectedBlogId(null);
+            setActiveBlog(null);
+        } else {
             const bId = Number(initialBlogId);
             setSelectedBlogId(bId);
             setViewMode('posts');
-            
+            // --- НОВОЕ: Очищаем фильтры при входе в конкретный блог ---
+            setSearchQuery('');      // Сбрасываем поиск
+            setSelectedTag(null);    // Сбрасываем тег
+            setSort('latest');       // Возвращаем сортировку по умолчанию
+            setFavoritesOnly(false); // Выключаем "Избранное"
+            setCurrentPage(1);       // Всегда на первую страницу
+            // ---------------------------------------------------------
 
             BlogApiService.fetchOne(bId)
                 .then(data => setActiveBlog(data))
-                .catch(err => console.error("Ошибка загрузки шапки:", err));
-        } else {
-            setSelectedBlogId(null);
-            setViewMode('blogs');
+                .catch(() => {
+                    setModal({
+                        isOpen: true,
+                        type: 'error',
+                        title: 'Блог не найден',
+                        message: `ID ${bId} не существует.`
+                    });
+                    navigate('/blogs');
+                });
         }
     }, [initialBlogId]);
 
-    const getTopTagsForBlog = (blogId: number) => {
-        const blogArticles = articles.filter(a => Number(a.blog_id) === blogId);
-        const counts: Record<string, number> = {};
-        blogArticles.forEach(a => {
-            a.tech_stack?.split(',').forEach(t => {
-                const tag = t.trim();
-                if (tag) counts[tag] = (counts[tag] || 0) + 1;
-            });
-        });
-        return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
+    const handleToggleLike = async (id: number, type: 'blog' | 'article') => {
+        if (!user) return alert("Войдите, чтобы ставить лайки!"); // Твой AuthRequiredModal тут идеально подойдет
+        
+        const service = type === 'blog' ? BlogApiService : ArticleApiService;
+        const res = await service.toggleLike(id);
+        
+        if (res.ok) {
+            const result = await res.json();
+            // Обновляем данные в текущей пагинации без перезагрузки всей страницы
+            setPagination(prev => prev ? {
+                ...prev,
+                data: prev.data.map((item: any) => 
+                    item.id === id ? { ...item, is_liked: result.is_liked, likes_count: result.likes_count } : item
+                )
+            } : null);
+            if (type === 'blog' && activeBlog?.id === id) {
+                setActiveBlog(prev => prev ? { ...prev, is_liked: result.is_liked, likes_count: result.likes_count } : null);
+            }
+        }
+    };
+
+    const handleToggleFavorite = async (id: number, type: 'blog' | 'article') => {
+        if (!user) return;
+        const service = type === 'blog' ? BlogApiService : ArticleApiService;
+        const res = await service.toggleFavorite(id);
+        if (res.ok) {
+            const result = await res.json();
+            setPagination(prev => prev ? {
+                ...prev,
+                data: prev.data.map((item: any) => 
+                    item.id === id ? { ...item, is_favorited: result.is_favorited } : item
+                )
+            } : null);
+            if (type === 'blog' && activeBlog?.id === id) {
+                setActiveBlog(prev => prev ? { ...prev, is_favorited: result.is_favorited } : null);
+            }
+        }
     };
 
     return (
@@ -131,13 +206,13 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                             <div className="flex items-center gap-4 overflow-hidden">
                                 {isSearchMode ? (
                                     <input 
-                                        autoFocus type="text" placeholder="Поиск тега..." value={searchQuery}
+                                        autoFocus 
+                                        type="text" 
+                                        placeholder="Введите название тега..." 
+                                        value={selectedTag || ''} // Привязываем к тегу
                                         onChange={(e) => { 
                                             const val = e.target.value;
-                                            setSearchQuery(val); 
-                                            setSelectedTag(val || null); 
-                                            
-                                            // ВАЖНО: При любом изменении фильтра возвращаемся на старт
+                                            setSelectedTag(val || null); // Обновляем только тег
                                             setCurrentPage(1); 
                                         }}
                                         className="bg-transparent border-none outline-none text-[10px] font-bold uppercase text-white w-full placeholder:text-gray-600"
@@ -157,7 +232,15 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                     </>
                                 )}
                             </div>
-                            <button onClick={() => { setIsSearchMode(!isSearchMode); if (isSearchMode) { setSelectedTag(null); setSearchQuery(''); } }} className="text-gray-500 hover:text-blue-500 ml-4 transition-colors">
+                            <button 
+                                onClick={() => { 
+                                    setIsSearchMode(!isSearchMode); 
+                                    if (isSearchMode) { 
+                                        setSelectedTag(null);
+                                    } 
+                                }} 
+                                className="text-gray-500 hover:text-blue-500 ml-4 transition-colors"
+                            >
                                 {isSearchMode ? <X size={14} /> : <Search size={14} />}
                             </button>
                         </div>
@@ -180,62 +263,151 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                     {selectedBlogId && (
                         <button 
                             onClick={() => { 
-                                navigate('/blogs'); }} 
-                                className="text-[10px] font-black uppercase text-gray-500 flex items-center gap-2 border border-white/5 bg-white/[0.02] px-5 py-2.5 rounded-xl hover:text-white transition-all"
-                            >
-                                Назад к блогам
+                                setSelectedBlogId(null);
+                                setActiveBlog(null);
+                                setViewMode('blogs');
+                                setCurrentPage(1);
+                                setPagination(null); 
+                                navigate('/blogs');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }} 
+                            className="text-[10px] font-black uppercase text-gray-500 flex items-center gap-2 border border-white/5 bg-white/[0.02] px-5 py-2.5 rounded-xl hover:text-white transition-all shadow-xl active:scale-95"
+                        >
+                            <ArrowRight size={14} className="rotate-180" /> Назад к блогам
                         </button>
                     )}
                 </div>
+                {!selectedBlogId && (
+                    <FilterBar 
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        searchType={searchType}
+                        setSearchType={setSearchType}
+                        sort={sort}
+                        setSort={setSort}
+                        favoritesOnly={favoritesOnly}
+                        setFavoritesOnly={setFavoritesOnly}
+                    />
+                )}
 
-                {/* ШАПКА ИНФОРМАЦИИ О БЛОГЕ (Замени этот блок полностью) */}
                 {selectedBlogId && viewMode === 'posts' && (
-                    <div className="mb-16 p-12 bg-white/[0.02] border border-white/5 rounded-[60px] relative overflow-hidden backdrop-blur-3xl">
-                        <div className="absolute -right-10 -top-10 opacity-[0.03] transform rotate-12"><Folder size={320} /></div>
+                    <>
+                    <div className="mb-16 p-12 bg-white/[0.02] border border-white/5 rounded-[60px] relative overflow-hidden backdrop-blur-3xl group/header transition-all duration-700 hover:border-white/10">
+                        
+                        {/* ФОНОВАЯ ПАПКА: Дорогой декор */}
+                        <div className="absolute -right-20 -bottom-20 opacity-[0.03] text-white rotate-12 pointer-events-none transition-all duration-1000 group-hover/header:scale-110 group-hover/header:rotate-[20deg] group-hover/header:opacity-[0.05]">
+                            <Folder size={400} strokeWidth={1} />
+                        </div>
+
                         <div className="relative z-10">
-                            <div className="mb-12">
-                                <span className="text-[9px] font-black uppercase text-gray-600 block mb-6 tracking-widest">Автор блога</span>
-                                <div className="flex items-center gap-5">
-                                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                        {/* Используем ТОЛЬКО currentBlogInfo для иконки */}
+                            {/* ВЕРХНИЙ РЯД: Автор и Кнопки */}
+                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12">
+                                
+                                {/* БЛОК АВТОРА: Теперь всё четко выровнено влево */}
+                                <div className="flex items-center gap-6">
+                                    <div className="w-20 h-20 rounded-[28px] bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl relative overflow-hidden shrink-0">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-50" />
                                         {activeBlog?.user?.role === 'admin' 
-                                            ? <ShieldCheck size={24} className="text-blue-500" /> 
-                                            : <UserIcon size={24} className="text-gray-500" />
+                                            ? <ShieldCheck size={32} className="text-blue-500 relative z-10" /> 
+                                            : <UserIcon size={32} className="text-gray-500 relative z-10" />
                                         }
                                     </div>
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-[8px] px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded w-fit font-black uppercase">
-                                            {/* Используем ТОЛЬКО currentBlogInfo для роли */}
-                                            {activeBlog?.user?.role || 'member'}
-                                        </span>
-                                        <p className="text-2xl font-black text-white tracking-tighter">
-                                            {/* Теперь имя не исчезнет на 2-й странице пагинации */}
-                                            {activeBlog?.user?.name || 'Загрузка...'}
-                                        </p>
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-4xl font-black text-white tracking-tighter">
+                                                {activeBlog?.user?.name || 'Загрузка...'}
+                                            </h2>
+                                            <span className="text-[10px] px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md font-black uppercase tracking-widest">
+                                                {activeBlog?.user?.role || 'member'}
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.4em]">Автор блога</span>
                                     </div>
+                                </div>
+
+                                {/* КНОПКИ ДЕЙСТВИЯ: Раздельные, без общего фона, с "дорогим" свечением */}
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => handleToggleLike(activeBlog!.id, 'blog')}
+                                        className={`flex items-center gap-3 px-8 py-4 rounded-[24px] border transition-all duration-500 active:scale-95
+                                            ${activeBlog?.is_liked 
+                                                ? 'bg-red-500/10 border-red-500/40 text-red-500 shadow-[0_0_40px_rgba(239,68,68,0.15)]' 
+                                                : 'bg-white/5 border-white/10 text-gray-500 hover:text-white hover:border-white/20'}`}
+                                    >
+                                        <Heart size={20} fill={activeBlog?.is_liked ? "currentColor" : "none"} className={activeBlog?.is_liked ? "animate-pulse" : ""} />
+                                        <span className="text-sm font-black">{activeBlog?.likes_count || 0}</span>
+                                    </button>
+
+                                    <button 
+                                        onClick={() => handleToggleFavorite(activeBlog!.id, 'blog')}
+                                        className={`p-4 rounded-[24px] border transition-all duration-500 active:scale-95
+                                            ${activeBlog?.is_favorited 
+                                                ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.15)]' 
+                                                : 'bg-white/5 border-white/10 text-gray-500 hover:text-white hover:border-white/20'}`}
+                                    >
+                                        <Star size={20} fill={activeBlog?.is_favorited ? "currentColor" : "none"} />
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="max-w-3xl mb-12">
-                                <span className="text-[9px] font-black uppercase text-gray-600 block mb-4 tracking-widest">Описание блога</span>
-                                <p className="text-[13px] text-gray-400/80 leading-7 font-medium border-l border-white/10 pl-6 max-w-2xl whitespace-pre-line italic">
-                                    {/* Описание берем именно из вложенного объекта blog */}
+                            {/* ОПИСАНИЕ: Стильная цитата */}
+                            <div className="max-w-2xl mb-12">
+                                <span className="text-[10px] font-black uppercase text-gray-700 block mb-4 tracking-[0.2em]">Описание / О себе</span>
+                                <p className="text-[15px] text-gray-400/80 leading-relaxed font-medium border-l-2 border-blue-500/20 pl-8 italic">
                                     {activeBlog?.description || "Автор еще не добавил описание..."}
                                 </p>
                             </div>
 
-                            <div className="flex flex-col gap-4 mt-10">
-                                <span className="text-[10px] font-black uppercase text-gray-600 block italic">Теги постов</span>
-                                <div className="flex flex-wrap gap-2.5">
-                                    {activeBlog?.top_tags?.map((tag: string) => (
-                                        <span key={tag} className="px-3 py-1.5 bg-blue-500/5 border border-blue-500/10 text-blue-400/80 text-[8px] font-black uppercase rounded-lg">
-                                            {tag}
-                                        </span>
-                                    ))}
+                            {/* ТЕГИ: Компактный ряд внизу */}
+                            {activeBlog?.top_tags && activeBlog.top_tags.length > 0 && (
+                                <div className="flex flex-col gap-4 mt-10">
+                                    <span className="text-[10px] font-black uppercase text-gray-700 block italic tracking-[0.2em]">Популярные теги автора</span>
+                                    
+                                    <div className="flex items-center justify-between gap-4">
+                                        {/* ИСПОЛЬЗУЕМ MASK-IMAGE ДЛЯ ПЛАВНОГО ИСЧЕЗНОВЕНИЯ СПРАВА */}
+                                        <div className="flex-grow overflow-hidden h-10 flex items-center [mask-image:linear-gradient(to_right,white_80%,transparent_100%)]">
+                                            <div className="flex flex-nowrap gap-2.5 items-center">
+                                                {activeBlog.top_tags.map((tag: string) => (
+                                                    <span 
+                                                        key={tag} 
+                                                        className="px-4 py-2 bg-white/[0.03] border border-white/5 text-gray-500 text-[9px] font-black uppercase rounded-xl tracking-widest hover:text-blue-400 hover:border-blue-400/30 transition-all cursor-default whitespace-nowrap shrink-0"
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {activeBlog.top_tags.length > 4 && (
+                                            <button 
+                                                onClick={() => setTagsModal({ 
+                                                    isOpen: true, 
+                                                    tags: activeBlog.top_tags || [], 
+                                                    title: `Все теги: ${activeBlog.user?.name}` 
+                                                })}
+                                                className="flex items-center justify-center px-4 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-black shrink-0 active:scale-90 shadow-lg shadow-blue-500/5 z-30"
+                                            >
+                                                Все Теги
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
+                    <div className="mb-12">
+                        <FilterBar 
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            searchType={searchType}
+                            setSearchType={setSearchType}
+                            sort={sort}
+                            setSort={setSort}
+                            favoritesOnly={favoritesOnly}
+                            setFavoritesOnly={setFavoritesOnly}
+                        />
+                    </div>
+                    </>
                 )}
 
                 {loading ? 
@@ -244,89 +416,199 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {/* РЕЖИМ БЛОГОВ */}
-                            {viewMode === 'blogs' && pagination?.data.map((blog: BlogWithUser) => {
-                                const tags = getTopTagsForBlog(blog.id);
-                                return (
-                                    <div 
-                                        key={blog.id} 
-                                        onClick={() => 
-                                            navigate(`/blogs/${blog.id}`)
-                                        } 
-                                        className="group p-8 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-blue-500/30 transition-all cursor-pointer h-80 flex flex-col relative overflow-hidden"
-                                    >
-                                        <div className="p-4 bg-white/5 w-14 h-14 rounded-2xl mb-6 text-gray-400 group-hover:text-blue-500 transition-colors"><Folder size={24}/></div>
-                                        <h3 className="text-xl font-bold mb-4">{blog.title}</h3>
-                                        <p className="text-[11px] text-gray-500 line-clamp-2 mb-4 italic">{blog.description || "Нет описания..."}</p>
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            {blog.top_tags?.map((t: string) => (
-                                                <span key={t} className="text-[7px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded uppercase font-bold">
-                                                    {t}
-                                                </span>
-                                            ))}
+                            {viewMode === 'blogs' && pagination?.data.map((blog: BlogWithUser) => (
+                                <div 
+                                    key={blog.id} 
+                                    onClick={() => navigate(`/blogs/${blog.id}`)} 
+                                    className="group p-8 bg-white/[0.02] border border-white/5 rounded-[45px] hover:border-blue-500/30 transition-all duration-500 cursor-pointer h-80 flex flex-col relative overflow-hidden backdrop-blur-sm"
+                                >
+                                    {/* 1. ВЕРХНЯЯ ПАНЕЛЬ: АВТОР И КНОПКИ */}
+                                    <div className="flex justify-between items-start mb-8 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                                                {blog.user?.role === 'admin' 
+                                                    ? <ShieldCheck size={18} className="text-blue-500" /> 
+                                                    : <UserIcon size={18} className="text-gray-500" />
+                                                }
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <p className="text-[11px] font-black uppercase text-white/90 leading-tight">
+                                                    {blog.user?.name || 'User'}
+                                                </p>
+                                                <p className="text-[8px] font-black uppercase tracking-[0.1em] text-gray-500/80">
+                                                    {blog.user?.role || 'member'}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="absolute -right-6 -bottom-6 opacity-[0.03] transform rotate-12"><Folder size={160} /></div>
-                                        
-                                        <div className="mt-auto flex items-center gap-3 pt-4 border-t border-white/5">
-                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                                                {blog.user?.role === 'admin' ? <ShieldCheck size={14} className="text-blue-500" /> : <UserIcon size={14} className="text-gray-500" />}
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-white/90">{blog.user?.name || 'User'}</p>
-                                                <p className="text-[7px] font-black uppercase tracking-widest text-gray-500">{blog.user?.role || 'member'}</p>
-                                            </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleToggleLike(blog.id, 'blog'); }}
+                                                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all active:scale-90
+                                                    ${blog.is_liked 
+                                                        ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+                                                        : 'bg-white/5 border-white/5 text-gray-500 hover:text-red-400'}`}
+                                            >
+                                                <Heart size={14} fill={blog.is_liked ? "currentColor" : "none"} />
+                                                <span className="text-[10px] font-black">{blog.likes_count || 0}</span>
+                                            </button>
+                                            
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleToggleFavorite(blog.id, 'blog'); }}
+                                                className={`p-2 rounded-xl border transition-all active:scale-90
+                                                    ${blog.is_favorited 
+                                                        ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' 
+                                                        : 'bg-white/5 border-white/5 text-gray-500 hover:text-yellow-400'}`}
+                                            >
+                                                <Star size={14} fill={blog.is_favorited ? "currentColor" : "none"} />
+                                            </button>
                                         </div>
                                     </div>
-                                );
-                            })}
+
+                                    {/* 2. КОНТЕНТ: ЗАГОЛОВОК И ОПИСАНИЕ */}
+                                    <div className="relative z-10">
+                                        <h3 className="text-2xl font-black mb-3 tracking-tighter group-hover:text-blue-400 transition-colors line-clamp-1">
+                                            {blog.title}
+                                        </h3>
+                                        <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed italic font-medium">
+                                            {blog.description || "Автор еще не добавил описание..."}
+                                        </p>
+                                    </div>
+
+                                    {/* 3. НИЖНЯЯ ПАНЕЛЬ: ТЕГИ (Умное скрытие и просмотр всех) */}
+                                    <div className="mt-auto pt-6 border-t border-white/5 relative z-10 flex items-center justify-between gap-4">
+                                        <div className="flex flex-wrap gap-2 h-7 overflow-hidden flex-grow">
+                                            {blog.top_tags && blog.top_tags.length > 0 ? (
+                                                blog.top_tags.map((tag: string) => (
+                                                    <span 
+                                                        key={tag} 
+                                                        className="text-[8px] px-2.5 py-1.5 bg-blue-500/5 border border-blue-500/10 text-blue-400/70 rounded-lg uppercase font-black whitespace-nowrap tracking-wider"
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-[8px] text-gray-700 uppercase font-bold tracking-widest text-white/20">Нет тегов</span>
+                                            )}
+                                        </div>
+
+                                        {/* Кнопка "Ещё", если тегов больше 3 (или можно просто сделать кнопку всегда, если нужно) */}
+                                        {blog.top_tags && blog.top_tags.length > 3 && (
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Чтобы не сработал переход в блог
+                                                    setTagsModal({ isOpen: true, tags: blog.top_tags || [], title: `Теги: ${blog.title}` });
+                                                }}
+                                                className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 border border-white/10 text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all text-[10px] font-black shrink-0 active:scale-90"
+                                            >
+                                                +
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* 4. ДЕКОР: БОЛЬШАЯ ПАПКА С АНИМАЦИЕЙ */}
+                                    <div className="absolute -right-12 -bottom-12 opacity-[0.03] transform rotate-12 pointer-events-none transition-all duration-700 ease-out group-hover:scale-125 group-hover:rotate-[20deg] group-hover:opacity-[0.06] text-white">
+                                        <Folder size={280} strokeWidth={1} />
+                                    </div>
+                                </div>
+                            ))}
 
                             {/* РЕЖИМ ПУБЛИКАЦИЙ */}
                             {viewMode === 'posts' && pagination?.data.map((article: any) => (
                                 <div 
                                     key={article.id} 
                                     onClick={() => onArticleSelect(article)} 
-                                    className="group p-8 bg-white/[0.01] border border-white/5 rounded-[40px] hover:border-blue-500/20 transition-all cursor-pointer h-[400px] flex flex-col relative overflow-hidden"
+                                    className="group p-8 bg-white/[0.01] border border-white/5 rounded-[45px] hover:border-blue-500/20 transition-all duration-500 cursor-pointer h-[420px] flex flex-col relative overflow-hidden backdrop-blur-sm"
                                 >
-                                    {/* 1. АВТОР СВЕРХУ */}
-                                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                                            {article.user?.role === 'admin' 
-                                                ? <ShieldCheck size={14} className="text-blue-500"/> 
-                                                : <UserIcon size={14} className="text-gray-400"/>
-                                            }
+                                    {/* 1. ВЕРХНЯЯ ПАНЕЛЬ: АВТОР + КНОПКИ (В ОДНУ ЛИНИЮ) */}
+                                    <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
+                                        {/* Левая часть: Автор */}
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-inner">
+                                                {article.user?.role === 'admin' 
+                                                    ? <ShieldCheck size={18} className="text-blue-500"/> 
+                                                    : <UserIcon size={18} className="text-gray-400"/>
+                                                }
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] font-black uppercase text-white/90 leading-none tracking-tight">
+                                                    {article.user?.name || 'Anonymous'}
+                                                </span>
+                                                <span className="text-[8px] font-bold uppercase text-gray-600 tracking-widest mt-1">
+                                                    {article.user?.role || 'member'}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-black uppercase text-white/90 leading-none">{article.user?.name}</span>
-                                            <span className="text-[7px] font-bold uppercase text-gray-500 tracking-widest">{article.user?.role || 'member'}</span>
-                                        </div>
-                                        <div className="ml-auto opacity-0 group-hover:opacity-100 transition-all">
-                                            <ArrowRight size={18} className="text-blue-500" />
+
+                                        {/* Правая часть: Умные кнопки (без лишних рамок) */}
+                                        <div className="flex items-center gap-3">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleToggleLike(article.id, 'article'); }}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 active:scale-90
+                                                    ${article.is_liked 
+                                                        ? 'bg-red-500/10 border-red-500/20 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]' 
+                                                        : 'bg-white/5 border-white/5 text-gray-500 hover:text-red-400 hover:border-red-400/20'}`}
+                                            >
+                                                <Heart size={14} fill={article.is_liked ? "currentColor" : "none"} />
+                                                <span className="text-[10px] font-black">{article.likes_count || 0}</span>
+                                            </button>
+                                            
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleToggleFavorite(article.id, 'article'); }}
+                                                className={`p-2.5 rounded-xl border transition-all duration-300 active:scale-90
+                                                    ${article.is_favorited 
+                                                        ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.1)]' 
+                                                        : 'bg-white/5 border-white/5 text-gray-500 hover:text-yellow-400 hover:border-yellow-400/20'}`}
+                                            >
+                                                <Star size={14} fill={article.is_favorited ? "currentColor" : "none"} />
+                                            </button>
                                         </div>
                                     </div>
 
                                     {/* 2. КОНТЕНТ */}
-                                    <h3 className="text-2xl font-black mb-4 group-hover:text-blue-400 line-clamp-2">{article.title}</h3>
-                                    <p className="text-xs text-gray-500 line-clamp-3 mb-6 flex-grow">
-                                        {article.content?.replace(/<[^>]*>/g, '').substring(0, 120)}...
-                                    </p>
-
-                                    {/* 3. ТЕГИ СНИЗУ (Все в один ряд с переносом) */}
-                                    <div className="mt-auto pt-4 border-t border-white/5">
-                                        <div className="flex flex-wrap gap-1.5 max-h-12 overflow-hidden relative">
-                                            {/* Парсим tech_stack или берем из объекта, если добавили в API */}
-                                            {article.tech_stack?.split(',').map((t: string, i: number) => (
-                                                <span 
-                                                    key={i} 
-                                                    title={t.trim()} // Всплывающая подсказка при наведении
-                                                    className="text-[7px] px-2 py-1 bg-white/5 rounded-md text-gray-400 uppercase font-black hover:text-blue-400 hover:bg-blue-500/10 transition-all whitespace-nowrap"
-                                                >
-                                                    {t.trim()}
-                                                </span>
-                                            ))}
-                                        </div>
+                                    <div className="relative z-10 flex-grow">
+                                        <h3 className="text-2xl font-black mb-4 group-hover:text-blue-400 transition-colors line-clamp-2 tracking-tighter leading-tight">
+                                            {article.title}
+                                        </h3>
+                                        <p className="text-[13px] text-gray-500 line-clamp-3 leading-relaxed font-medium">
+                                            {article.content?.replace(/<[^>]*>/g, '').substring(0, 140)}...
+                                        </p>
                                     </div>
 
-                                    <div className="absolute -right-6 -bottom-6 opacity-[0.02] transform -rotate-12 pointer-events-none">
-                                        <FileText size={180} />
+                                    {/* 3. ТЕГИ ПОСТА: Однострочный режим с Masking */}
+                                    <div className="mt-auto pt-6 border-t border-white/5 relative z-10 flex items-center justify-between gap-4">
+                                        
+                                        {/* Маскируем контейнер, чтобы теги плавно уходили в прозрачность */}
+                                        <div className="flex-grow overflow-hidden h-8 flex items-center [mask-image:linear-gradient(to_right,white_75%,transparent_100%)]">
+                                            <div className="flex flex-nowrap gap-2 items-center">
+                                                {article.tech_stack?.split(',').map((t: string, i: number) => (
+                                                    <span 
+                                                        key={i} 
+                                                        className="text-[8px] px-2.5 py-1.5 bg-white/[0.03] border border-white/5 rounded-lg text-gray-500 uppercase font-black tracking-widest whitespace-nowrap shrink-0"
+                                                    >
+                                                        {t.trim()}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {article.tech_stack && article.tech_stack.split(',').length > 3 && (
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const postTags = article.tech_stack.split(',').map((t: string) => t.trim());
+                                                    setTagsModal({ isOpen: true, tags: postTags, title: article.title });
+                                                }}
+                                                className="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all text-[12px] font-black shrink-0 active:scale-90 shadow-lg shadow-blue-500/5 z-30"
+                                            >
+                                                +
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* ДЕКОР */}
+                                    <div className="absolute -right-8 -bottom-8 opacity-[0.02] transform -rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                                        <FileText size={200} />
                                     </div>
                                 </div>
                             ))}
@@ -347,6 +629,23 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                     </>
                 )}
             </div>
+            <StatusModal 
+                isOpen={modal.isOpen}
+                type={modal.type}
+                title={modal.title}
+                message={modal.message}
+                onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
+            />
+            <TagsModal 
+                isOpen={tagsModal.isOpen}
+                tags={tagsModal.tags}
+                title={tagsModal.title}
+                onClose={() => setTagsModal(prev => ({ ...prev, isOpen: false }))}
+                onTagClick={(tag) => {
+                    setSelectedTag(tag); // Теперь теги внутри окна тоже работают как фильтры!
+                    setCurrentPage(1);
+                }}
+            />
         </div>
     );
 }

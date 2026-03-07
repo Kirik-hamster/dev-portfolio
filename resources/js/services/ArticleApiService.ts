@@ -17,8 +17,16 @@ const getHeaders = () => ({
 
 export const ArticleApiService = {
      // Получить статьи конкретного блога (папки)
-    async fetchByBlog(blogId: number, query = '', page = 1): Promise<any> {
-        const response = await fetch(`/api/blogs/${blogId}/articles?search=${query}&page=${page}`, {
+    async fetchByBlog(blogId: number, params: any): Promise<any> {
+        const queryParams = new URLSearchParams({
+            page: (params.page || 1).toString(),
+            search: params.search || '',
+            sort: params.sort || 'latest',
+            tag: params.tag || '',
+            favorites_only: params.favorites_only ? '1' : '0'
+        });
+
+        const response = await fetch(`/api/blogs/${blogId}/articles?${queryParams.toString()}`, {
             headers: { 'Accept': 'application/json' },
             credentials: 'include'
         });
@@ -44,12 +52,19 @@ export const ArticleApiService = {
     /**
      * Получить статьи сообщества (лента всех блогов)
      */
-    async fetchCommunity(page = 1, tag = ''): Promise<any> {
-        const tagParam = tag ? `&tag=${tag}` : '';
-        const response = await fetch(`/api/community-articles?page=${page}${tagParam}`, {
+    async fetchCommunity(params: any): Promise<any> {
+        const queryParams = new URLSearchParams({
+            page: (params.page || 1).toString(),
+            tag: params.tag || '',
+            search: params.search || '',
+            search_type: params.search_type || 'title',
+            sort: params.sort || 'latest',
+            favorites_only: params.favorites_only ? '1' : '0'
+        });
+
+        const response = await fetch(`/api/community-articles?${queryParams.toString()}`, {
             headers: getHeaders(),
         });
-        // Всегда возвращаем структуру пагинации, чтобы не ломать фронт
         return response.ok ? response.json() : { data: [], last_page: 1 };
     },
 
@@ -91,4 +106,19 @@ export const ArticleApiService = {
             body: JSON.stringify({ content })
         });
     },
+
+    async toggleLike(id: number) {
+        return fetch(`${BASE_URL}/${id}/toggle-like`, {
+            method: 'POST',
+            headers: getHeaders(),
+            credentials: 'include'
+        });
+    },
+    async toggleFavorite(id: number) {
+        return fetch(`${BASE_URL}/${id}/toggle-favorite`, {
+            method: 'POST',
+            headers: getHeaders(),
+            credentials: 'include'
+        });
+    }
 };

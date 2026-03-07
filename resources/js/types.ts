@@ -29,6 +29,11 @@ export interface Blog {
     description?: string;
     is_portfolio: boolean;
     top_tags?: string[];
+    likes_count?: number;
+    favorites_count?: number;
+    is_liked?: boolean;
+    is_favorited?: boolean;
+    user?: User;
 }
 
 
@@ -58,6 +63,11 @@ export interface Article {
     github_url?: string;
     comments?: Comment[];
     comments_count?: number;
+    likes_count?: number;
+    favorites_count?: number;
+    is_liked?: boolean;
+    is_favorited?: boolean;
+    user?: User;
 }
 
 // Данные для создания/редактирования статьи

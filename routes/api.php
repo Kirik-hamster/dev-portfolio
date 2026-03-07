@@ -70,4 +70,11 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::post('/mail', [SettingController::class, 'updateMail']);
         Route::post('/mail-test', [SettingController::class, 'testMail']);
     });
+
+    // Роуты для лайков и избранного постов/блогов
+    Route::post('/articles/{article}/toggle-like', [ArticleController::class, 'toggleLike']);
+    Route::post('/articles/{article}/toggle-favorite', [ArticleController::class, 'toggleFavorite']);
+    
+    Route::post('/blogs/{blog}/toggle-like', [BlogController::class, 'toggleLike']);
+    Route::post('/blogs/{blog}/toggle-favorite', [BlogController::class, 'toggleFavorite']);
 });

@@ -10,27 +10,59 @@ class BlogController extends Controller
 {
     public function index(Request $request) 
     {
-        $query = Blog::query()->with('user')->withCount('articles');
+        $query = Blog::query()
+            ->with('user')
+            ->withCount(['articles', 'likes', 'favorites']);
 
-        if ($request->filled('tag')) {
-            $query->whereJsonContains('top_tags', $request->tag);
+        // 1. ПОИСК
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $type = $request->get('search_type', 'title');
+            $query->where(function($q) use ($search, $type) {
+                if ($type === 'author') {
+                    $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                } else {
+                    $q->where('title', 'like', "%{$search}%");
+                }
+            });
         }
 
-        $query->latest();
+        // 2. ТЕГИ
+        if ($request->filled('tag')) {
+            $tag = mb_strtolower($request->tag);
+            $query->whereRaw('LOWER(top_tags) LIKE ?', ["%{$tag}%"]); 
+        }
 
-        // Для профиля (свои)
+        // 3. ИЗБРАННОЕ
+        if ($request->boolean('favorites_only')) {
+            if (auth()->check()) {
+                $query->whereHas('favorites', fn($q) => $q->where('user_id', auth()->id()));
+            } else {
+                return response()->json(['data' => [], 'last_page' => 1], 200);
+            }
+        }
+
+        // 4. СОРТИРОВКА (ОДИН БЛОК!)
+        $sort = $request->get('sort', 'latest');
+        if ($sort === 'popular') {
+            $query->orderByDesc('likes_count');
+        } else {
+            $query->latest();
+        }
+
+        // 5. ФИЛЬТРАЦИЯ ПО ТИПУ
         if ($request->has('my_only')) {
             return $query->where('user_id', Auth::id())->paginate(12);
         }
 
-        // Для Сообщества (все чужие + свои, НО БЕЗ системного портфолио)
         return $query->where('is_portfolio', false)->paginate(9);
     }
+    
     // Получить один блог с автором этого блога
     public function show(Blog $blog)
     {
-        // Возвращаем блог и сразу подгружаем автора (user)
-        return $blog->load('user');
+        // Подгружаем автора и СЧЕТЧИКИ лайков, статей и избранного
+        return $blog->load('user')->loadCount(['likes', 'articles', 'favorites']);
     }
 
     public function update(Request $request, Blog $blog)
@@ -70,5 +102,15 @@ class BlogController extends Controller
         $data['is_portfolio'] = false; // Обычные блоги пользователей
 
         return Blog::create($data);
+    }
+
+    public function toggleLike(Blog $blog) {
+        $blog->likes()->toggle(auth()->id());
+        return response()->json(['is_liked' => $blog->is_liked, 'likes_count' => $blog->likes()->count()]);
+    }
+
+    public function toggleFavorite(Blog $blog) {
+        $blog->favorites()->toggle(auth()->id());
+        return response()->json(['is_favorited' => $blog->is_favorited]);
     }
 }

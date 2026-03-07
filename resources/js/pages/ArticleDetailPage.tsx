@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Article, User, Comment } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/comments/CommentSection';
@@ -10,7 +11,7 @@ import { ScrollToTop } from '../components/ui/ScrollToTop';
 
 interface ArticleDetailPageProps {
     articleId: number;
-    onBack: () => void;
+    onBack: (blogId?: number) => void;
     user: User | null;       
     onNavigateToLogin: () => void; 
 }
@@ -22,6 +23,9 @@ interface ArticleDetailPageProps {
 export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: ArticleDetailPageProps) {
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // 1. Добавляем состояние для ID комментария-цели
     const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
@@ -59,6 +63,17 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
         window.scrollTo({ top: 0, behavior: 'smooth' }); // Плавный скролл при открытии
     }, [articleId]);
 
+    const handleBack = () => {
+        // Проверяем, есть ли куда возвращаться внутри приложения
+        // Если пользователь зашел по прямой ссылке, истории не будет (key === 'default')
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            // Фолбек: если зашли по ссылке, возвращаем в блог или на главную
+            onBack(article?.blog_id);
+        }
+    };
+
     if (loading && !article) {
         return <PremiumLoader />;
     }
@@ -70,8 +85,12 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
     return (
         <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
             <ScrollToTop />
-            <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-white mb-12 transition-colors group">
-                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Back to entries
+            <button 
+                onClick={handleBack} // Используем умный обработчик
+                className="flex items-center gap-2 text-gray-500 hover:text-white mb-12 transition-colors group"
+            >
+                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> 
+                Вернуться назад
             </button>
 
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter leading-none mb-8">{article.title}</h1>

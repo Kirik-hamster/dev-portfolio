@@ -46,7 +46,13 @@ const ArticleDetailPageWrapper: React.FC<WrapperProps> = ({ user, navigate }) =>
     return (
         <ArticleDetailPage 
             articleId={Number(id)} 
-            onBack={() => navigate(-1)} 
+            onBack={(blogId) => {
+                if (blogId) {
+                    navigate(`/blogs/${blogId}`);
+                } else {
+                    navigate('/blogs');
+                }
+            }} 
             user={user} 
             onNavigateToLogin={() => navigate('/login')} 
         />

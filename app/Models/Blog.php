@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Blog extends Model
 {
     use HasFactory;
+    
+    protected $appends = ['is_liked', 'is_favorited'];
+
     // Поля, которые можно заполнять массово (как в твоем сидере)
     protected $fillable = ['user_id', 'title', 'description', 'is_portfolio', 'top_tags'];
 
@@ -46,5 +49,24 @@ class Blog extends Model
             ->pluck('name');
 
         $this->update(['top_tags' => $tags]);
+    }
+
+    public function likes() {
+        return $this->belongsToMany(User::class, 'blog_likes');
+    }
+
+    public function favorites() {
+        return $this->belongsToMany(User::class, 'blog_favorites');
+    }
+
+    // Виртуальные поля: возвращают true/false для текущего юзера
+    public function getIsLikedAttribute() {
+        if (!auth()->check()) return false;
+        return $this->likes()->where('user_id', auth()->id())->exists();
+    }
+
+    public function getIsFavoritedAttribute() {
+        if (!auth()->check()) return false;
+        return $this->favorites()->where('user_id', auth()->id())->exists();
     }
 }
