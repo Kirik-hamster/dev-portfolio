@@ -1,20 +1,37 @@
-// resources/js/hooks/useArticles.ts
 import { useState, useEffect, useCallback } from 'react';
 import { Article, BlogPagination } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 
-export function useArticles(searchQuery: string, blogId?: number) {
-    // Явно указываем тип для пагинации
+export function useArticles(
+    searchQuery: string, 
+    blogId: number | null, 
+    searchType: string = 'title', 
+    sort: string = 'latest', 
+    favoritesOnly: boolean = false
+) {
     const [pagination, setPagination] = useState<BlogPagination | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState<boolean>(true);
 
-    const fetchArticles = useCallback(async (query = '', page = 1) => {
+    const fetchArticles = useCallback(async () => {
         setLoading(true);
         try {
-            const data = blogId 
-                ? await ArticleApiService.fetchByBlog(blogId, query, page) 
-                : await ArticleApiService.fetchPortfolio(query, page);
+            // Собираем все параметры для твоего сервиса
+            const params = {
+                page: currentPage,
+                search: searchQuery,
+                search_type: searchType,
+                sort: sort,
+                favorites_only: favoritesOnly
+            };
+
+            let data;
+            if (blogId) {
+                // Вызываем твой fetchByBlog(blogId, params)
+                data = await ArticleApiService.fetchByBlog(blogId, params);
+            } else {
+                data = await ArticleApiService.fetchPortfolio(searchQuery, currentPage);
+            }
             
             setPagination(data);
         } catch (err) {
@@ -23,19 +40,19 @@ export function useArticles(searchQuery: string, blogId?: number) {
         } finally {
             setLoading(false);
         }
-    }, [blogId]);
+        // Добавляем все новые фильтры в зависимости useCallback
+    }, [blogId, searchQuery, currentPage, searchType, sort, favoritesOnly]); 
 
     useEffect(() => {
-        fetchArticles(searchQuery, currentPage);
-    }, [fetchArticles, searchQuery, currentPage]);
+        fetchArticles();
+    }, [fetchArticles]);
 
     const deleteArticle = async (id: number) => {
         const res = await ArticleApiService.delete(id);
-        if (res.ok) fetchArticles(searchQuery, currentPage);
+        if (res.ok) fetchArticles();
     };
 
     return { 
-        // Безопасно достаем массив статей
         articles: (pagination?.data as unknown as Article[]) || [], 
         pagination, 
         currentPage, 

@@ -34,6 +34,14 @@ interface BlogsPageProps {
     onBlogSelect?: (id: number | null) => void;
 }
 
+interface GenericPagination<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    per_page: number;
+}
+
 export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }: BlogsPageProps) {
     const [viewMode, setViewMode] = useState<'blogs' | 'posts'>('blogs');
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -41,7 +49,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     
     const [activeBlog, setActiveBlog] = useState<BlogWithUser | null>(null);
 
-    const [pagination, setPagination] = useState<BlogPagination | null>(null);
+    const [pagination, setPagination] = useState<GenericPagination<BlogWithUser | ArticleWithBlog> | null>(null);
     const [articles, setArticles] = useState<ArticleWithBlog[]>([]); // Храним все для тегов
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -178,16 +186,15 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         
         if (res.ok) {
             const result = await res.json();
-            // Обновляем данные в текущей пагинации без перезагрузки всей страницы
-            setPagination(prev => prev ? {
-                ...prev,
-                data: prev.data.map((item: any) => 
-                    item.id === id ? { ...item, is_liked: result.is_liked, likes_count: result.likes_count } : item
-                )
-            } : null);
-            if (type === 'blog' && activeBlog?.id === id) {
-                setActiveBlog(prev => prev ? { ...prev, is_liked: result.is_liked, likes_count: result.likes_count } : null);
-            }
+            setPagination(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    data: prev.data.map((item: BlogWithUser | ArticleWithBlog) => 
+                        item.id === id ? { ...item, is_liked: result.is_liked, likes_count: result.likes_count } : item
+                    )
+                };
+            });
         }
     };
 
@@ -199,7 +206,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
             const result = await res.json();
             setPagination(prev => prev ? {
                 ...prev,
-                data: prev.data.map((item: any) => 
+                data: prev.data.map((item: BlogWithUser | ArticleWithBlog) => 
                     item.id === id ? { ...item, is_favorited: result.is_favorited } : item
                 )
             } : null);
@@ -264,6 +271,8 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                         setSort={setSort}
                         favoritesOnly={favoritesOnly}
                         setFavoritesOnly={setFavoritesOnly}
+                        isProfileMode={false}
+                        
                     />
                 )}
 
@@ -285,6 +294,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                 setSort={setSort}
                                 favoritesOnly={favoritesOnly}
                                 setFavoritesOnly={setFavoritesOnly}
+                                isProfileMode={false}
                             />
                         </div>
                     </>
@@ -296,10 +306,10 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {/* РЕЖИМ БЛОГОВ */}
-                            {viewMode === 'blogs' && pagination?.data.map((blog: BlogWithUser) => (
+                            {viewMode === 'blogs' && pagination?.data.map((item) => (
                                 <BlogCard 
-                                    key={blog.id} 
-                                    blog={blog} 
+                                    key={item.id} 
+                                    blog={item as BlogWithUser} 
                                     onNavigate={(id) => navigate(`/blogs/${id}`)}
                                     onToggleLike={handleToggleLike}
                                     onToggleFavorite={handleToggleFavorite}
@@ -308,7 +318,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                             ))}
 
                             {/* РЕЖИМ ПУБЛИКАЦИЙ */}
-                            {viewMode === 'posts' && pagination?.data.map((article: any) => (
+                            {viewMode === 'posts' && pagination?.data.map((article) => (
                                 <PostCard 
                                     key={article.id} 
                                     article={article} 

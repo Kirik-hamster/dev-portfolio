@@ -21,7 +21,7 @@ export function PortfolioPage({ user, blogId, onArticleSelect, onEditArticle, on
     const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
     
     // Достаем пагинацию из нашего крутого хука
-    const { articles, pagination, currentPage, setCurrentPage, loading, deleteArticle } = useArticles(searchQuery, blogId ?? undefined);
+    const { articles, pagination, currentPage, setCurrentPage, loading, deleteArticle } = useArticles(searchQuery, blogId ?? null);
 
     const handleConfirmDelete = () => {
         if (articleToDelete) {

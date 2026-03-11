@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
 import { User as UserType, Blog, Article, BlogPagination } from '../types';
@@ -10,6 +10,7 @@ import { ProfileInfo } from '../components/profile/ProfileInfo';
 import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { UserCommentsList } from '../components/profile/UserCommentsList';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
+import { TagsModal } from '@/components/ui/blogPage/TagsModal';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -32,6 +33,8 @@ export function ProfilePage({
     
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [blogToDelete, setBlogToDelete] = useState<number | null>(null);
+
+    const contentAnchorRef = useRef<HTMLDivElement>(null);
 
     // --- 1. СИНХРОНИЗАЦИЯ С URL (Источник правды) ---
     const getActiveTabFromUrl = () => {
@@ -64,6 +67,12 @@ export function ProfilePage({
     const [blogPagination, setBlogPagination] = useState<BlogPagination | null>(null);
     const [currentBlogPage, setCurrentBlogPage] = useState(1);
 
+    const [tagsModal, setTagsModal] = useState<{ isOpen: boolean; tags: string[]; title: string }>({
+        isOpen: false,
+        tags: [],
+        title: ''
+    });
+
     const startDemo = () => {
         if (timerId) clearTimeout(timerId);
         setDemoLoading(true);
@@ -75,6 +84,19 @@ export function ProfilePage({
         if (timerId) clearTimeout(timerId);
         setDemoLoading(false);
     };
+
+    // Функция для умного скролла
+    const scrollToContent = () => {
+        if (contentAnchorRef.current) {
+            // scrollIntoView подтянет начало контента к верху экрана
+            contentAnchorRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    // Эффект: скроллим при входе в блог или смене вкладки
+    useEffect(() => {
+        scrollToContent();
+    }, [insideBlogId, activeTab]);
 
     // --- 3. ЭФФЕКТЫ ---
     useEffect(() => {
@@ -187,7 +209,11 @@ export function ProfilePage({
                         onEditArticle={onEditArticle}
                         onTriggerCreate={onTriggerCreate}
                         blogPagination={blogPagination}
-                        onPageChange={setCurrentBlogPage}
+                        onPageChange={(page) => {
+                            setCurrentBlogPage(page);
+                            scrollToContent();
+                        }}
+                        onOpenTags={(tags, title) => setTagsModal({ isOpen: true, tags, title })}
                     />
                 );
 
@@ -206,10 +232,10 @@ export function ProfilePage({
     };
 
     return (
-        <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row gap-10 lg:gap-16 pt-10 px-6 md:px-12 pb-20">
+        <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row gap-4 lg:gap-6 xl:gap-12 pt-4 lg:pt-10 px-4 lg:px-8 pb-20">
             <ScrollToTop />
             {/* САЙДБАР */}
-            <aside className="w-full md:w-72 flex-shrink-0 space-y-12">
+            <aside className="w-full lg:w-60 xl:w-72 flex-shrink-0 space-y-8 lg:space-y-12">
                 <div className="flex flex-col items-start px-6">
                     <div className="w-20 h-20 bg-white/5 rounded-[28px] border border-white/10 flex items-center justify-center mb-6 relative shadow-2xl shadow-black/50">
                         <UserCircle size={40} className="text-white/20" />
@@ -241,8 +267,9 @@ export function ProfilePage({
 
             {/* ОСНОВНОЙ КОНТЕНТ */}
             <main className="flex-1 min-h-[400px]">
+                <div ref={contentAnchorRef} className="scroll-mt-10" />
                 <div className="mb-10 border-b border-white/5 pb-10 flex justify-between items-end">
-                    <h2 className="text-5xl font-black uppercase tracking-tighter">
+                    <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tighter leading-none">
                         {activeTab === 'profile' && 'Профиль'}
                         {activeTab === 'blog' && (insideBlogId ? 'Записи' : 'Мои блоги')}
                         {activeTab === 'admin' && 'Управление'}
@@ -257,6 +284,17 @@ export function ProfilePage({
                 message="Вы уверены? Это действие безвозвратно удалит папку и ВСЕ статьи, которые в ней находятся."
                 onConfirm={confirmDeleteBlog}
                 onCancel={() => setIsDeleteModalOpen(false)}
+            />
+            <TagsModal 
+                isOpen={tagsModal.isOpen}
+                tags={tagsModal.tags}
+                title={tagsModal.title}
+                onClose={() => setTagsModal(prev => ({ ...prev, isOpen: false }))}
+                onTagClick={(tag) => {
+                    // Здесь можно добавить логику фильтрации по тегу в профиле, 
+                    // если она тебе понадобится позже
+                    setTagsModal(prev => ({ ...prev, isOpen: false }));
+                }}
             />
         </div>
     );

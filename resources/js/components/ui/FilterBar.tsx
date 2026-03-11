@@ -10,10 +10,11 @@ interface FilterBarProps {
     setSort: (val: 'latest' | 'popular') => void;
     favoritesOnly: boolean;
     setFavoritesOnly: (val: boolean) => void;
+    isProfileMode?: boolean;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
-    searchQuery, setSearchQuery, searchType, setSearchType, sort, setSort, favoritesOnly, setFavoritesOnly
+    searchQuery, setSearchQuery, searchType, setSearchType, sort, setSort, favoritesOnly, setFavoritesOnly, isProfileMode = false
 }) => {
     const [isTypeOpen, setIsTypeOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
@@ -38,44 +39,45 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             {/* БЛОК 1: ПОИСК + СЕЛЕКТОР ТИПА */}
             {/* Динамический z-index: если меню открыто, этот блок становится выше всех */}
             <div className={`flex-grow flex-[2] min-w-[280px] flex bg-white/5 border border-white/10 rounded-2xl backdrop-blur-2xl h-12 sm:h-14 relative transition-all focus-within:border-blue-500/30 shadow-2xl ${isTypeOpen ? 'z-[100]' : 'z-20'}`}>
-                
-                <div className="relative h-full border-r border-white/10" ref={typeRef}>
-                    <button 
-                        onClick={() => { setIsTypeOpen(!isTypeOpen); setIsSortOpen(false); }}
-                        className={`h-full px-4 sm:px-6 flex items-center gap-2.5 text-[9px] sm:text-[10px] font-black uppercase transition-all rounded-l-2xl
-                            ${isTypeOpen ? 'bg-white/5 text-blue-400' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        {searchType === 'title' ? <Type size={14} className="text-blue-500" /> : <UserIcon size={14} className="text-blue-400" />}
-                        <span className="hidden xs:inline">{searchType === 'title' ? 'Текст' : 'Автор'}</span>
-                        <ChevronDown size={10} className={`transition-transform duration-300 ${isTypeOpen ? 'rotate-180' : ''}`} />
-                    </button>
+    
+                {/* СКРЫВАЕМ ВЫБОР ТИПА, ЕСЛИ ЭТО ПРОФИЛЬ */}
+                {!isProfileMode && (
+                    <div className="relative h-full border-r border-white/10" ref={typeRef}>
+                        <button 
+                            onClick={() => { setIsTypeOpen(!isTypeOpen); setIsSortOpen(false); }}
+                            className={`h-full px-4 sm:px-6 flex items-center gap-2.5 text-[9px] sm:text-[10px] font-black uppercase transition-all rounded-l-2xl
+                                ${isTypeOpen ? 'bg-white/5 text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            {searchType === 'title' ? <Type size={14} className="text-blue-500" /> : <UserIcon size={14} className="text-blue-400" />}
+                            <span className="hidden xs:inline">{searchType === 'title' ? 'Текст' : 'Автор'}</span>
+                            <ChevronDown size={10} className={`transition-transform duration-300 ${isTypeOpen ? 'rotate-180' : ''}`} />
+                        </button>
 
-                    {isTypeOpen && (
-                        <div className="absolute top-[calc(100%+8px)] left-0 w-44 bg-[#0d0d0d] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[110] overflow-hidden animate-in fade-in zoom-in-95 duration-200 backdrop-blur-3xl">
-                            <div className="p-1 flex flex-col gap-0.5">
-                                <button 
-                                    onClick={() => { setSearchType('title'); setIsTypeOpen(false); }} 
-                                    className={`flex items-center gap-3 w-full p-3 rounded-lg text-[9px] font-bold uppercase transition-all ${searchType === 'title' ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-                                >
-                                    <Type size={14} /> По названию
-                                </button>
-                                <button 
-                                    onClick={() => { setSearchType('author'); setIsTypeOpen(false); }} 
-                                    className={`flex items-center gap-3 w-full p-3 rounded-lg text-[9px] font-bold uppercase transition-all ${searchType === 'author' ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-                                >
-                                    <UserIcon size={14} /> По автору
-                                </button>
+                        {isTypeOpen && (
+                            <div className="absolute top-[calc(100%+8px)] left-0 w-44 bg-[#0d0d0d] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[110] overflow-hidden animate-in fade-in zoom-in-95 duration-200 backdrop-blur-3xl">
+                                <div className="p-1 flex flex-col gap-0.5">
+                                    <button onClick={() => { setSearchType('title'); setIsTypeOpen(false); }} className={`flex items-center gap-3 w-full p-3 rounded-lg text-[9px] font-bold uppercase transition-all ${searchType === 'title' ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                                        <Type size={14} /> По названию
+                                    </button>
+                                    <button onClick={() => { setSearchType('author'); setIsTypeOpen(false); }} className={`flex items-center gap-3 w-full p-3 rounded-lg text-[9px] font-bold uppercase transition-all ${searchType === 'author' ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                                        <UserIcon size={14} /> По автору
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
 
                 <div className="flex-grow relative h-full flex items-center group">
-                    <Search size={16} className="absolute left-4 text-gray-600 group-focus-within:text-blue-500 transition-colors" />
+                    {/* Сдвигаем иконку чуть вправо (left-6), если селектора нет, для красоты */}
+                    <Search size={16} className={`absolute ${isProfileMode ? 'left-6' : 'left-4'} text-gray-600 group-focus-within:text-blue-500 transition-colors`} />
                     <input 
-                        type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={searchType === 'title' ? "Поиск контента..." : "Имя автора..."}
-                        className="w-full h-full bg-transparent pl-11 pr-4 outline-none text-[10px] sm:text-xs font-bold text-white placeholder:text-gray-700"
+                        type="text" 
+                        value={searchQuery} 
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        // Если профиль — всегда пишем "Поиск...", автора не упоминаем
+                        placeholder={isProfileMode ? "Поиск по вашим записям..." : (searchType === 'title' ? "Поиск контента..." : "Имя автора...")}
+                        className={`w-full h-full bg-transparent ${isProfileMode ? 'pl-14' : 'pl-11'} pr-4 outline-none text-[10px] sm:text-xs font-bold text-white placeholder:text-gray-700`}
                     />
                 </div>
             </div>
