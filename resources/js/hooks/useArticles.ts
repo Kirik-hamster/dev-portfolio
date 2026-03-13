@@ -7,7 +7,8 @@ export function useArticles(
     blogId: number | null, 
     searchType: string = 'title', 
     sort: string = 'latest', 
-    favoritesOnly: boolean = false
+    favoritesOnly: boolean = false,
+    userId?: number | null
 ) {
     const [pagination, setPagination] = useState<BlogPagination | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -30,7 +31,7 @@ export function useArticles(
                 // Вызываем твой fetchByBlog(blogId, params)
                 data = await ArticleApiService.fetchByBlog(blogId, params);
             } else {
-                data = await ArticleApiService.fetchPortfolio(searchQuery, currentPage);
+                data = await ArticleApiService.fetchPortfolio(params);
             }
             
             setPagination(data);
@@ -41,7 +42,7 @@ export function useArticles(
             setLoading(false);
         }
         // Добавляем все новые фильтры в зависимости useCallback
-    }, [blogId, searchQuery, currentPage, searchType, sort, favoritesOnly]); 
+    }, [blogId, searchQuery, currentPage, searchType, sort, favoritesOnly, userId]); 
 
     useEffect(() => {
         fetchArticles();

@@ -179,22 +179,37 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     }, [currentPage]);
 
     const handleToggleLike = async (id: number, type: 'blog' | 'article') => {
-        if (!user) return alert("Войдите, чтобы ставить лайки!"); // Твой AuthRequiredModal тут идеально подойдет
-        
+        if (!user) {
+            setModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Доступ ограничен',
+                message: 'Войдите в аккаунт, чтобы ставить лайки и поддерживать авторов.'
+            });
+            return;
+        }
         const service = type === 'blog' ? BlogApiService : ArticleApiService;
         const res = await service.toggleLike(id);
         
         if (res.ok) {
             const result = await res.json();
-            setPagination(prev => {
-                if (!prev) return null;
-                return {
-                    ...prev,
-                    data: prev.data.map((item: BlogWithUser | ArticleWithBlog) => 
-                        item.id === id ? { ...item, is_liked: result.is_liked, likes_count: result.likes_count } : item
-                    )
-                };
-            });
+            
+            // 1. Обновляем список (карточки)
+            setPagination(prev => prev ? {
+                ...prev,
+                data: prev.data.map((item: any) => 
+                    item.id === id ? { ...item, is_liked: result.is_liked, likes_count: result.likes_count } : item
+                )
+            } : null);
+
+            // 2. ВАЖНО: Обновляем активный блог в шапке!
+            if (type === 'blog' && activeBlog?.id === id) {
+                setActiveBlog(prev => prev ? { 
+                    ...prev, 
+                    is_liked: result.is_liked, 
+                    likes_count: result.likes_count 
+                } : null);
+            }
         }
     };
 

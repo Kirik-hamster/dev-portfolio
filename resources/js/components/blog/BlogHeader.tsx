@@ -68,10 +68,17 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
 
                     {/* СТАТИСТИКА / КНОПКИ */}
                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <div className={`flex items-center gap-3 px-6 py-3.5 rounded-2xl border transition-all 
-                            ${isProfile ? 'bg-white/[0.03] border-white/5 text-gray-500' : 
-                            (activeBlog?.is_liked ? 'bg-red-500/10 border-red-500/40 text-red-500' : 'bg-white/5 border-white/10 text-gray-500 hover:text-white cursor-pointer')}`}
-                            onClick={() => !isProfile && onToggleLike?.(activeBlog!.id, 'blog')}
+                        <div 
+                            className={`flex items-center gap-3 px-6 py-3.5 rounded-2xl border transition-all active:scale-95 
+                                ${isProfile ? 'bg-white/[0.03] border-white/5 text-gray-500 cursor-default' : 
+                                (activeBlog?.is_liked 
+                                    ? 'bg-red-500/10 border-red-500/40 text-red-500 cursor-pointer' 
+                                    : 'bg-white/5 border-white/10 text-gray-500 hover:text-white cursor-pointer')}`}
+                            onClick={() => {
+                                if (!isProfile && activeBlog) {
+                                    onToggleLike?.(activeBlog.id, 'blog'); // Безопасный вызов
+                                }
+                            }}
                         >
                             <Heart size={18} fill={(activeBlog?.is_liked || isProfile) ? "currentColor" : "none"} className={isProfile ? "opacity-20" : ""} />
                             <span className="text-sm font-black">{activeBlog?.likes_count || 0}</span>

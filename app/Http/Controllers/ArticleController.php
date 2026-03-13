@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Services\ArticleService;
 use App\Http\Requests\ArticleStoreRequest;
-use App\Http\Requests\StoreCommentRequest; // Импортируем новый класс
+use App\Http\Requests\StoreCommentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Blog;
@@ -49,26 +49,43 @@ class ArticleController extends Controller
         return $query->paginate(12);
     }
 
-    public function portfolio()
+    public function portfolio(Request $request) // Добавили Request!
     {
-        // Ищем системную папку портфолио
         $portfolioBlog = Blog::where('is_portfolio', true)->first();
         
-        // Если папки нет, возвращаем пустую структуру пагинации
         if (!$portfolioBlog) {
-            return response()->json([
-                'data' => [],
-                'last_page' => 1,
-                'current_page' => 1,
-                'total' => 0
-            ], 200);
+            return response()->json(['data' => [], 'last_page' => 1], 200);
         }
 
-        // ВАЖНО: Вместо get() пишем paginate(12)
-        return $portfolioBlog->articles()
+        $query = $portfolioBlog->articles()
             ->with(['blog', 'user'])
-            ->latest()
-            ->paginate(12); 
+            ->withCount(['likes', 'favorites', 'comments']); 
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $type = $request->get('search_type', 'title');
+
+            $query->where(function($q) use ($search, $type) {
+                if ($type === 'author') {
+                    $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                } else {
+                    $q->where('title', 'like', "%{$search}%");
+                }
+            });
+        }
+
+        if ($request->boolean('favorites_only') && auth()->check()) {
+            $query->whereHas('favorites', fn($q) => $q->where('user_id', auth()->id()));
+        }
+
+        $sort = $request->get('sort', 'latest');
+        if ($sort === 'popular') {
+            $query->orderByDesc('likes_count');
+        } else {
+            $query->latest();
+        }
+
+        return $query->paginate(12); 
     }
 
     public function show(Article $article)

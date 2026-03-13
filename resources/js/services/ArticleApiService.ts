@@ -27,17 +27,26 @@ export const ArticleApiService = {
         });
 
         const response = await fetch(`/api/blogs/${blogId}/articles?${queryParams.toString()}`, {
-            headers: { 'Accept': 'application/json' },
+            headers: getHeaders(),
             credentials: 'include'
         });
         return response.ok ? response.json() : { data: [], last_page: 1 };
     },
     // Получить статьи системного портфолио
-    async fetchPortfolio(query = '', page = 1): Promise<any> {
-        const response = await fetch(`/api/portfolio?search=${query}&page=${page}`, {
-            headers: { 'Accept': 'application/json' }
+    async fetchPortfolio(params: any): Promise<any> {
+        const queryParams = new URLSearchParams({
+            page: (params.page || 1).toString(),
+            search: params.search || '',
+            sort: params.sort || 'latest',
+            search_type: params.search_type || 'title',
+            favorites_only: params.favorites_only ? '1' : '0'
         });
-        // Теперь всегда возвращает объект пагинации
+
+        const response = await fetch(`/api/portfolio?${queryParams.toString()}`, {
+            headers: getHeaders(),
+            credentials: 'include'
+        });
+        
         return response.ok ? response.json() : { data: [], last_page: 1 };
     },
 
