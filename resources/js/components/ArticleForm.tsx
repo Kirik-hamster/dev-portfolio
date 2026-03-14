@@ -6,12 +6,14 @@ import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
+import Gapcursor from '@tiptap/extension-gapcursor';
 import { 
     Bold, Italic, List, Code, Tag, Image as ImageIcon,
     Heading1, Heading2, Undo, Redo, Underline as UnderlineIcon,
     AlignLeft, AlignCenter, Link as LinkIcon, ListTree, UploadCloud, ChevronRight
 } from 'lucide-react'; 
 import { Article, ArticleInput, User } from '../types';
+import { ArticleNavigation } from './ArticlePage/ArticleNavigation';
 
 interface ArticleFormProps {
     article: Article | undefined; 
@@ -21,22 +23,13 @@ interface ArticleFormProps {
 }
 
 const EDITOR_EXTENSIONS = [
-    StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        // Убрали 'history: true' отсюда, так как это не валидный параметр конфигурации
-    }),
+    StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
     Underline,
-    Link.configure({
-        openOnClick: false,
-        HTMLAttributes: { class: 'text-blue-400 underline' },
-    }),
+    Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-blue-400 underline' } }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    Image.configure({
-        HTMLAttributes: { class: 'rounded-3xl border border-white/10 shadow-2xl my-8 mx-auto' },
-    }),
-    Placeholder.configure({
-        placeholder: 'Начните писать свою историю...',
-    }),
+    Image.configure({ HTMLAttributes: { class: 'rounded-3xl border border-white/10 shadow-2xl my-8 mx-auto' } }),
+    Placeholder.configure({ placeholder: 'Начните писать...' }),
+    Gapcursor, // Позволяет кликать между блоками, чтобы они не слипались
 ];
 
 export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCancel, user }) => {
@@ -45,26 +38,35 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
     const [githubUrl, setGithubUrl] = useState(article?.github_url || '');
     const [toc, setToc] = useState<{ level: number; text: string; pos: number }[]>([]);
 
+    const updateToc = (editor: any) => {
+        const headings: any[] = [];
+        editor.state.doc.descendants((node: any, pos: number) => {
+            if (node.type.name === 'heading') {
+                headings.push({ 
+                    level: node.attrs.level, 
+                    text: node.textContent, 
+                    pos: pos + 1 // +1 чтобы курсор вставал ВНУТРЬ заголовка
+                });
+            }
+        });
+        setToc(headings);
+    };
+
     const editor = useEditor({
         extensions: EDITOR_EXTENSIONS,
         content: article?.content || '',
         editorProps: {
             attributes: {
-                // Добавляем специфические классы для визуализации заголовков прямо во время письма
-                class: 'prose prose-invert focus:outline-none max-w-none min-h-[600px] p-10 text-xl leading-relaxed selection:bg-blue-500/30 \
-                        prose-h1:text-4xl prose-h1:font-black prose-h1:mb-6 \
-                        prose-h2:text-2xl prose-h2:font-black prose-h2:text-blue-400 \
-                        prose-h3:text-xl prose-h3:font-bold',
+                class: 'prose-editor focus:outline-none min-h-[600px] p-10 selection:bg-blue-500/30',
             },
         },
+        // Срабатывает при создании редактора (важно для существующих постов)
+        onCreate: ({ editor }) => {
+            updateToc(editor);
+        },
+        // Срабатывает при каждом изменении текста
         onUpdate: ({ editor }) => {
-            const headings: any[] = [];
-            editor.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'heading') {
-                    headings.push({ level: node.attrs.level, text: node.textContent, pos });
-                }
-            });
-            setToc(headings);
+            updateToc(editor);
         }
     });
 
@@ -119,8 +121,8 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-                <div className="flex-1 w-full bg-white/[0.01] border border-white/10 rounded-[45px] overflow-hidden backdrop-blur-sm shadow-3xl">
+            <div className="flex flex-col lg:flex-row gap-8"> {/* Убрали items-start! */}
+                <div className="flex-1 min-w-0 bg-white/[0.01] border border-white/10 rounded-[45px] overflow-hidden backdrop-blur-sm shadow-3xl">
                     <div className="sticky top-0 z-30 p-2.5 bg-[#080808]/90 backdrop-blur-2xl border-b border-white/5 flex flex-wrap gap-1">
                         <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })}><Heading1 size={18}/></ToolbarButton>
                         <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })}><Heading2 size={18}/></ToolbarButton>
@@ -139,20 +141,11 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                     <EditorContent editor={editor} />
                 </div>
 
-                <aside className="hidden lg:block w-80 sticky top-32">
-                    <div className="p-8 bg-white/[0.01] border border-white/10 rounded-[45px] backdrop-blur-3xl shadow-2xl relative overflow-hidden group">
-                        <div className="absolute -right-10 -top-10 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl" />
-                        <div className="flex items-center gap-3 mb-10"><ListTree size={14} className="text-blue-500" /><span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Outline</span></div>
-                        <nav className="space-y-6">
-                            {toc.map((h, i) => (
-                                <button key={i} onClick={() => editor.commands.focus(h.pos)} className={`flex items-start gap-3 text-left transition-all hover:text-blue-400 w-full ${h.level === 1 ? 'text-[11px] font-black uppercase text-white' : 'text-[10px] font-bold text-gray-500 pl-4 border-l border-white/5'}`}>
-                                    <ChevronRight size={10} className={`mt-0.5 shrink-0 ${h.level === 1 ? 'opacity-100 text-blue-500' : 'opacity-0'}`} />
-                                    <span className="leading-tight">{h.text}</span>
-                                </button>
-                            ))}
-                        </nav>
-                    </div>
-                </aside>
+                <ArticleNavigation 
+                    title="Outline"
+                    toc={toc} 
+                    onItemClick={(h) => editor.commands.focus(h.pos)} 
+                />
             </div>
 
             <div className="flex justify-between items-center bg-white/[0.01] border border-white/10 p-6 rounded-[40px] backdrop-blur-md">

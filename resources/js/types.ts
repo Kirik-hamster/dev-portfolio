@@ -61,6 +61,8 @@ export interface Article {
     type: 'blog' | 'portfolio';
     tech_stack?: string;
     github_url?: string;
+    created_at: string;
+    views_count?: number;
     comments?: Comment[];
     comments_count?: number;
     likes_count?: number;

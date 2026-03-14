@@ -90,8 +90,9 @@ class ArticleController extends Controller
 
     public function show(Article $article)
     {
-        // Загружаем автора, папку и теги самой статьи
-        return $article->load(['user:id,name,role', 'blog', 'tags'])->loadCount('comments');
+        // Загружаем автора, папку, теги И СЧЕТЧИКИ
+        return $article->load(['user:id,name,role', 'blog', 'tags'])
+                    ->loadCount(['comments', 'likes', 'favorites']);
     }
 
     public function store(ArticleStoreRequest $request, $blogId)
