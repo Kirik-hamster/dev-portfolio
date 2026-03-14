@@ -35,7 +35,7 @@ const BlogsPageWrapper: React.FC<WrapperProps> = ({ user, navigate }) => {
         <BlogsPage 
             user={user} 
             onNavigateToProfile={() => navigate('/profile')}
-            onArticleSelect={(a) => navigate(`/article/${a.id}`)}
+            onArticleSelect={(a: Article) => navigate(`/article/${a.id}`)}
             initialBlogId={blogId ? Number(blogId) : null}
         />
     );
@@ -46,13 +46,13 @@ const ArticleDetailPageWrapper: React.FC<WrapperProps> = ({ user, navigate }) =>
     return (
         <ArticleDetailPage 
             articleId={Number(id)} 
-            onBack={(blogId) => {
-                if (blogId) {
-                    navigate(`/blogs/${blogId}`);
+            onBack={(article: Article) => {
+                if (article.type === 'portfolio') {
+                    navigate('/portfolio');
                 } else {
-                    navigate('/blogs');
+                    navigate(`/blogs/${article.blog_id}`);
                 }
-            }} 
+            }}
             user={user} 
             onNavigateToLogin={() => navigate('/login')} 
         />
@@ -70,8 +70,8 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, set
                 <PortfolioPage 
                     user={user} 
                     blogId={portfolioBlogId}
-                    onArticleSelect={(a) => navigate(`/article/${a.id}`)}
-                    onEditArticle={(a) => navigate(`/form/edit/${a.id}`)} 
+                    onArticleSelect={(a: Article) => navigate(`/article/${a.id}`)}
+                    onEditArticle={(a: Article) => navigate(`/form/edit/${a.id}`)} 
                     onCreateArticle={() => navigate(`/form/new/${portfolioBlogId}`)} 
                 />
             } />
@@ -79,8 +79,15 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, set
             <Route path="/profile/*" element={
                 user ? (
                     user.email_verified_at 
-                        ? <ProfilePage user={user} onBlogSelect={(id) => navigate(`/profile/blog/${id}`)} onNavigateToPortfolio={() => navigate('/portfolio')} onTriggerCreate={(blogId) => navigate(`/form/new/${blogId}`)} onEditArticle={(a) => navigate(`/form/edit/${a.id}`)} onArticleSelect={(a) => navigate(`/article/${a.id}`)} />
-                        : <VerifyCodePage onVerified={refreshUser} /> // Показываем код только здесь!
+                        ? <ProfilePage 
+                            user={user} 
+                            onBlogSelect={(id: number) => navigate(`/profile/blog/${id}`)} 
+                            onNavigateToPortfolio={() => navigate('/portfolio')} 
+                            onTriggerCreate={(blogId: number | null) => navigate(`/form/new/${blogId}`)} 
+                            onEditArticle={(a: Article) => navigate(`/form/edit/${a.id}`)} 
+                            onArticleSelect={(a: Article) => navigate(`/article/${a.id}`)} 
+                        />
+                        : <VerifyCodePage onVerified={refreshUser} />
                 ) : <Navigate to="/login" />
             } />
 
@@ -98,8 +105,8 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, set
             } />
             <Route path="/form/edit/:articleId" element={<ArticleFormPage user={user} onSave={() => navigate(-1)} onCancel={() => navigate(-1)} />} />
             
-            <Route path="/login" element={<LoginPage onLoginSuccess={(u) => { setUser(u); navigate('/'); }} onNavigateToRegister={() => navigate('/register')} />} />
-            <Route path="/register" element={<RegisterPage onRegisterSuccess={(u) => { setUser(u); navigate('/'); }} onNavigateToLogin={() => navigate('/login')} />} />
+            <Route path="/login" element={<LoginPage onLoginSuccess={(u: User) => { setUser(u); navigate('/'); }} onNavigateToRegister={() => navigate('/register')} />} />
+            <Route path="/register" element={<RegisterPage onRegisterSuccess={(u: User) => { setUser(u); navigate('/'); }} onNavigateToLogin={() => navigate('/login')} />} />
             
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>

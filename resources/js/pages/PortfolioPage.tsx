@@ -35,6 +35,10 @@ export function PortfolioPage({ user, blogId, onArticleSelect, onEditArticle, on
         message: '' 
     });
 
+    const lastArticlesRef = useRef<string>("");
+
+
+
     // 1. ИСПРАВЛЕНИЕ ПОИСКА: Убираем setCurrentPage(1) из общего потока, 
     // чтобы не провоцировать лишние рендеры
     useEffect(() => {
@@ -53,22 +57,18 @@ export function PortfolioPage({ user, blogId, onArticleSelect, onEditArticle, on
         user?.id
     );
 
-    // 2. ИСПРАВЛЕНИЕ ПЕТЛИ: Синхронизируем только когда данные РЕАЛЬНО пришли
     useEffect(() => {
-        if (articles && articles.length > 0) {
-            setLocalArticles(articles);
-        } else if (!loading) {
-            setLocalArticles([]);
-        }
-    }, [articles, loading]);
+        if (!articles) return;
 
-    useEffect(() => {
-        // Если пришли новые статьи из хука (после логина или фильтра) — 
-        // ПОЛНОСТЬЮ перезаписываем локальный стейт
-        if (articles) {
+        // Создаем уникальный ключ текущих данных (длина + ID первой статьи)
+        const currentFingerprint = `${articles.length}-${articles[0]?.id}`;
+
+        // Если данные РЕАЛЬНО новые — обновляем стейт
+        if (currentFingerprint !== lastArticlesRef.current) {
+            lastArticlesRef.current = currentFingerprint;
             setLocalArticles(articles);
         }
-    }, [articles, loading]);
+    }, [articles]);
 
     const isAdmin = user?.role === 'admin';
 

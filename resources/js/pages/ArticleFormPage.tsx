@@ -16,33 +16,27 @@ interface ArticleFormPageProps {
 
 export function ArticleFormPage({ user, onSave, onCancel }: ArticleFormPageProps) {
     if (!user) return <Navigate to="/login" replace />;
-    const { articleId, blogId } = useParams(); // Берем ID прямо из URL
+    
+    const { articleId, blogId } = useParams();
     const navigate = useNavigate();
+    
+    // Тип стейта совпадает с пропсом в ArticleForm
     const [article, setArticle] = React.useState<Article | undefined>(undefined);
     const [loading, setLoading] = React.useState(false);
 
-    const [modalConfig, setModalConfig] = React.useState<{
-        isOpen: boolean;
-        type: 'success' | 'error';
-        title: string;
-        message: string;
-    }>({
+    const [modalConfig, setModalConfig] = React.useState({
         isOpen: false,
-        type: 'error',
+        type: 'error' as 'success' | 'error',
         title: '',
         message: ''
     });
 
-    // Если в URL есть articleId, значит мы РЕДАКТИРУЕМ
     React.useEffect(() => {
         if (articleId) {
             setLoading(true);
             ArticleApiService.fetchOne(Number(articleId))
                 .then(data => {
-                    const isOwner = data.user_id === user.id;
-                    const isAdmin = user.role === 'admin';
-
-                    if (!isAdmin && !isOwner) {
+                    if (user.role !== 'admin' && data.user_id !== user.id) {
                         navigate('/');
                         return;
                     }
@@ -51,37 +45,23 @@ export function ArticleFormPage({ user, onSave, onCancel }: ArticleFormPageProps
                 })
                 .catch(() => {
                     setLoading(false);
-                    navigate('/portfolio'); // Если статьи нет, уходим
+                    navigate('/portfolio');
                 });
         }
-    }, [articleId]);
+    }, [articleId, user.id, user.role, navigate]);
 
     const handleSave = async (data: ArticleInput) => {
         const targetBlogId = blogId ? Number(blogId) : article?.blog_id;
-
         const res = await ArticleApiService.save(data, targetBlogId, article?.id);
 
         if (res.ok) {
             onSave();
-        } else if (res.status === 422) {
-            const errorData = await res.json();
-            const errorMessage = errorData.errors?.slug?.[0] 
-                || errorData.errors?.title?.[0] 
-                || "Проверьте правильность введенных данных";
-
-            setModalConfig({
-                isOpen: true,
-                type: 'error',
-                title: 'Дубликат данных',
-                message: `К сожалению, запись с таким названием или адресом уже существует.\n\nОшибка: ${errorMessage}`
-            });
         } else {
-            // Любая другая ошибка сервера
             setModalConfig({
                 isOpen: true,
                 type: 'error',
-                title: 'Упс!',
-                message: 'Что-то пошло не так на сервере. Попробуйте еще раз позже.'
+                title: 'Ошибка сохранения',
+                message: 'Не удалось опубликовать запись. Проверьте уникальность заголовка.'
             });
         }
     };
@@ -92,9 +72,10 @@ export function ArticleFormPage({ user, onSave, onCancel }: ArticleFormPageProps
         <>
             <ScrollToTop />
             <ArticleForm 
-                article={article} 
+                article={article} // Теперь TS не ругается, типы идентичны!
                 onSave={handleSave} 
                 onCancel={onCancel} 
+                user={user} 
             />
             <StatusModal 
                 isOpen={modalConfig.isOpen}

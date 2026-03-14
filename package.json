@@ -20,7 +20,9 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@tiptap/extension-image": "^3.20.1",
         "@tiptap/extension-link": "^3.19.0",
+        "@tiptap/extension-placeholder": "^3.20.1",
         "@tiptap/extension-text-align": "^3.19.0",
         "@tiptap/extension-underline": "^3.19.0",
         "@tiptap/react": "^3.19.0",
