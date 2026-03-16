@@ -21,7 +21,8 @@ class Article extends Model
         'content', 
         'slug', 
         'tech_stack', 
-        'github_url'
+        'github_url',
+        'views_count'
     ];
 
 

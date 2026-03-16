@@ -40,7 +40,12 @@ class ArticleController extends Controller
         }
 
         // СОРТИРОВКА
-        if ($request->get('sort') === 'popular') {
+        $sort = $request->get('sort', 'latest');
+    
+        // Разрешаем оба ключа для статей
+        if (in_array($sort, ['popular_views', 'most_viewed'])) {
+            $query->orderByDesc('views_count');
+        } elseif ($sort === 'popular') {
             $query->orderByDesc('likes_count');
         } else {
             $query->latest();
@@ -79,18 +84,29 @@ class ArticleController extends Controller
         }
 
         $sort = $request->get('sort', 'latest');
-        if ($sort === 'popular') {
+        if (in_array($sort, ['popular_views', 'most_viewed'])) {
+            $query->orderByDesc('views_count');
+        } elseif ($sort === 'popular') {
             $query->orderByDesc('likes_count');
-        } else {
-            $query->latest();
-        }
+        } else { $query->latest(); }
 
         return $query->paginate(12); 
     }
 
     public function show(Article $article)
     {
-        // Загружаем автора, папку, теги И СЧЕТЧИКИ
+        $sessionKey = 'viewed_article_' . $article->id;
+
+        if (!session()->has($sessionKey)) {
+            // 1. Плюсуем просмотр статье
+            $article->increment('views_count');
+            
+            // 2. Плюсуем просмотр всему блогу этой статьи
+            $article->blog()->increment('total_views');
+            
+            session()->put($sessionKey, true);
+        }
+
         return $article->load(['user:id,name,role', 'blog', 'tags'])
                     ->loadCount(['comments', 'likes', 'favorites']);
     }
@@ -196,8 +212,11 @@ class ArticleController extends Controller
         }
 
         $sort = $request->get('sort', 'latest');
-        if ($sort === 'popular') $query->orderByDesc('likes_count');
-        else $query->latest();
+        if (in_array($sort, ['popular_views', 'most_viewed'])) {
+            $query->orderByDesc('views_count');
+        } elseif ($sort === 'popular') {
+            $query->orderByDesc('likes_count');
+        } else { $query->latest(); }
 
         return $query->with(['blog', 'user'])->paginate(12);
     }

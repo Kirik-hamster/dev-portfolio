@@ -31,6 +31,7 @@ export interface Blog {
     top_tags?: string[];
     likes_count?: number;
     favorites_count?: number;
+    total_views?: number;
     is_liked?: boolean;
     is_favorited?: boolean;
     user?: User;

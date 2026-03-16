@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { ShieldCheck, User as UserIcon, Heart, Star, Folder, ChevronLeft } from 'lucide-react';
+import { ShieldCheck, User as UserIcon, Heart, Star, Folder, ChevronLeft, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Blog } from '../../types';
 
@@ -68,6 +68,10 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
 
                     {/* СТАТИСТИКА / КНОПКИ */}
                     <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <div className="flex items-center gap-2.5 px-5 py-3.5 bg-white/[0.03] border border-white/5 rounded-2xl text-gray-500">
+                            <Eye size={18} className="opacity-50" />
+                            <span className="text-sm font-black tracking-tight">{activeBlog?.total_views || 0}</span>
+                        </div>
                         <div 
                             className={`flex items-center gap-3 px-6 py-3.5 rounded-2xl border transition-all active:scale-95 
                                 ${isProfile ? 'bg-white/[0.03] border-white/5 text-gray-500 cursor-default' : 

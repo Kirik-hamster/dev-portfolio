@@ -11,10 +11,11 @@ interface TagCapsuleProps {
     viewMode: 'blogs' | 'posts';
     setViewMode: (mode: 'blogs' | 'posts') => void;
     setSelectedBlogId: (id: number | null) => void;
+    isInsideBlog?: boolean;
 }
 
 export const TagCapsule: React.FC<TagCapsuleProps> = ({
-    isSearchMode, setIsSearchMode, selectedTag, setSelectedTag, globalTags,
+    isInsideBlog = false, isSearchMode, setIsSearchMode, selectedTag, setSelectedTag, globalTags,
     setCurrentPage, viewMode, setViewMode, setSelectedBlogId
 }) => {
     const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
@@ -131,35 +132,37 @@ export const TagCapsule: React.FC<TagCapsuleProps> = ({
                 </div>
 
                 {/* ПРАВАЯ ЧАСТЬ: ДЕКСТОП (Кнопки) / МОБИЛКА (Дропдаун) */}
-                <div className="flex items-center ml-2">
-                    {/* Вид для Десктопа: Обычные кнопки */}
-                    <div className="hidden sm:flex items-center gap-1">
-                        <button onClick={() => { setViewMode('blogs'); setSelectedBlogId(null); setCurrentPage(1); }} className={`p-2 rounded-full transition-all ${viewMode === 'blogs' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}><LayoutGrid size={14} /></button>
-                        <button onClick={() => { setViewMode('posts'); setSelectedBlogId(null); setCurrentPage(1); }} className={`p-2 rounded-full transition-all ${viewMode === 'posts' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}><List size={14} /></button>
-                    </div>
+                {!isInsideBlog && (
+                    <div className="flex items-center ml-2">
+                        {/* Вид для Десктопа: Обычные кнопки */}
+                        <div className="hidden sm:flex items-center gap-1">
+                            <button onClick={() => { setViewMode('blogs'); setSelectedBlogId(null); setCurrentPage(1); }} className={`p-2 rounded-full transition-all ${viewMode === 'blogs' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}><LayoutGrid size={14} /></button>
+                            <button onClick={() => { setViewMode('posts'); setSelectedBlogId(null); setCurrentPage(1); }} className={`p-2 rounded-full transition-all ${viewMode === 'posts' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}><List size={14} /></button>
+                        </div>
 
-                    {/* Вид для Мобилки: Дропдаун */}
-                    <div className="sm:hidden relative" ref={dropdownRef}>
-                        <button 
-                            onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400 active:text-white transition-all"
-                        >
-                            {viewMode === 'blogs' ? <LayoutGrid size={12} /> : <List size={12} />}
-                            <ChevronDown size={10} className={`transition-transform ${isViewDropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
+                        {/* Вид для Мобилки: Дропдаун */}
+                        <div className="sm:hidden relative" ref={dropdownRef}>
+                            <button 
+                                onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400 active:text-white transition-all"
+                            >
+                                {viewMode === 'blogs' ? <LayoutGrid size={12} /> : <List size={12} />}
+                                <ChevronDown size={10} className={`transition-transform ${isViewDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
 
-                        {isViewDropdownOpen && (
-                            <div className="absolute top-[calc(100%+10px)] right-0 w-32 bg-[#0d0d0d] border border-white/10 rounded-xl shadow-2xl z-[70] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                <button onClick={() => { setViewMode('blogs'); setSelectedBlogId(null); setIsViewDropdownOpen(false); }} className="flex items-center gap-2 w-full p-3 text-[8px] font-bold uppercase text-gray-400 active:bg-blue-500/10 active:text-blue-400">
-                                    <LayoutGrid size={12} /> Блоги
-                                </button>
-                                <button onClick={() => { setViewMode('posts'); setSelectedBlogId(null); setIsViewDropdownOpen(false); }} className="flex items-center gap-2 w-full p-3 text-[8px] font-bold uppercase text-gray-400 active:bg-blue-500/10 active:text-blue-400">
-                                    <List size={12} /> Посты
-                                </button>
-                            </div>
-                        )}
+                            {isViewDropdownOpen && (
+                                <div className="absolute top-[calc(100%+10px)] right-0 w-32 bg-[#0d0d0d] border border-white/10 rounded-xl shadow-2xl z-[70] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <button onClick={() => { setViewMode('blogs'); setSelectedBlogId(null); setIsViewDropdownOpen(false); }} className="flex items-center gap-2 w-full p-3 text-[8px] font-bold uppercase text-gray-400 active:bg-blue-500/10 active:text-blue-400">
+                                        <LayoutGrid size={12} /> Блоги
+                                    </button>
+                                    <button onClick={() => { setViewMode('posts'); setSelectedBlogId(null); setIsViewDropdownOpen(false); }} className="flex items-center gap-2 w-full p-3 text-[8px] font-bold uppercase text-gray-400 active:bg-blue-500/10 active:text-blue-400">
+                                        <List size={12} /> Посты
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

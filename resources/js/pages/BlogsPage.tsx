@@ -3,7 +3,7 @@ import { User, Article, Blog, BlogPagination } from '../types';
 import { ArrowRight } from 'lucide-react';
 import { Pagination } from '../components/ui/Pagination';
 import { PremiumLoader } from '../components/PremiumLoader';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BlogApiService } from '../services/BlogApiService';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { TagApiService } from '../services/TagApiService';
@@ -43,7 +43,10 @@ interface GenericPagination<T> {
 }
 
 export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }: BlogsPageProps) {
-    const [viewMode, setViewMode] = useState<'blogs' | 'posts'>('blogs');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [viewMode, setViewMode] = useState<'blogs' | 'posts'>(
+        (searchParams.get('view') as 'blogs' | 'posts') || 'blogs'
+    );
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [selectedBlogId, setSelectedBlogId] = useState<number | null>(initialBlogId || null);
     
@@ -62,6 +65,13 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     const [searchType, setSearchType] = useState<'title' | 'author'>('title');
     const [sort, setSort] = useState<'latest' | 'popular'>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
+
+    
+    const handleViewChange = (mode: 'blogs' | 'posts') => {
+        setViewMode(mode);
+        setSearchParams({ view: mode }, { replace: true }); // replace: true, чтобы не плодить историю переходов
+    };
+    
 
     const [modal, setModal] = useState({ 
         isOpen: false, 
@@ -243,7 +253,8 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                 globalTags={globalTags}
                 setCurrentPage={setCurrentPage}
                 viewMode={viewMode}
-                setViewMode={setViewMode}
+                isInsideBlog={!!selectedBlogId}
+                setViewMode={handleViewChange} 
                 setSelectedBlogId={setSelectedBlogId}
             />
 
@@ -286,7 +297,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                         setSort={setSort}
                         favoritesOnly={favoritesOnly}
                         setFavoritesOnly={setFavoritesOnly}
-                        isProfileMode={false}
+                        isProfileMode={viewMode === 'posts'}
                         
                     />
                 )}
@@ -333,16 +344,20 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                             ))}
 
                             {/* РЕЖИМ ПУБЛИКАЦИЙ */}
-                            {viewMode === 'posts' && pagination?.data.map((article) => (
-                                <PostCard 
-                                    key={article.id} 
-                                    article={article} 
-                                    onSelect={onArticleSelect}
-                                    onToggleLike={handleToggleLike}
-                                    onToggleFavorite={handleToggleFavorite}
-                                    onOpenTags={(tags, title) => setTagsModal({ isOpen: true, tags, title })}
-                                />
-                            ))}
+                            {viewMode === 'posts' && pagination?.data.map((item) => {
+                                // Явно говорим TS, что в этом режиме item — это Статья
+                                const article = item as ArticleWithBlog; 
+                                return (
+                                    <PostCard 
+                                        key={article.id} 
+                                        article={article} 
+                                        onSelect={onArticleSelect}
+                                        onToggleLike={handleToggleLike}
+                                        onToggleFavorite={handleToggleFavorite}
+                                        onOpenTags={(tags, title) => setTagsModal({ isOpen: true, tags, title })}
+                                    />
+                                );
+                            })}
                         </div>
 
                         {/* ЧИСЛОВАЯ ПАГИНАЦИЯ */}

@@ -44,7 +44,9 @@ class BlogController extends Controller
 
         // 4. СОРТИРОВКА (ОДИН БЛОК!)
         $sort = $request->get('sort', 'latest');
-        if ($sort === 'popular') {
+        if ($sort === 'most_viewed') {
+            $query->orderByDesc('total_views');
+        } elseif ($sort === 'popular') {
             $query->orderByDesc('likes_count');
         } else {
             $query->latest();
