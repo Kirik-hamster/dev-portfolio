@@ -5,12 +5,13 @@ import { Article, User } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/comments/CommentSection';
 import { 
-    ArrowLeft, ArrowUpRight, ListTree, ChevronRight, 
-    User as UserIcon, Clock, Eye, MessageSquare, Heart, AlignLeft, X 
+    ArrowLeft, User as UserIcon, Clock, Eye, MessageSquare, Heart
 } from 'lucide-react';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
 import { ArticleNavigation } from '@/components/ArticlePage/ArticleNavigation';
+import { MobileTocToggle } from '@/components/ui/MobileTocToggle';
+import { MobileTocDrawer } from '@/components/ui/MobileTocDrawer';
 
 export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: any) {
     const navigate = useNavigate();
@@ -62,7 +63,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
 
     return (
         <div className="max-w-6xl mx-auto px-4 md:px-6 relative animate-in fade-in duration-700">
-            <ScrollToTop />
+            <ScrollToTop hasOffset={toc.length > 0} />
             
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 xl:gap-24 items-start">
                 <main className="min-w-0 py-6">
@@ -122,42 +123,25 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                     </div>
                 </main>
 
-                {/* 3. СОДЕРЖАНИЕ (Desktop) */}
+                {/* СОДЕРЖАНИЕ (Desktop) */}
                 <ArticleNavigation toc={toc} onItemClick={(h) => scrollTo(h.id!)} />
             </div>
 
             {/* МОБИЛЬНОЕ СОДЕРЖАНИЕ (Кнопка) */}
-            <div className="lg:hidden fixed bottom-6 right-6 z-[60]">
-                <button 
-                    onClick={() => setIsMobileTocOpen(true)}
-                    className="p-5 bg-white text-black rounded-full shadow-2xl active:scale-95 transition-all border border-black/10"
-                >
-                    <AlignLeft size={24} />
-                </button>
-            </div>
+            {toc.length > 0 && (
+                <MobileTocToggle 
+                    onClick={() => setIsMobileTocOpen(!isMobileTocOpen)} 
+                    isOpen={isMobileTocOpen} 
+                />
+            )}
 
             {/* Mobile TOC Drawer */}
-            {isMobileTocOpen && (
-                <div className="lg:hidden fixed inset-0 z-[100] flex flex-col justify-end p-4 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setIsMobileTocOpen(false)} />
-                    <div className="relative bg-[#0a0a0a] border border-white/10 rounded-[40px] p-8 max-h-[70vh] overflow-y-auto shadow-3xl animate-in slide-in-from-bottom-10 duration-500">
-                        <div className="flex justify-between items-center mb-10">
-                            <div className="flex items-center gap-3 text-blue-500">
-                                <ListTree size={18} />
-                                <span className="text-[11px] font-black uppercase tracking-widest">Содержание</span>
-                            </div>
-                            <button onClick={() => setIsMobileTocOpen(false)} className="p-2 text-gray-500"><X size={20}/></button>
-                        </div>
-                        <nav className="flex flex-col gap-6">
-                            {toc.map((h, i) => (
-                                <button key={i} onClick={() => scrollTo(h.id!)} className={`text-left transition-all ${h.level === 1 ? 'text-sm font-black text-white uppercase' : 'text-xs font-bold text-gray-500 pl-4 border-l border-white/5'}`}>
-                                    {h.text}
-                                </button>
-                            ))}
-                        </nav>
-                    </div>
-                </div>
-            )}
+            <MobileTocDrawer 
+                isOpen={isMobileTocOpen} 
+                onClose={() => setIsMobileTocOpen(false)} 
+                toc={toc} 
+                onScrollTo={scrollTo} 
+            />
         </div>
     );
 }
