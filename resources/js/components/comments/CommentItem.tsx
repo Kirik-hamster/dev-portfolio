@@ -91,19 +91,19 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     // Логика скролла (только если ЭТОТ комментарий — цель)
     useLayoutEffect(() => {
-    if (isTarget && commentRef.current) {
-        requestAnimationFrame(() => {
+        if (isTarget && commentRef.current) {
             requestAnimationFrame(() => {
-                commentRef.current?.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
+                requestAnimationFrame(() => {
+                    commentRef.current?.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    setIsActiveGlow(true);
+                    setTimeout(() => setIsActiveGlow(false), GLOW_DURATION);
                 });
-                setIsActiveGlow(true);
-                setTimeout(() => setIsActiveGlow(false), GLOW_DURATION);
             });
-        });
-    }
-}, [isTarget, showReplies]);
+        }
+    }, [isTarget, showReplies]);
 
     const isAdminAuthor = comment.user?.role === 'admin';
     const isOwner = user?.id === comment.user_id;
@@ -135,186 +135,197 @@ export const CommentItem: React.FC<ItemProps> = ({
     };
 
     const handleConfirmDelete = async () => {
-        await CommentApiService.delete(comment.id);
-        setIsDeleteModalOpen(false);
-        onAction();
+        try {
+            const res = await CommentApiService.delete(comment.id);
+            if (res.ok) {
+                setIsDeleteModalOpen(false);
+                onAction(); // Вызываем обновление списка
+            }
+        } catch (e) {
+            console.error("Delete error:", e);
+        }
     };
 
     return (
-        <div className="w-full" ref={commentRef}>
-            <div
-                id={`comment-${comment.id}`}
-                className="group relative p-6 rounded-[35px] mb-2 bg-[#0a0a0a]/60 border transition-all"
-                style={{
-                    // Мягкий бордер (почти не меняем цвет, только легкий акцент)
-                    borderColor: isActiveGlow 
-                        ? 'rgba(37, 99, 235, 0.25)' 
-                        : 'rgba(255, 255, 255, 0.05)',
-                    
-                    // "Дорогое" свечение: очень широкое, но очень прозрачное (Glow эффект)
-                    boxShadow: isActiveGlow 
-                        ? '0 0 60px rgba(37, 99, 235, 0.12), inset 0 0 20px rgba(37, 99, 235, 0.05)' 
-                        : 'none',
-                    
-                    // Очень длинный и мягкий переход для затухания
-                    transition: isActiveGlow ? 'none' : `all ${FADE_DURATION} ease-in-out`,
-                    zIndex: isActiveGlow ? 10 : 1
-                }}
-            >
-                <div className="flex justify-between items-start mb-5">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5 ${isAdminAuthor ? 'border-blue-500/30' : ''}`}>
-                            {isAdminAuthor ? <ShieldCheck size={18} className="text-blue-500" /> : <UserIcon size={18} className="text-gray-600" />}
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <span className={`text-[11px] font-black uppercase tracking-tight ${isAdminAuthor ? 'text-blue-400' : 'text-white/90'}`}>{comment.user?.name}</span>
-                                {isAdminAuthor && <span className="text-[7px] px-1.5 py-0.5 border border-blue-500/20 text-blue-500/50 rounded font-black uppercase tracking-widest">Admin</span>}
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                {/* Дата публикации */}
-                                <span className="text-[9px] text-gray-700 font-medium uppercase">
-                                    {new Date(comment.created_at).toLocaleDateString()}
-                                </span>
-
-                                {/* Проверка: показываем только если редактирование РЕАЛЬНО было */}
-                                {!!comment.is_edited && (
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-800 text-[8px]">•</span> 
-                                        <span className="text-[8px] text-blue-500/40 font-black italic uppercase tracking-tighter">
-                                            отредактировано
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* БЛОК КНОПОК: БЕЗ ФОНА, ВЫРОВНЕНЫ */}
-                    <div className="flex items-center gap-1 h-10"> 
-                        {user && (
-                            <>
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
-                                    {isOwner && (
-                                        <button onClick={() => setIsEditing(true)} className="p-2 text-gray-600 hover:text-blue-400 transition-all">
-                                            <Pencil size={15} />
-                                        </button>
-                                    )}
-                                    {canDelete && (
-                                        <button 
-                                            onClick={() => setIsDeleteModalOpen(true)} // Просто открываем окно
-                                            className={`p-2 transition-all ${user.role === 'admin' && !isOwner ? 'text-red-500/40 hover:text-red-500' : 'text-gray-600 hover:text-red-500'}`}
-                                        >
-                                            <Trash2 size={15} />
-                                        </button>
-                                    )}
-                                    <ConfirmModal 
-                                        isOpen={isDeleteModalOpen}
-                                        title="Удалить комментарий?"
-                                        message="Это действие нельзя отменить. Комментарий и все ответы на него (если они есть) исчезнут."
-                                        onConfirm={handleConfirmDelete}
-                                        onCancel={() => setIsDeleteModalOpen(false)}
-                                    />
-                                </div>
-                                
-                                {/* НОВАЯ ИКОНКА ОТВЕТА (Undo2) */}
-                                <button onClick={() => setIsReplying(!isReplying)} title="Reply" className="p-2 text-gray-500 hover:text-blue-500 transition-all">
-                                    <Undo2 size={16} />
-                                </button>
-                            </>
+        // ⚡️ ГЛАВНОЕ: Убираем любые центрирования. Всё дерево строго w-full.
+        <div className="w-full flex flex-col mb-2 sm:mb-4" ref={commentRef}>
+            
+            {/* 1. МОБИЛЬНОЕ "УШКО" — Стиль Liquid Glass */}
+            <div className="sm:hidden self-end bg-white/[0.05] border border-white/10 rounded-t-[18px] px-4 py-1 flex items-center gap-3 backdrop-blur-md relative z-10 translate-y-[1px]">
+                {user && (
+                    <div className="flex items-center gap-2">
+                        {isOwner && (
+                            <button onClick={() => setIsEditing(true)} className="p-1 text-white/40 active:scale-75 transition-all">
+                                <Pencil size={13} />
+                            </button>
                         )}
-
-                        <button onClick={() => handleLike(comment.id)} className="flex items-center gap-2 px-3 h-full hover:bg-white/[0.03] rounded-2xl transition-all group/heart">
-                            <Heart size={16} className={`${comment.likes_count > 0 ? 'fill-blue-600 text-blue-600 scale-110' : 'text-gray-800 group-hover/heart:text-blue-500'} transition-all`} />
-                            <span className="text-[10px] font-black font-mono text-gray-700 group-hover/heart:text-blue-400">{comment.likes_count}</span>
+                        {canDelete && (
+                            <button onClick={() => setIsDeleteModalOpen(true)} className="p-1 text-white/40 active:scale-75 transition-all">
+                                <Trash2 size={13} />
+                            </button>
+                        )}
+                        <button onClick={() => setIsReplying(!isReplying)} className="p-1 text-white/40 active:scale-75 transition-all">
+                            <Undo2 size={14} />
                         </button>
+                        
+                        {/* Тонкий разделитель */}
+                        <div className="w-px h-3 bg-white/10 mx-1" />
                     </div>
-                </div>
-                
-                {/* ... контент (textarea / p) остается как был ... */}
-                {isEditing ? (
-                    <div className="space-y-4">
-                        <textarea value={editText} onChange={e => setEditText(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded-2xl p-4 text-sm outline-none text-white focus:border-blue-500/20 min-h-[80px] resize-none" />
-                        <div className="flex gap-3">
-                            <button onClick={handleUpdate} className="px-5 py-2 bg-blue-600 text-white rounded-full text-[9px] font-black uppercase">Save</button>
-                            <button onClick={() => setIsEditing(false)} className="px-5 py-2 bg-white/5 text-gray-600 rounded-full text-[9px] font-black uppercase">Cancel</button>
-                        </div>
-                    </div>
-                ) : (
-                    <p className="text-gray-400/80 text-[13px] leading-relaxed font-medium pl-1 italic">
-                        {comment.content}
-                    </p>
                 )}
+
+                {/* Лайк */}
+                <div onClick={() => handleLike(comment.id)} className="flex items-center gap-1.5 px-1 text-white/60">
+                    <Heart size={14} className={comment.likes_count > 0 ? 'fill-blue-600 text-blue-600' : ''} />
+                    <span className="text-[10px] font-black">{comment.likes_count}</span>
+                </div>
             </div>
 
-            {/* ФОРМА ОТВЕТА */}
-            {isReplying && (
-                <div className="mt-2 mb-6 flex gap-3 animate-in slide-in-from-top-2 duration-300">
-                    <div className="w-px h-8 bg-white/10 ml-4" />
-                    <input autoFocus value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write a reply..." className="flex-1 bg-[#050505] border border-white/5 rounded-full px-6 py-2.5 text-sm outline-none focus:border-blue-500/10 text-white" />
-                    <button onClick={handleReply} disabled={!replyText.trim()} className="px-6 bg-blue-600 text-white rounded-full text-[9px] font-black uppercase transition-all active:scale-95">Reply</button>
-                </div>
-            )}
-
-            {/* --- БЛОК ВЛОЖЕННОСТИ --- */}
-            {(comment.replies_count > 0 || replies.length > 0) && (
-                <div className={`mt-4 ${depth < 5 ? 'ml-5 border-l border-white/10 pl-5' : 'ml-0 pl-0'}`}>
-                    
-                    {/* 1. Кнопка "Раскрыть" (если еще не загрузили) */}
-                    {!showReplies ? (
-                        <button 
-                            onClick={() => loadReplies(true)} 
-                            disabled={repliesLoading}
-                            className="mb-4 flex items-center gap-2 text-[8px] font-black uppercase text-gray-700 hover:text-blue-500 transition-colors tracking-[0.2em]"
-                        >
-                            <div className="w-4 h-px bg-current opacity-20" />
-                            {repliesLoading ? 'Загрузка...' : `Показать ответы (${comment.replies_count})`}
-                            <ChevronDown size={10} />
-                        </button>
-                    ) : (
-                        <>
-                            {/* 2. Список загруженных ответов из ЛОКАЛЬНОГО стейта */}
-                            <div className="space-y-4">
-                                {replies.map(reply => (
-                                    <CommentItem 
-                                        key={reply.id} 
-                                        comment={reply} 
-                                        sort={sort}
-                                        onAuthRequired={onAuthRequired}
-                                        user={user} 
-                                        depth={depth + 1}
-                                        targetCommentId={targetCommentId} 
-                                        onAction={onAction} 
-                                        handleLike={handleReplyLike} 
-                                    />
-                                ))}
+            {/* 2. ОСНОВНОЙ КОНТЕЙНЕР КОММЕНТАРИЯ */}
+            <div
+                id={`comment-${comment.id}`}
+                /* ⚡️ Вернули bg-white/[0.01] и border-white/5 для деликатного вида */
+                className="group w-full relative bg-white/[0.01] border border-white/10 backdrop-blur-md shadow-xl transition-all
+                    p-5 sm:p-7 rounded-[28px] sm:rounded-[35px] rounded-tr-none sm:rounded-tr-[35px]"
+                style={{
+                    borderColor: isActiveGlow ? 'rgba(37, 99, 235, 0.3)' : 'rgba(255, 255, 255, 0.05)',
+                    boxShadow: isActiveGlow ? '0 0 40px rgba(37, 99, 235, 0.1)' : 'none',
+                    transition: isActiveGlow ? 'none' : `all ${FADE_DURATION} ease-in-out`,
+                }}
+            >
+                {/* --- ШАПКА ДЛЯ ДЕСКТОПА --- */}
+                <div className="hidden sm:flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border border-white/10 bg-white/5 shrink-0 ${isAdminAuthor ? 'border-blue-500/30' : ''}`}>
+                            {isAdminAuthor ? <ShieldCheck size={18} className="text-blue-500" /> : <UserIcon size={18} className="text-gray-600" />}
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[12px] font-black uppercase text-white/90">{comment.user?.name}</span>
+                                {isAdminAuthor && <span className="text-[7px] px-1.5 py-0.5 border border-blue-500/20 text-blue-500/50 rounded font-black uppercase">Admin</span>}
                             </div>
+                            <span className="text-[10px] text-gray-700 uppercase">{new Date(comment.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
 
-                            {/* 3. Кнопка "СМОТРЕТЬ ЕЩЕ ОТВЕТЫ" (если есть другие страницы) */}
-                            {hasMoreReplies && (
-                                <button 
-                                    onClick={() => loadReplies()} 
-                                    disabled={repliesLoading}
-                                    className="mt-6 ml-4 text-[8px] font-black uppercase text-blue-500/40 hover:text-blue-500 transition-all flex items-center gap-2"
-                                >
-                                    <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                                    {repliesLoading ? 'Загружаем...' : 'Еще ответы'}
-                                </button>
-                            )}
+                    <div className="flex items-center gap-1">
+                        {user && (
+                            <div className="flex items-center">
+                                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                    {(isOwner || user.role === 'admin') && (
+                                        <>
+                                            <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="p-2 text-white/30 hover:text-blue-400 active:scale-75 transition-all"><Pencil size={15} /></button>
+                                            <button onClick={(e) => { e.stopPropagation(); setIsDeleteModalOpen(true); }} className="p-2 text-white/30 hover:text-red-500 active:scale-75 transition-all"><Trash2 size={15} /></button>
+                                        </>
+                                    )}
+                                </div>
+                                <button onClick={() => setIsReplying(!isReplying)} className="p-2 text-gray-500 hover:text-blue-400 active:scale-75 transition-all"><Undo2 size={16} /></button>
+                                <div className="w-px h-3 bg-white/10 mx-2" />
+                            </div>
+                        )}
+                        <button onClick={() => handleLike(comment.id)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-xl transition-all group/heart active:scale-90">
+                            <Heart size={16} className={`${comment.likes_count > 0 ? 'fill-blue-600 text-blue-600 scale-110' : 'text-gray-700 group-hover/heart:text-blue-500'}`} />
+                            <span className="text-[11px] font-black text-gray-700 group-hover/heart:text-blue-400">{comment.likes_count}</span>
+                        </button>
+                    </div>
+                </div>
 
-                            {/* Кнопка "Свернуть все" */}
-                            <button 
-                                onClick={() => setShowReplies(false)}
-                                className="mt-6 flex items-center gap-2 text-[8px] font-black uppercase text-gray-800 hover:text-red-500/60 transition-colors tracking-[0.2em]"
-                            >
-                                <div className="w-4 h-px bg-current opacity-20" />
-                                Свернуть ответы
-                                <ChevronUp size={10} />
-                            </button>
-                        </>
+                {/* --- ШАПКА ДЛЯ МОБИЛКИ --- */}
+                <div className="sm:hidden flex items-center gap-4 mb-6 px-1">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5 shrink-0`}>
+                        {isAdminAuthor ? <ShieldCheck size={22} className="text-blue-500" /> : <UserIcon size={22} className="text-gray-600" />}
+                    </div>
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[14px] font-black uppercase text-white/90 truncate">{comment.user?.name}</span>
+                            {isAdminAuthor && <span className="text-[8px] px-2 py-0.5 border border-blue-500/20 text-blue-500/50 rounded font-black uppercase">Admin</span>}
+                        </div>
+                        <span className="text-[10px] text-gray-700 uppercase font-medium">{new Date(comment.created_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+
+                {/* КОНТЕНТ */}
+                <div className="px-2 sm:px-0">
+                    {isEditing ? (
+                        <div className="space-y-3">
+                            <textarea value={editText} onChange={e => setEditText(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-sm outline-none text-white min-h-[80px] resize-none focus:border-blue-500/20" />
+                            <div className="flex gap-2">
+                                <button onClick={handleUpdate} className="px-5 py-2 bg-blue-600 text-white rounded-full text-[9px] font-black uppercase">Save</button>
+                                <button onClick={() => setIsEditing(false)} className="px-5 py-2 bg-white/5 text-gray-600 rounded-full text-[9px] font-black uppercase">Exit</button>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-gray-400/80 text-[13px] sm:text-[15px] leading-relaxed font-medium italic break-words">
+                            {comment.content}
+                        </p>
                     )}
                 </div>
+            </div>
+
+            {/* 3. ВЛОЖЕННОСТЬ (ОТВЕТЫ) */}
+            {(comment.replies_count > 0 || replies.length > 0) && (
+                /* ⚡️ items-start гарантирует, что вертикальная линия будет СЛЕВА */
+                <div className="w-full mt-4 flex flex-col items-start">
+                    
+                    {/* Контейнер ответов: ширина уменьшается на 12px (моб) / 40px (десктоп) с левой стороны */}
+                    <div className="w-[calc(100%-12px)] sm:w-[calc(100%-40px)] ml-auto border-l border-white/5 sm:border-white/10 pl-4 sm:pl-10">
+                        
+                        {!showReplies ? (
+                            /* ⚡️ КНОПКА "ОТВЕТЫ" СПРАВА С ГОРИЗОНТАЛЬНОЙ ЛИНИЕЙ */
+                            <div className="flex items-center gap-4 w-full mb-4 translate-y-2 sm:translate-y-3">
+                                {/* Горизонтальная линия от вертикального гида до текста */}
+                                <div className="flex-grow h-px bg-white/5" /> 
+                                <button 
+                                    onClick={() => loadReplies(true)} 
+                                    disabled={repliesLoading} 
+                                    className="flex items-center gap-2 text-[9px] font-black uppercase text-blue-500/40 hover:text-blue-400 tracking-widest transition-all shrink-0 active:scale-95"
+                                >
+                                    {repliesLoading ? '...' : `Показать ответы (${comment.replies_count})`}
+                                    <ChevronDown size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col">
+                                {/* Список ответов */}
+                                <div className="space-y-6">
+                                    {replies.map(reply => (
+                                        <CommentItem 
+                                            key={reply.id} 
+                                            comment={reply} 
+                                            sort={sort}
+                                            onAuthRequired={onAuthRequired}
+                                            user={user} 
+                                            depth={depth + 1}
+                                            targetCommentId={targetCommentId} 
+                                            onAction={onAction} 
+                                            handleLike={handleReplyLike} 
+                                        />
+                                    ))}
+                                </div>
+
+                                {/* ⚡️ КНОПКА "СВЕРНУТЬ" СПРАВА С ЛИНИЕЙ */}
+                                <div className="flex items-center gap-4 w-full py-6">
+                                    <div className="flex-grow h-px bg-white/5" />
+                                    <button 
+                                        onClick={() => setShowReplies(false)} 
+                                        className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-800 hover:text-red-500/60 transition-colors tracking-widest shrink-0 active:scale-95"
+                                    >
+                                        Свернуть ветку
+                                        <ChevronUp size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
+
+            <ConfirmModal 
+                isOpen={isDeleteModalOpen}
+                title="Удалить комментарий?"
+                message="Это действие нельзя отменить. Все ответы будут удалены."
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setIsDeleteModalOpen(false)}
+            />
         </div>
     );
 };

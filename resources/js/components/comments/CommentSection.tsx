@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { User, Comment } from '../../types';
 import { CommentApiService } from '@/services/CommentApiService';
 import { CommentItem } from './CommentItem';
 import { AuthRequiredModal } from '../ui/AuthRequiredModal';
+import { StatusModal } from '../ui/StatusModal';
 
 interface CommentSectionProps {
     articleId: number;
@@ -13,6 +14,8 @@ interface CommentSectionProps {
     user: User | null;
     onNavigateToLogin: () => void;
 }
+
+const MAX_CHARS = 1000;
 
 export const CommentSection: React.FC<CommentSectionProps> = ({ 
     articleId, 
@@ -34,6 +37,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     const [total, setTotal] = useState(0);
 
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', message: '' });
 
     const loadRootComments = async (isInitial = false) => {
         setLoading(true);
@@ -47,6 +51,16 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         setLoading(false);
     };
 
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Этот эффект будет срабатывать при каждом изменении контента
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto'; // Сбрасываем высоту, чтобы вычислить новую
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Ставим высоту равную контенту
+        }
+    }, [content]);
+
     useEffect(() => { loadRootComments(true); }, [sort, articleId]);
 
     // Синхронизируем, если пришли новые комменты от родителя (например, при заходе в статью)
@@ -59,14 +73,24 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         setIsSubmitting(true);
         try {
             const res = await CommentApiService.add(articleId, content);
+            
             if (res.ok) {
                 const newComment = await res.json();
                 setContent('');
                 setLocalComments(prev => [newComment, ...prev]);
                 setTotal(prev => prev + 1);
+            } else {
+                // Если сервер вернул ошибку (например, 422 - превышен лимит)
+                const errorData = await res.json();
+                setErrorModal({
+                    isOpen: true,
+                    title: 'Ошибка публикации',
+                    // Берем сообщение от бэкенда или ставим стандартное
+                    message: errorData.message || 'Возможно, комментарий слишком длинный или содержит недопустимые символы.'
+                });
             }
         } catch (e) {
-            console.error("Ошибка при создании:", e);
+            console.error("Ошибка сети:", e);
         } finally {
             setIsSubmitting(false);
         }
@@ -111,30 +135,49 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 
             {/* ФОРМА ДЛЯ ОСТАВЛЕНИЯ КОММЕНТАРИЯ */}
             {!user ? (
-                <div className="bg-white/[0.01] border border-dashed border-white/10 p-12 rounded-[40px] text-center">
-                    <button onClick={onNavigateToLogin} className="px-8 py-3 bg-white text-black rounded-full font-black uppercase text-[9px] tracking-widest">Войти в аккаунт</button>
+                <div className="bg-white/[0.01] border border-dashed border-white/10 p-8 sm:p-12 rounded-[24px] sm:rounded-[40px] text-center">
+                    <button onClick={onNavigateToLogin} className="px-6 sm:px-8 py-3 bg-white text-black rounded-full font-black uppercase text-[8px] sm:text-[9px] tracking-widest transition-all active:scale-95">Войти в аккаунт</button>
                 </div>
             ) : (
-                <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[40px] relative">
+                /* 2. Форма ввода */
+                <div className="bg-white/[0.02] border border-white/5 p-5 sm:p-8 rounded-[24px] sm:rounded-[40px] flex flex-col">
                     <textarea 
-                        value={content} onChange={e => setContent(e.target.value)}
+                        ref={textareaRef}
+                        value={content} 
+                        onChange={e => setContent(e.target.value)}
                         placeholder={`${user.name}, что думаете?`}
-                        className="w-full bg-transparent border-none text-white outline-none text-sm min-h-[100px] resize-none pb-12"
+                        /* ⚡️ Убрали pb-16, так как плашка больше не абсолютная и не перекрывает текст */
+                        className="w-full bg-transparent border-none text-white outline-none text-sm min-h-[100px] resize-none pb-6 placeholder:text-gray-600 overflow-hidden transition-[height] duration-200"
                     />
-                    <div className="absolute bottom-6 right-8 left-8 flex justify-between items-center pt-6 border-t border-white/5">
-                        <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                                {user.role === 'admin' ? <ShieldCheck size={12} className="text-blue-500"/> : <UserIcon size={12} className="text-gray-500"/>}
+                    
+                    {/* Нижняя плашка формы (Теперь она в потоке, а не absolute) */}
+                    <div className="flex justify-between items-center pt-4 sm:pt-6 border-t border-white/5 mt-auto">
+                        <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+                            {/* Аватар */}
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
+                                {user.role === 'admin' ? <ShieldCheck size={10} className="text-blue-500"/> : <UserIcon size={10} className="text-gray-500"/>}
                             </div>
-                            <span className="text-[9px] font-black uppercase text-gray-500">{user.name}</span>
+
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-3 min-w-0">
+                                
+                                
+                                {/* Имя автора */}
+                                <span className="text-[8px] sm:text-[9px] font-black uppercase text-gray-500 truncate">{user.name}</span>
+                                {/* ⚡️ Счётчик символов слева от имени */}
+                                <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest whitespace-nowrap 
+                                    ${content.length > MAX_CHARS ? 'text-red-500 animate-pulse' : 'text-white/20'}`}>
+                                    {content.length > (MAX_CHARS - 50) ? `Осталось: ${MAX_CHARS - content.length}` : `Символов: ${content.length}/${MAX_CHARS}`}
+                                </span>
+                            </div>
                         </div>
+
                         <button 
                             onClick={handleSubmit} 
-                            // Условие остается прежним — оно верное
-                            disabled={!content.trim() || isSubmitting} 
-                            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-[9px] uppercase tracking-widest shadow-lg transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:shadow-none"
+                            /* ⚡️ Блокируем кнопку, если текст пустой ИЛИ превышен лимит */
+                            disabled={!content.trim() || isSubmitting || content.length > MAX_CHARS} 
+                            className="flex items-center gap-2 bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-full font-bold text-[8px] sm:text-[9px] uppercase tracking-widest shadow-lg transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
                         >
-                            <Send size={12} /> Post
+                            <Send size={10} /> Post
                         </button>
                     </div>
                 </div>
@@ -155,6 +198,13 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                 <AuthRequiredModal 
                     isOpen={isAuthModalOpen} 
                     onClose={() => setIsAuthModalOpen(false)} 
+                />
+                <StatusModal 
+                    isOpen={errorModal.isOpen}
+                    type="error"
+                    title={errorModal.title}
+                    message={errorModal.message}
+                    onClose={() => setErrorModal(prev => ({ ...prev, isOpen: false }))}
                 />
                 {localComments.map((comment) => (
                     <CommentItem 
