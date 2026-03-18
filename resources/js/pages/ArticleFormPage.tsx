@@ -66,11 +66,12 @@ export function ArticleFormPage({ user, onSave, onCancel }: ArticleFormPageProps
         }
     };
 
-    if (loading) return <PremiumLoader />;
+    if (loading || (articleId && !article)) {
+        return <PremiumLoader />;
+    }
 
     return (
         <>
-            <ScrollToTop />
             <ArticleForm 
                 article={article} // Теперь TS не ругается, типы идентичны!
                 onSave={handleSave} 

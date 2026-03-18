@@ -12,7 +12,7 @@ export const MobileTocToggle: React.FC<MobileTocToggleProps> = ({ onClick, isOpe
 
     return (
         <div 
-            className="lg:hidden fixed right-6 z-[60] transition-all duration-500 ease-in-out"
+            className="lg:hidden fixed right-6 z-[100] transition-all duration-500 ease-in-out"
             style={{ bottom: `${bottomOffset}px` }}
         >
             <button 
