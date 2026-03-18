@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Send, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { User, Comment } from '../../types';
 import { CommentApiService } from '@/services/CommentApiService';
 import { CommentItem } from './CommentItem';
@@ -10,7 +10,6 @@ interface CommentSectionProps {
     articleId: number;
     comments: Comment[];
     targetCommentId: number | null;
-    onCommentAdded: () => void;
     user: User | null;
     onNavigateToLogin: () => void;
 }
@@ -21,7 +20,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     articleId, 
     comments, 
     targetCommentId, 
-    onCommentAdded, 
     user, 
     onNavigateToLogin 
 }) => {
@@ -63,11 +61,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 
     useEffect(() => { loadRootComments(true); }, [sort, articleId]);
 
-    // Синхронизируем, если пришли новые комменты от родителя (например, при заходе в статью)
-    useEffect(() => {
-        setLocalComments(comments);
-    }, [comments]);
-
     const handleSubmit = async () => {
         if (!content.trim() || isSubmitting) return;
         setIsSubmitting(true);
@@ -99,8 +92,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     const countTotal = (list: Comment[]): number => {
         return list.reduce((acc, c) => acc + 1 + (c.replies ? countTotal(c.replies) : 0), 0);
     };
-
-    const totalCount = countTotal(localComments);
 
     const handleLike = async (commentId: number) => {
         if (!user) return setIsAuthModalOpen(true);

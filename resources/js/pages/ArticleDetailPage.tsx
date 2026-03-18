@@ -119,7 +119,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                     <article className="prose-editor w-full mb-40" dangerouslySetInnerHTML={{ __html: article.content }} />
 
                     <div id="discussion-area" className="mt-32 border-t border-white/5 pt-20">
-                        <CommentSection articleId={article.id} comments={article.comments || []} user={user} onNavigateToLogin={onNavigateToLogin} onCommentAdded={() => {}} targetCommentId={0} />
+                        <CommentSection articleId={article.id} comments={article.comments || []} user={user} onNavigateToLogin={onNavigateToLogin} targetCommentId={0} />
                     </div>
                 </main>
 
