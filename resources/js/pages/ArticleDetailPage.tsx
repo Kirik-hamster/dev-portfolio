@@ -5,7 +5,9 @@ import { Article, User } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/comments/CommentSection';
 import { 
-    ArrowLeft, User as UserIcon, Clock, Eye, MessageSquare, Heart
+    ArrowLeft, User as UserIcon, Clock, Eye, MessageSquare, Heart,
+    ShieldCheck,
+    Pencil
 } from 'lucide-react';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
@@ -19,6 +21,27 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
     const [loading, setLoading] = useState(true);
     const [toc, setToc] = useState<{ id: string; text: string; level: number }[]>([]);
     const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
+
+    const handleToggleLike = async () => {
+        // Если юзер не залогинен — отправляем на вход
+        if (!user) return onNavigateToLogin();
+        if (!article) return;
+
+        try {
+            const res = await ArticleApiService.toggleLike(article.id);
+            if (res.ok) {
+                const data = await res.json();
+                // Обновляем состояние статьи локально, чтобы цифра изменилась мгновенно
+                setArticle(prev => prev ? { 
+                    ...prev, 
+                    is_liked: data.is_liked, 
+                    likes_count: data.likes_count 
+                } : null);
+            }
+        } catch (err) {
+            console.error("Ошибка при попытке поставить лайк:", err);
+        }
+    };
 
     const handleBack = () => {
         if (window.history.state && window.history.state.idx > 0) {
@@ -65,36 +88,102 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
         <div className="max-w-6xl mx-auto px-4 md:px-6 relative animate-in fade-in duration-700">
             <ScrollToTop hasOffset={toc.length > 0} />
             
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 xl:gap-24 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_350px] gap-8 xl:gap-16 items-start">
                 <main className="min-w-0 py-6">
                     
                     {/* ВЕРХНЯЯ НАВИГАЦИЯ */}
                     <div className="flex flex-col gap-8 mb-16">
-                        <button onClick={handleBack} className="w-fit flex items-center gap-2 text-gray-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest group">
-                            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Назад
-                        </button>
+                        
+                        {/* СТРОКА 1: СИСТЕМНАЯ ПАНЕЛЬ (НАЗАД + СТАТИСТИКА) */}
+                        <div className="flex items-center justify-between w-full h-6">
+                            <button 
+                                onClick={handleBack} 
+                                className="flex items-center gap-2 text-gray-500 hover:text-white transition-all font-black uppercase text-[10px] tracking-[0.2em] group"
+                            >
+                                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
+                                <span>Назад</span>
+                            </button>
 
-                        <div className="flex flex-wrap items-center gap-6 text-gray-500 border-b border-white/5 pb-8">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shadow-xl">
-                                    <UserIcon size={18} />
+                            <div className="flex items-center gap-5 text-gray-500">
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-tight opacity-50">
+                                    <Eye size={14} strokeWidth={2.5} /> 
+                                    <span>{article.views_count || 0}</span>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-black text-white uppercase tracking-wider">{article.user?.name}</span>
-                                    {/* РОЛЬ АВТОРА */}
-                                    <span className="text-[9px] text-blue-500 font-bold uppercase tracking-tighter">{article.user?.role || 'Contributor'}</span>
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-tight opacity-50">
+                                    <MessageSquare size={14} strokeWidth={2.5} /> 
+                                    <span>{article.comments_count || 0}</span>
+                                </div>
+                                <button 
+                                    onClick={handleToggleLike} 
+                                    className={`
+                                        flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tight transition-all active:scale-90
+                                        ${article.is_liked ? 'text-red-500' : 'text-blue-500 hover:text-red-400'}
+                                    `}
+                                >
+                                    <Heart 
+                                        size={14} 
+                                        strokeWidth={2.5}
+                                        fill={article.is_liked ? "currentColor" : "none"} 
+                                    /> 
+                                    <span>{article.likes_count || 0}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* СТРОКА 2: ИНФО-ПАНЕЛЬ (АВТОР + ДАТЫ) */}
+                        <div className="flex flex-wrap items-center justify-between gap-y-6 border-b border-white/5 pb-8">
+                            {/* БЛОК АВТОРА */}
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <div className="w-11 h-11 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shadow-2xl">
+                                        <UserIcon size={20} />
+                                    </div>
+                                    {article.user?.role === 'admin' && (
+                                        <div className="absolute -right-1 -bottom-1 w-4 h-4 bg-blue-600 rounded-full border-2 border-[#050505] flex items-center justify-center">
+                                            <ShieldCheck size={10} className="text-white" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-col justify-center">
+                                    <span className="text-[11px] font-black text-white uppercase tracking-wider leading-none mb-1.5">
+                                        {article.user?.name}
+                                    </span>
+                                    <span className="text-[9px] text-blue-500 font-bold uppercase tracking-widest leading-none">
+                                        {article.user?.role || 'Contributor'}
+                                    </span>
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-1.5 text-[11px] opacity-60">
-                                <Clock size={14} />
-                                <span>{new Date(article.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                            </div>
-
-                            <div className="flex items-center gap-6 ml-auto">
-                                <div className="flex items-center gap-1.5 text-xs opacity-50"><Eye size={14} /> {article.views_count || 0}</div>
-                                <div className="flex items-center gap-1.5 text-xs opacity-50"><MessageSquare size={14} /> {article.comments_count || 0}</div>
-                                <div className="flex items-center gap-1.5 text-xs text-blue-500 font-black"><Heart size={14} fill={article.is_liked ? "currentColor" : "none"} /> {article.likes_count || 0}</div>
+                            {/* БЛОК ДАТ (ВЫРОВНЕН ПО ВЫСОТЕ С АВТОРОМ) */}
+                            <div className="flex flex-col items-end justify-center">
+                                <div className="grid grid-cols-[auto_12px] lg:grid-cols-[auto_auto_12px] gap-x-2 lg:gap-x-4 gap-y-1.5 items-center text-[9px] uppercase font-black tracking-[0.1em]">
+                                    
+                                    {/* СТРОКА 1: ДАТА СОЗДАНИЯ */}
+                                    <span className="hidden lg:block opacity-40 text-left text-gray-500">Опубликовано</span>
+                                    <span className="text-gray-300 text-right lg:text-left lg:min-w-[110px]">
+                                        {new Date(article.created_at).toLocaleDateString('ru-RU', { 
+                                            day: 'numeric', 
+                                            month: window.innerWidth < 1024 ? 'short' : 'long', // Короткий месяц на мобилках
+                                            year: 'numeric' 
+                                        })}
+                                    </span>
+                                    <Clock size={12} className="opacity-30 justify-self-end" />
+                                    
+                                    {/* СТРОКА 2: ДАТА ОБНОВЛЕНИЯ */}
+                                    {article.updated_at && article.updated_at !== article.created_at && (
+                                        <>
+                                            <span className="hidden lg:block opacity-50 text-left text-blue-400/80">Обновлено</span>
+                                            <span className="text-blue-400/80 text-right lg:text-left lg:min-w-[110px]">
+                                                {new Date(article.updated_at).toLocaleDateString('ru-RU', { 
+                                                    day: 'numeric', 
+                                                    month: window.innerWidth < 1024 ? 'short' : 'long',
+                                                    year: 'numeric' 
+                                                })}
+                                            </span>
+                                            <Pencil size={11} className="text-blue-500/50 justify-self-center" />
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

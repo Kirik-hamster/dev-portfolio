@@ -98,12 +98,15 @@ class ArticleController extends Controller
         $sessionKey = 'viewed_article_' . $article->id;
 
         if (!session()->has($sessionKey)) {
-            // 1. Плюсуем просмотр статье
+            $article->timestamps = false; 
             $article->increment('views_count');
             
-            // 2. Плюсуем просмотр всему блогу этой статьи
-            $article->blog()->increment('total_views');
-            
+            $blog = $article->blog;
+            if ($blog) {
+                $blog->timestamps = false;
+                $blog->increment('total_views');
+            }
+
             session()->put($sessionKey, true);
         }
 

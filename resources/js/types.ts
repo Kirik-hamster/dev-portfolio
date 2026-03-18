@@ -63,6 +63,7 @@ export interface Article {
     tech_stack?: string;
     github_url?: string;
     created_at: string;
+    updated_at: string;
     views_count?: number;
     comments?: Comment[];
     comments_count?: number;
