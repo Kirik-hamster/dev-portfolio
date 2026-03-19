@@ -10,13 +10,15 @@ import Gapcursor from '@tiptap/extension-gapcursor';
 import { 
     Bold, Italic, List, Code, Tag, Image as ImageIcon,
     Heading1, Heading2, Undo, Redo, Underline as UnderlineIcon,
-    AlignLeft, AlignCenter, Link as LinkIcon, ListTree, UploadCloud, ChevronRight
+    AlignLeft, AlignCenter, Link as LinkIcon, ListTree, UploadCloud, ChevronRight,
+    X
 } from 'lucide-react'; 
 import { Article, ArticleInput, User } from '../types';
 import { ArticleNavigation } from './ArticlePage/ArticleNavigation';
 import { MobileTocDrawer } from './ui/MobileTocDrawer';
 import { MobileTocToggle } from './ui/MobileTocToggle';
 import { ScrollToTop } from './ui/ScrollToTop';
+import { ArticleMetaModal } from './ui/ArticleForm/ArticleMetaModal';
 
 interface ArticleFormProps {
     article: Article | undefined; 
@@ -41,6 +43,8 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
     const [githubUrl, setGithubUrl] = useState(article?.github_url || '');
     const [toc, setToc] = useState<{ level: number; text: string; pos: number }[]>([]);
 
+    const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
+
     const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
 
     const [isMobile, setIsMobile] = React.useState(window.innerWidth < 1024);
@@ -50,6 +54,34 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    const toggleHeading = (level: 1 | 2 | 3) => {
+        if (!editor) return;
+
+        const { from, to } = editor.state.selection;
+        const isCollapsed = from === to; // Просто курсор или выделение?
+
+        if (editor.isActive('heading', { level })) {
+            editor.chain().focus().setParagraph().run();
+            return;
+        }
+
+        if (!isCollapsed) {
+            // Если выделен текст внутри параграфа:
+            // 1. Копируем выделенный текст
+            // 2. Удаляем его
+            // 3. Вставляем новый блок заголовка с этим текстом
+            const selectedText = editor.state.doc.textBetween(from, to);
+            editor.chain()
+                .focus()
+                .deleteSelection()
+                .insertContent(`<h${level}>${selectedText}</h${level}>`)
+                .run();
+        } else {
+            // Если просто курсор: разрезаем блок и делаем новую строку заголовком
+            editor.chain().focus().splitBlock().toggleHeading({ level }).run();
+        }
+    };
 
     const scrollTo = (id: string) => {
         const el = document.getElementById(id);
@@ -124,37 +156,43 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
 
     return (
         <>
-            <ScrollToTop hasOffset={toc.length > 0} />
-            <div className="max-w-[1500px] mx-auto px-6 w-full space-y-8 animate-in fade-in duration-700 relative z-10">
+            <ScrollToTop hasOffset={toc.length > 0 && isMobile} />
+            <div className="max-w-[1500px] mx-auto px-4 sm:px-6 w-full space-y-8 animate-in fade-in duration-700 relative z-10">
             
+                {/* ВЕРХНЯЯ ЧАСТЬ: TITLE + META */}
                 <div className="flex flex-col lg:flex-row gap-6 items-end">
                     <div className="flex-1 w-full">
-                        <input 
-                            value={title} 
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Название проекта..."
-                            className="w-full bg-transparent text-5xl sm:text-7xl font-black uppercase tracking-tighter outline-none border-none p-0 placeholder:text-white/5 focus:ring-0 text-white"
-                        />
+                        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название проекта..." className="w-full bg-transparent text-5xl sm:text-8xl font-black uppercase tracking-tighter outline-none border-none p-0 placeholder:text-white/5 focus:ring-0 text-white" />
                     </div>
-                    <div className="flex gap-4 w-full lg:w-96">
-                        <div className="flex-1 bg-white/[0.02] border border-white/5 p-4 rounded-[25px] backdrop-blur-md">
-                            <label className="text-[8px] font-black uppercase text-blue-500/50 block mb-1">Stack</label>
-                            <input value={techStack} onChange={(e) => setTechStack(e.target.value)} className="bg-transparent outline-none text-xs w-full text-white" placeholder="React, Three.js..." />
-                        </div>
-                        <div className="flex-1 bg-white/[0.02] border border-white/5 p-4 rounded-[25px] backdrop-blur-md">
-                            <label className="text-[8px] font-black uppercase text-blue-500/50 block mb-1">Source</label>
-                            <input value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} className="bg-transparent outline-none text-xs w-full text-blue-400" placeholder="GitHub URL..." />
+                    
+                    {/* КНОПКА МЕТАДАННЫХ: Теперь аккуратно и с подписями */}
+                    <div className="w-full lg:w-[450px]">
+                        <div 
+                            onClick={() => setIsMetaModalOpen(true)}
+                            className="bg-white/[0.02] border border-white/5 p-6 rounded-[35px] backdrop-blur-md cursor-pointer hover:bg-white/[0.05] transition-all group flex items-center justify-between"
+                        >
+                            <div className="space-y-3 flex-1 min-w-0">
+                                <div className="space-y-1">
+                                    <span className="block text-[8px] font-black uppercase text-blue-500/50 tracking-widest">Теги</span>
+                                    <p className="text-xs text-gray-300 font-bold truncate pr-4">{techStack || 'Не указано'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <span className="block text-[8px] font-black uppercase text-blue-500/50 tracking-widest">Ссылка</span>
+                                    <p className="text-xs text-blue-400/80 font-bold truncate pr-4">{githubUrl || 'Ссылка отсутствует'}</p>
+                                </div>
+                            </div>
+                            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <ChevronRight size={20} />
+                            </div>
                         </div>
                     </div>
                 </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_350px] gap-8 items-start">
-                    
-                    {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР */}
-                    <div className="min-w-0 bg-white/[0.01] border border-white/10 rounded-[45px] overflow-hidden backdrop-blur-sm shadow-3xl">
-                        <div className="sticky top-0 z-30 p-2.5 bg-[#080808]/90 backdrop-blur-2xl border-b border-white/5 flex flex-wrap gap-1">
-                            <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })}><Heading1 size={18}/></ToolbarButton>
-                            <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })}><Heading2 size={18}/></ToolbarButton>
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_350px] gap-8 items-start">
+                    <div className="min-w-0 bg-white/[0.01] border border-white/10 rounded-[45px] backdrop-blur-sm shadow-3xl relative">                       
+                        <div className="sticky top-[64px] sm:top-[72px] z-[40] p-4 bg-[#080808] border-b border-white/10 rounded-t-[45px] flex flex-wrap gap-1 shadow-2xl">
+                            <ToolbarButton onClick={() => toggleHeading(1)} isActive={editor.isActive('heading', { level: 1 })}><Heading1 size={18}/></ToolbarButton>
+                            <ToolbarButton onClick={() => toggleHeading(2)} isActive={editor.isActive('heading', { level: 2 })}><Heading2 size={18}/></ToolbarButton>
                             <div className="w-px h-5 bg-white/10 mx-2 self-center" />
                             <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}><Bold size={18}/></ToolbarButton>
                             <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')}><Italic size={18}/></ToolbarButton>
@@ -167,7 +205,9 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                             <ToolbarButton onClick={() => editor.chain().focus().undo().run()}><Undo size={18}/></ToolbarButton>
                             <ToolbarButton onClick={() => editor.chain().focus().redo().run()}><Redo size={18}/></ToolbarButton>
                         </div>
-                        <EditorContent editor={editor} />
+                        <div className="flex-1 overflow-y-auto sm:p-14 custom-scrollbar">
+                            <EditorContent editor={editor} />
+                        </div>
                     </div>
 
                     <aside className="hidden lg:block sticky top-32 z-10">
@@ -179,15 +219,21 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                     </aside>
                 </div>
 
-                <div className="flex justify-between items-center bg-white/[0.01] border border-white/10 p-6 rounded-[40px] backdrop-blur-md">
-                    <button onClick={onCancel} className="px-8 py-4 text-gray-500 font-black uppercase text-[10px] tracking-[0.2em] hover:text-white transition-all">Discard</button>
-                    <button onClick={handleSave} disabled={!title.trim()} className="px-12 py-4 bg-white text-black rounded-full font-black uppercase text-[11px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl disabled:opacity-10 active:scale-95">
-                        {article ? 'Save Changes' : 'Publish'}
+                <div className="flex justify-between items-center bg-white/[0.01] border border-white/10 p-6 rounded-[40px] backdrop-blur-md relative z-20">
+                    <button onClick={onCancel} className="px-8 py-4 text-gray-500 font-black uppercase text-[10px] tracking-[0.2em] hover:text-white transition-all">Отмена</button>
+                    <button onClick={handleSave} disabled={!title.trim()} className="px-12 py-4 bg-white text-black rounded-full font-black uppercase text-[11px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-95">
+                        {article ? 'Сохранить изменения' : 'Опубликовать пост'}
                     </button>
                 </div>
-
-                
             </div>
+
+            {/* КОМПОНЕНТЫ МОДАЛОК И ПОРТАЛОВ */}
+            <ArticleMetaModal 
+                isOpen={isMetaModalOpen} 
+                onClose={() => setIsMetaModalOpen(false)}
+                techStack={techStack} setTechStack={setTechStack}
+                githubUrl={githubUrl} setGithubUrl={setGithubUrl}
+            />
             {/* МОБИЛЬНЫЕ КОМПОНЕНТЫ СОДЕРЖАНИЯ (Порталы) */}
             {toc.length > 0 && (
                 <MobileTocToggle 
