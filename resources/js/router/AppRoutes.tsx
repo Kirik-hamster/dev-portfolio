@@ -64,8 +64,12 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, set
 
     return (
         <Routes>
-            <Route path="/" element={<HomePage onNavigateToPortfolio={() => navigate('/portfolio')} />} />
-            
+<           Route path="/" element={
+                <HomePage 
+                    user={user} 
+                    onNavigateToPortfolio={() => navigate('/portfolio')} 
+                />
+            } />            
             <Route path="/portfolio" element={
                 <PortfolioPage 
                     user={user} 

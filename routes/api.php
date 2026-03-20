@@ -33,6 +33,9 @@ Route::post('/verify-resend', [VerifyCodeController::class, 'resend'])
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::get('/home-settings', [App\Http\Controllers\HomeSettingController::class, 'show']);
+
 // 2. Закрытые маршруты (только после логина)
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Получение данных текущего юзера
@@ -77,4 +80,6 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     
     Route::post('/blogs/{blog}/toggle-like', [BlogController::class, 'toggleLike']);
     Route::post('/blogs/{blog}/toggle-favorite', [BlogController::class, 'toggleFavorite']);
+
+    Route::put('/home-settings', [App\Http\Controllers\HomeSettingController::class, 'update']);
 });
