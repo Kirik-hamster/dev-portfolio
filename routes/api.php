@@ -6,6 +6,8 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Auth\VerifyCodeController;
 use App\Http\Controllers\Auth\PasswordUpdateController;
+use App\Http\Controllers\HomeSettingController;
+use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -81,5 +83,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/blogs/{blog}/toggle-like', [BlogController::class, 'toggleLike']);
     Route::post('/blogs/{blog}/toggle-favorite', [BlogController::class, 'toggleFavorite']);
 
-    Route::put('/home-settings', [App\Http\Controllers\HomeSettingController::class, 'update']);
+    Route::post('/upload', [ImageUploadController::class, 'upload']);
+    Route::post('/upload/delete', [ImageUploadController::class, 'destroy']);
+
+    Route::put('/home-settings', [HomeSettingController::class, 'update']);
 });

@@ -23,18 +23,35 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $code = rand(100000, 999999); // Генерируем 6 цифр
+        $user = User::where('email', $request->email)->first();
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->string('password')),
-            'verification_code' => $code, // Сохраняем код
-        ]);
+        if ($user) {
+            // Если юзер уже верифицирован — тогда ОШИБКА "занято"
+            if ($user->hasVerifiedEmail()) {
+                return response()->json(['errors' => ['email' => ['Этот email уже занят.']]], 422);
+            }
+
+            // Если НЕ верифицирован — просто обновляем его данные
+            $code = rand(100000, 999999);
+            $user->update([
+                'name' => $request->name,
+                'password' => Hash::make($request->password),
+                'verification_code' => $code,
+            ]);
+        } else {
+            // Если юзера нет совсем — создаем
+            $code = rand(100000, 999999);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'verification_code' => $code,
+            ]);
+        }
 
         // Отправляем наше новое уведомление с кодом
         $user->notify(new VerifyEmailCode($code));

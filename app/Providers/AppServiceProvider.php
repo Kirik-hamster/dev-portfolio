@@ -43,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
                     config([
                         'mail.mailers.smtp.host' => $settings->get('mail_host'),
                         'mail.mailers.smtp.port' => $settings->get('mail_port'),
+                        'mail.mailers.smtp.encryption' => $settings->get('mail_encryption', 'ssl'),
                         'mail.mailers.smtp.username' => $settings->get('mail_username'),
                         'mail.mailers.smtp.password' => Crypt::decryptString($settings->get('mail_password')),
                         'mail.from.address' => $settings->get('mail_username'),

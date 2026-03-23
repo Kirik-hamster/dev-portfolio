@@ -19,6 +19,9 @@ import { MobileTocDrawer } from './ui/MobileTocDrawer';
 import { MobileTocToggle } from './ui/MobileTocToggle';
 import { ScrollToTop } from './ui/ScrollToTop';
 import { ArticleMetaModal } from './ui/ArticleForm/ArticleMetaModal';
+import { MediaApiService } from '@/services/MediaApiService';
+import { StatusModal } from './ui/StatusModal';
+import { ConfirmModal } from './ui/ConfirmModel';
 
 interface ArticleFormProps {
     article: Article | undefined; 
@@ -43,11 +46,30 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
     const [githubUrl, setGithubUrl] = useState(article?.github_url || '');
     const [toc, setToc] = useState<{ level: number; text: string; pos: number }[]>([]);
 
+    const [isUploading, setIsUploading] = useState(false);
+
     const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
 
     const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
 
     const [isMobile, setIsMobile] = React.useState(window.innerWidth < 1024);
+
+    const [status, setStatus] = useState<{
+        isOpen: boolean;
+        type: 'success' | 'error';
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        type: 'success',
+        title: '',
+        message: ''
+    });
+
+    const [isConfirmCancelOpen, setIsConfirmCancelOpen] = useState(false);
+
+    const initialImagesRef = React.useRef<string[]>([]);
+    const sessionUploadedRef = React.useRef<string[]>([]);
 
     React.useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -108,6 +130,16 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
         setToc(headings);
     };
 
+    const getAllImages = (editor: any) => {
+        const images: string[] = [];
+        editor.state.doc.descendants((node: any) => {
+            if (node.type.name === 'image') {
+                images.push(node.attrs.src);
+            }
+        });
+        return images;
+    };
+
     const editor = useEditor({
         extensions: EDITOR_EXTENSIONS,
         content: article?.content || '',
@@ -116,13 +148,13 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                 class: 'prose-editor focus:outline-none min-h-[600px] p-10 selection:bg-blue-500/30',
             },
         },
-        // Срабатывает при создании редактора (важно для существующих постов)
         onCreate: ({ editor }) => {
             updateToc(editor);
+            initialImagesRef.current = getAllImages(editor);
         },
-        // Срабатывает при каждом изменении текста
         onUpdate: ({ editor }) => {
             updateToc(editor);
+            // Здесь удалили старую логику удаления — она мешала!
         }
     });
 
@@ -133,23 +165,65 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
         else editor.chain().focus().unsetLink().run();
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !editor) return;
-        const reader = new FileReader();
-        reader.onload = () => editor.chain().focus().setImage({ src: reader.result as string }).run();
-        reader.readAsDataURL(file);
+
+        try {
+            setIsUploading(true);
+            const result = await MediaApiService.uploadImage(file);
+            sessionUploadedRef.current.push(result.url);
+            editor.chain().focus().setImage({ src: result.url }).run();
+        } catch (error: any) {
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка медиа',
+                message: error.message || 'Не удалось загрузить картинку в облако.'
+            });
+        } finally {
+            setIsUploading(false);
+            e.target.value = '';
+        }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!editor || !title.trim()) return;
-        onSave({ 
-            title, 
-            content: editor.getHTML(), 
-            tech_stack: techStack, 
-            github_url: githubUrl,
-            slug: title.toLowerCase().replace(/[^\w\sа-яё-]/gi, "").replace(/\s+/g, "-") 
-        });
+        setIsUploading(true);
+
+        try {
+            const finalImages = getAllImages(editor);
+            const allEverBeenImages = [...initialImagesRef.current, ...sessionUploadedRef.current];
+            const imagesToDelete = allEverBeenImages.filter(url => !finalImages.includes(url));
+
+            if (imagesToDelete.length > 0) {
+                for (const url of imagesToDelete) {
+                    if (url.includes('yandexcloud.net') || url.includes('localhost')) {
+                        await MediaApiService.deleteImage(url);
+                    }
+                }
+            }
+
+            await onSave({ 
+                title, 
+                content: editor.getHTML(), 
+                tech_stack: techStack, 
+                github_url: githubUrl,
+                slug: title.toLowerCase().replace(/[^\w\sа-яё-]/gi, "").replace(/\s+/g, "-") 
+            });
+
+            // Если сохранение прошло успешно, можно либо редиректить, 
+            // либо показать успех (в твоем ArticleFormPage скорее всего идет редирект)
+        } catch (error) {
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка сохранения',
+                message: 'Что-то пошло не так при синхронизации с базой данных.'
+            });
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     if (!editor) return null;
@@ -200,7 +274,26 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                             <div className="w-px h-5 bg-white/10 mx-2 self-center" />
                             <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')}><List size={18}/></ToolbarButton>
                             <ToolbarButton onClick={setLink} isActive={editor.isActive('link')}><LinkIcon size={18}/></ToolbarButton>
-                            <label className="p-2.5 rounded-xl cursor-pointer text-gray-500 hover:text-white hover:bg-white/5 transition-all"><UploadCloud size={18} /><input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} /></label>
+                            {(user?.role === 'admin') && (
+                                <label className="p-2.5 rounded-xl cursor-pointer text-gray-500 hover:text-white hover:bg-white/5 transition-all group relative">
+                                    {isUploading ? (
+                                        <div className="animate-spin"><UploadCloud size={18} /></div>
+                                    ) : (
+                                        <ImageIcon size={18} />
+                                    )}
+                                    <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        accept="image/*" 
+                                        onChange={handleImageUpload} 
+                                        disabled={isUploading}
+                                    />
+                                    {/* Подсказка при наведении */}
+                                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-[8px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10">
+                                        Загрузить медиа
+                                    </span>
+                                </label>
+                            )}
                             <div className="flex-grow" />
                             <ToolbarButton onClick={() => editor.chain().focus().undo().run()}><Undo size={18}/></ToolbarButton>
                             <ToolbarButton onClick={() => editor.chain().focus().redo().run()}><Redo size={18}/></ToolbarButton>
@@ -226,6 +319,22 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                     </button>
                 </div>
             </div>
+
+            <StatusModal 
+                isOpen={status.isOpen}
+                type={status.type}
+                title={status.title}
+                message={status.message}
+                onClose={() => setStatus(prev => ({ ...prev, isOpen: false }))}
+            />
+
+            <ConfirmModal 
+                isOpen={isConfirmCancelOpen}
+                title="Отменить правки?"
+                message="Все незавершенные изменения будут потеряны. Вы уверены?"
+                onConfirm={onCancel}
+                onCancel={() => setIsConfirmCancelOpen(false)}
+            />
 
             {/* КОМПОНЕНТЫ МОДАЛОК И ПОРТАЛОВ */}
             <ArticleMetaModal 
