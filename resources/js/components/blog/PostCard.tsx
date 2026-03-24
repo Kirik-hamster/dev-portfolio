@@ -5,13 +5,13 @@ import { Heart, Star, ShieldCheck, User as UserIcon, FileText, Pencil, Trash2, E
 import { Article } from '../../types'; 
 
 interface PostCardProps {
-    article: Article; // Заменили any на Article
+    article: Article;
     mode?: 'public' | 'profile';
-    onSelect: (article: Article) => void; // Заменили any
+    onSelect: (article: Article) => void;
     onToggleLike: (id: number, type: 'article') => void;
     onToggleFavorite: (id: number, type: 'article') => void;
     onOpenTags: (tags: string[], title: string) => void;
-    onEdit?: (article: Article) => void; // Заменили any
+    onEdit?: (article: Article) => void;
     onDelete?: (id: number) => void;
 }
 

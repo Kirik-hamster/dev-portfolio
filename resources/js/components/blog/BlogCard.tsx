@@ -1,15 +1,16 @@
 // resources/js/components/BlogCard.tsx
 import React from 'react';
 import { Heart, Star, ShieldCheck, User as UserIcon, Folder, Pencil, Trash2, Eye, Plus } from 'lucide-react';
+import { Blog } from '../../types';
 
 interface BlogCardProps {
-    blog: any;
+    blog: Blog;
     mode?: 'public' | 'profile';
     onNavigate: (id: number) => void;
     onToggleLike?: (id: number, type: 'blog') => void;
     onToggleFavorite?: (id: number, type: 'blog') => void;
     onOpenTags: (tags: string[], title: string) => void;
-    onEdit?: (blog: any) => void;
+    onEdit?: (blog: Blog) => void;
     onDelete?: (id: number) => void;
 }
 
@@ -106,7 +107,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
                     </div>
                     {blog.top_tags && blog.top_tags.length > 3 && (
                         <button 
-                            onClick={(e) => { e.stopPropagation(); onOpenTags(blog.top_tags, blog.title); }} 
+                            onClick={(e) => { e.stopPropagation(); onOpenTags(blog.top_tags ?? [], blog.title); }}
                             className="flex items-center justify-center w-7 h-7 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all shrink-0 active:scale-90 shadow-lg"                        
                         >
                             <Plus size={14} strokeWidth={3} />

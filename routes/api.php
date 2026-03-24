@@ -85,7 +85,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
-        Route::post('/admin/home/avatar', [AvatarUploadController::class, 'upload']);
+        Route::post('/home/avatar', [AvatarUploadController::class, 'upload']);
     });
 
     // Роуты для лайков и избранного постов/блогов

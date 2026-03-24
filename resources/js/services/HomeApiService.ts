@@ -1,3 +1,4 @@
+import { HomeSettings } from "../types";
 import { getHeaders } from "./apiUtils";
 
 export const HomeApiService = {
@@ -15,7 +16,7 @@ export const HomeApiService = {
         }
     },
 
-    async updateSettings(data: any) {
+    async updateSettings(data: HomeSettings): Promise<boolean> {
         try {
             const res = await fetch('/api/home-settings', {
                 method: 'PUT',

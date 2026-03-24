@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, ShieldCheck, User as UserIcon } from 'lucide-react';
-import { User, Comment } from '../../types';
+import { User, Comment, CommentSort, ErrorModalState, PaginatedResponse } from '../../types';
 import { CommentApiService } from '@/services/CommentApiService';
 import { CommentItem } from './CommentItem';
 import { AuthRequiredModal } from '../ui/AuthRequiredModal';
@@ -28,25 +28,33 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
  
     const [localComments, setLocalComments] = useState<Comment[]>(comments);
 
-    const [sort, setSort] = useState<'new' | 'popular' | 'discussed'>('popular');
+    const [sort, setSort] = useState<CommentSort>('popular');
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
     const [loading, setLoading] = useState(false);
     const [total, setTotal] = useState(0);
 
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', message: '' });
+    const [errorModal, setErrorModal] = useState<ErrorModalState>({ 
+        isOpen: false, 
+        title: '', 
+        message: '' 
+    });
 
     const loadRootComments = async (isInitial = false) => {
         setLoading(true);
         const targetPage = isInitial ? 1 : page;
-        const res = await CommentApiService.fetchComments(articleId, sort, targetPage);
-        
-        setLocalComments(prev => isInitial ? res.data : [...prev, ...res.data]);
-        setTotal(res.total);
-        setHasMore(res.current_page < res.last_page);
-        setPage(res.current_page + 1);
-        setLoading(false);
+        try {
+            const res: PaginatedResponse<Comment> = await CommentApiService.fetchComments(articleId, sort, targetPage);
+            setLocalComments(prev => isInitial ? res.data : [...prev, ...res.data]);
+            setTotal(res.total);
+            setHasMore(res.current_page < res.last_page);
+            setPage(res.current_page + 1);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -176,8 +184,8 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 
             {/* Твои табы фильтров (Новые / Топ / Обсуждаемые) */}
             <div className="flex gap-6 border-b border-white/5 pb-4">
-                {['popular', 'new', 'discussed'].map(s => (
-                    <button key={s} onClick={() => setSort(s as any)} 
+                {(['popular', 'new', 'discussed'] as const).map(s => (
+                    <button key={s} onClick={() => setSort(s)} 
                         className={`text-[10px] font-black uppercase tracking-widest ${sort === s ? 'text-blue-500' : 'text-gray-600'}`}>
                         {s === 'popular' ? 'Залайканные' : s === 'new' ? 'Новые' : 'Обсуждаемые'}
                     </button>

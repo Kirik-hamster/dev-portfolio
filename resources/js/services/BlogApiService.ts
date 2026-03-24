@@ -30,7 +30,7 @@ export const BlogApiService = {
         return res.json();
     },
 
-    async fetchOne(id: number): Promise<any> {
+    async fetchOne(id: number): Promise<Blog> {
         const res = await fetch(`${BLOG_URL}/${id}`, { 
             headers: getHeaders(),
             credentials: 'include' 

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, ThumbsUp, Search, ArrowUpRight, Clock, Hash, ChevronDown } from 'lucide-react';
+import { CommentWithArticle, ArticleTag, PaginatedResponse } from '../../types';
 import { CommentApiService, HistoryParams } from '../../services/CommentApiService';
 import { Pagination } from '../ui/Pagination';
 import { PremiumLoader } from '../PremiumLoader';
 
 export const UserCommentsList: React.FC = () => {
-    const [comments, setComments] = useState<any[]>([]); // Тип можно уточнить в types.ts
+    const [comments, setComments] = useState<CommentWithArticle[]>([]); // Тип можно уточнить в types.ts
     const [loading, setLoading] = useState(true);
     const [isSortOpen, setIsSortOpen] = useState(false);
 
@@ -21,12 +22,12 @@ export const UserCommentsList: React.FC = () => {
         { id: 'latest', label: 'Сначала новые' },
         { id: 'popular', label: 'Популярные' },
         { id: 'active', label: 'Обсуждаемые' }
-    ];
+    ] as const;
 
     const fetchHistory = async () => {
         setLoading(true);
         try {
-            const data = await CommentApiService.getHistory({ ...filters, page });
+            const data: PaginatedResponse<CommentWithArticle> = await CommentApiService.getHistory({ ...filters, page });
             setComments(data.data);
             setTotalPages(data.last_page); // Сохраняем общее кол-во страниц
         } catch (e) {
@@ -78,7 +79,7 @@ export const UserCommentsList: React.FC = () => {
                                 {sortOptions.map(option => (
                                     <button
                                         key={option.id}
-                                        onClick={() => { setFilters({...filters, sort: option.id as any}); setIsSortOpen(false); }}
+                                        onClick={() => { setFilters({...filters, sort: option.id}); setIsSortOpen(false); }}
                                         className={`w-full px-6 py-4 rounded-[24px] text-left text-[9px] font-black uppercase tracking-[0.25em] transition-all duration-500 flex items-center justify-between group/item ${
                                             filters.sort === option.id 
                                             ? 'text-blue-500 bg-blue-500/[0.03]' // Едва заметный оттенок вместо глухой заливки
@@ -121,7 +122,7 @@ export const UserCommentsList: React.FC = () => {
                                         {comment.article.title}
                                     </h4>
                                     <div className="flex flex-wrap gap-2">
-                                        {comment.article.tags?.map((tag: any) => (
+                                        {comment.article.tags?.map((tag: ArticleTag) => (
                                             <span key={tag.id} className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-gray-500">
                                                 <Hash size={10} /> {tag.name}
                                             </span>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Edit3, Trash2, Plus, Layout, Heart, MessageSquare, Star } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
-import { Article, User } from '../types';
+import { Article, User, SortOption } from '../types';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { Pagination } from '../components/ui/Pagination';
@@ -12,11 +12,21 @@ import { ArticleApiService } from '../services/ArticleApiService';
 import { StatusModal } from '../components/ui/StatusModal';
 import { PortfolioPostCard } from '@/components/portfolio/PortfolioPostCard';
 
-export function PortfolioPage({ user, blogId, onArticleSelect, onEditArticle, onCreateArticle }: any) {
+interface PortfolioPageProps {
+    user: User | null;
+    blogId?: number | null;
+    onArticleSelect: (article: Article) => void;
+    onEditArticle: (article: Article) => void;
+    onCreateArticle: () => void;
+}
+
+export function PortfolioPage({ 
+    user, blogId, onArticleSelect, onEditArticle, onCreateArticle 
+}: PortfolioPageProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [searchType, setSearchType] = useState<'title' | 'author'>('title');
-    const [sort, setSort] = useState<'latest' | 'popular'>('latest');
+    const [sort, setSort] = useState<SortOption>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
     
     // ЛОКАЛЬНЫЙ СПИСОК: Используем его как единственный источник правды для UI

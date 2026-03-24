@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ChevronDown, Settings, Users, Layout } from 'lucide-react';
+import { MailSettings, User, PaginatedResponse } from '@/types';
+import { useSettings } from '@/context/SettingsContext';
 
-type Tab = 'config' | 'content' | 'users';
+export type Tab = 'config' | 'users' | 'content';
 
-interface Props {
+interface AdminTabsProps {
     activeTab: Tab;
     onTabChange: (tab: Tab) => void;
 }
@@ -14,7 +16,7 @@ const TAB_MAP = {
     content: { label: 'Наполнение', icon: Layout },
 };
 
-export const AdminTabs: React.FC<Props> = ({ activeTab, onTabChange }) => {
+export const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, onTabChange }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleSelect = (tab: Tab) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Article, Blog, BlogPagination } from '../types';
+import { User, Article, Blog, BlogPagination, SortOption } from '../types';
 import { ArrowRight } from 'lucide-react';
 import { Pagination } from '../components/ui/Pagination';
 import { PremiumLoader } from '../components/PremiumLoader';
@@ -63,7 +63,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     const [globalTags, setGlobalTags] = useState<string[]>([]);
 
     const [searchType, setSearchType] = useState<'title' | 'author'>('title');
-    const [sort, setSort] = useState<'latest' | 'popular'>('latest');
+    const [sort, setSort] = useState<SortOption>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
 
     
@@ -207,7 +207,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
             // 1. Обновляем список (карточки)
             setPagination(prev => prev ? {
                 ...prev,
-                data: prev.data.map((item: any) => 
+                data: prev.data.map((item: BlogWithUser | ArticleWithBlog) => 
                     item.id === id ? { ...item, is_liked: result.is_liked, likes_count: result.likes_count } : item
                 )
             } : null);

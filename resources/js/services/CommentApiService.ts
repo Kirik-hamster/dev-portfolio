@@ -1,3 +1,4 @@
+import { Comment, CommentWithArticle, PaginatedResponse } from "../types";
 import { getHeaders } from "./apiUtils";
 
 
@@ -49,8 +50,11 @@ export const CommentApiService = {
     },
 
     async getHistory(params: HistoryParams) {
-        // Формируем query string из объекта
-        const query = new URLSearchParams(params as any).toString();
+        const cleanParams: Record<string, string> = {};
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined) cleanParams[key] = String(value);
+        });
+        const query = new URLSearchParams(cleanParams).toString();
         const response = await fetch(`/api/user/comments?${query}`, {
             headers: getHeaders(),
             credentials: 'include'

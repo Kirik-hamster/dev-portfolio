@@ -1,25 +1,30 @@
 import React, { useCallback, useState } from 'react';
-import Cropper from 'react-easy-crop';
+import Cropper, { Area, Point } from 'react-easy-crop';
 import { createPortal } from 'react-dom';
 import { X, Save, Upload, Camera } from 'lucide-react';
 import { HomeApiService } from '@/services/HomeApiService';
+
+// Описываем интерфейсы данных, чтобы не дублировать их
+interface ProfileData {
+    name: string;
+    specialization: string;
+    aboutText: string;
+    photoUrl: string;
+}
+
+interface TechStackData {
+    current: string;
+    learning: string;
+}
 
 interface EditModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: () => Promise<void>;
-    data: {
-        name: string;
-        specialization: string;
-        aboutText: string;
-        photoUrl: string;
-    };
-    setData: React.Dispatch<React.SetStateAction<any>>;
-    stack: {
-        current: string;
-        learning: string;
-    };
-    setStack: React.Dispatch<React.SetStateAction<any>>;
+    data: ProfileData;
+    setData: React.Dispatch<React.SetStateAction<ProfileData>>;
+    stack: TechStackData;
+    setStack: React.Dispatch<React.SetStateAction<TechStackData>>;
 }
 
 export const EditModal: React.FC<EditModalProps> = ({ 
@@ -27,13 +32,13 @@ export const EditModal: React.FC<EditModalProps> = ({
 }) => {
     // 1. Сначала определяем ВСЕ хуки (они всегда должны вызываться в одном порядке)
     const [image, setImage] = useState<string | null>(null);
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const onCropComplete = useCallback((_area: any, pixels: any) => {
+    const onCropComplete = useCallback((_area: Area, pixels: Area) => {
         setCroppedAreaPixels(pixels);
     }, []);
 

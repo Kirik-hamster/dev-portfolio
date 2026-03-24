@@ -7,6 +7,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import Gapcursor from '@tiptap/extension-gapcursor';
+import { Editor } from '@tiptap/react';
+import { Node as ProsemirrorNode } from '@tiptap/pm/model';
 import { 
     Bold, Italic, List, Code, Tag, Image as ImageIcon,
     Heading1, Heading2, Undo, Redo, Underline as UnderlineIcon,
@@ -30,6 +32,12 @@ interface ArticleFormProps {
     user: User | null;
 }
 
+interface TocItem {
+    level: number;
+    text: string;
+    pos: number;
+}
+
 const EDITOR_EXTENSIONS = [
     StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
     Underline,
@@ -44,7 +52,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
     const [title, setTitle] = useState(article?.title || '');
     const [techStack, setTechStack] = useState(article?.tech_stack || '');
     const [githubUrl, setGithubUrl] = useState(article?.github_url || '');
-    const [toc, setToc] = useState<{ level: number; text: string; pos: number }[]>([]);
+    const [toc, setToc] = useState<TocItem[]>([]);
 
     const [isUploading, setIsUploading] = useState(false);
 
@@ -70,6 +78,8 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
 
     const initialImagesRef = React.useRef<string[]>([]);
     const sessionUploadedRef = React.useRef<string[]>([]);
+
+    
 
     React.useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -105,20 +115,40 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
         }
     };
 
-    const scrollTo = (id: string) => {
-        const el = document.getElementById(id);
-        if (el) {
-            const offset = 100;
-            const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
-            window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+    const scrollToPos = (target: string | number) => {
+        if (!editor || typeof target !== 'number') return;
+        const pos = target;
+
+        try {
+            // 1. Сначала ставим фокус
+            editor.commands.focus(pos);
+            
+            // 2. Получаем координаты этой позиции в окне
+            // coordsAtPos возвращает { top, bottom, left, right }
+            const coords = editor.view.coordsAtPos(pos);
+
+            if (coords) {
+                const yOffset = -150; // Твой отступ под тулбар
+                const y = coords.top + window.pageYOffset + yOffset;
+
+                window.scrollTo({
+                    top: y,
+                    behavior: 'smooth'
+                });
+            }
+        } catch (e) {
+            // Если что-то пошло совсем не так, просто используем стандартный скролл Tiptap
+            editor.commands.scrollIntoView();
+            console.warn("Мягкий скролл не удался, применен стандартный:", e);
+        } finally {
             setIsMobileTocOpen(false);
         }
-    };
+};
 
 
-    const updateToc = (editor: any) => {
-        const headings: any[] = [];
-        editor.state.doc.descendants((node: any, pos: number) => {
+    const updateToc = (editor: Editor) => {
+        const headings: { level: number; text: string; pos: number }[] = [];
+        editor.state.doc.descendants((node: ProsemirrorNode, pos: number) => {
             if (node.type.name === 'heading') {
                 headings.push({ 
                     level: node.attrs.level, 
@@ -130,9 +160,9 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
         setToc(headings);
     };
 
-    const getAllImages = (editor: any) => {
+    const getAllImages = (editor: Editor) => {
         const images: string[] = [];
-        editor.state.doc.descendants((node: any) => {
+        editor.state.doc.descendants((node: ProsemirrorNode) => {
             if (node.type.name === 'image') {
                 images.push(node.attrs.src);
             }
@@ -174,12 +204,13 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
             const result = await MediaApiService.uploadImage(file);
             sessionUploadedRef.current.push(result.url);
             editor.chain().focus().setImage({ src: result.url }).run();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Произошла непредвиденная ошибка';
             setStatus({
                 isOpen: true,
                 type: 'error',
                 title: 'Ошибка медиа',
-                message: error.message || 'Не удалось загрузить картинку в облако.'
+                message: errorMessage
             });
         } finally {
             setIsUploading(false);
@@ -356,7 +387,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                 isOpen={isMobileTocOpen} 
                 onClose={() => setIsMobileTocOpen(false)} 
                 toc={toc} 
-                onScrollTo={scrollTo} 
+                onScrollTo={scrollToPos} 
             />
         </>
 

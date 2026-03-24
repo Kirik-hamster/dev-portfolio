@@ -1,5 +1,15 @@
 import { getHeaders } from "./apiUtils";
 
+export interface LoginData {
+    email: string;
+    password?: string; // Опционально, если используем для разных нужд
+}
+
+export interface RegisterData extends LoginData {
+    name: string;
+    password_confirmation: string;
+}
+
 export const AuthApiService = {
     // CSRF Cookie
     async getCsrf() {
@@ -11,7 +21,7 @@ export const AuthApiService = {
     },
 
     // Вход
-    async login(data: any) {
+    async login(data: LoginData) {
         await this.getCsrf();
         return fetch('/api/login', {
             method: 'POST',
@@ -22,7 +32,7 @@ export const AuthApiService = {
     },
 
     // Регистрация
-    async register(data: any) {
+    async register(data: RegisterData) {
         await this.getCsrf();
         return fetch('/api/register', {
             method: 'POST',
@@ -42,11 +52,26 @@ export const AuthApiService = {
     },
 
     // Обновление пароля
-    async updatePassword(data: any) {
+    async updatePassword(data: { password: string; code: string }) {
         return fetch('/api/password/update', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data),
+            credentials: 'include'
+        });
+    },
+    async verifyCode(code: string): Promise<Response> {
+        return fetch('/api/verify-code', {
+            method: 'POST',
+            headers: getHeaders(),
+            credentials: 'include',
+            body: JSON.stringify({ code })
+        });
+    },
+    async resendVerifyCode(): Promise<Response> {
+        return fetch('/api/verify-resend', {
+            method: 'POST',
+            headers: getHeaders(),
             credentials: 'include'
         });
     }

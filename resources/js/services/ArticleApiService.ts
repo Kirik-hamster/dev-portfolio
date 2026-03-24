@@ -1,11 +1,20 @@
-import { Article, ArticleInput } from '../types';
+import { Article, ArticleInput, PaginatedResponse, ArticleQueryParams } from '../types';
 import { getHeaders } from './apiUtils';
 
 const BASE_URL = '/api/articles';
 
+// Хелпер для создания пустого ответа, чтобы не дублировать код в catch/errors
+const emptyPaginatedResponse = <T>(): PaginatedResponse<T> => ({
+    data: [],
+    current_page: 1,
+    last_page: 1,
+    total: 0,
+    per_page: 12
+});
+
 export const ArticleApiService = {
      // Получить статьи конкретного блога (папки)
-    async fetchByBlog(blogId: number, params: any): Promise<any> {
+    async fetchByBlog(blogId: number, params: ArticleQueryParams): Promise<PaginatedResponse<Article>> {
         const queryParams = new URLSearchParams({
             page: (params.page || 1).toString(),
             search: params.search || '',
@@ -18,10 +27,10 @@ export const ArticleApiService = {
             headers: getHeaders(),
             credentials: 'include'
         });
-        return response.ok ? response.json() : { data: [], last_page: 1 };
+        return response.ok ? response.json() : emptyPaginatedResponse<Article>();
     },
     // Получить статьи системного портфолио
-    async fetchPortfolio(params: any): Promise<any> {
+    async fetchPortfolio(params: ArticleQueryParams): Promise<PaginatedResponse<Article>> {
         const queryParams = new URLSearchParams({
             page: (params.page || 1).toString(),
             search: params.search || '',
@@ -35,10 +44,8 @@ export const ArticleApiService = {
             credentials: 'include'
         });
         
-        return response.ok ? response.json() : { data: [], last_page: 1 };
+        return response.ok ? response.json() : emptyPaginatedResponse<Article>();
     },
-
-   
 
     async fetchOne(id: string | number): Promise<Article> {
         const response = await fetch(`/api/articles/${id}`);
@@ -49,7 +56,7 @@ export const ArticleApiService = {
     /**
      * Получить статьи сообщества (лента всех блогов)
      */
-    async fetchCommunity(params: any): Promise<any> {
+    async fetchCommunity(params: ArticleQueryParams): Promise<PaginatedResponse<Article>> {
         const queryParams = new URLSearchParams({
             page: (params.page || 1).toString(),
             tag: params.tag || '',
@@ -62,7 +69,7 @@ export const ArticleApiService = {
         const response = await fetch(`/api/community-articles?${queryParams.toString()}`, {
             headers: getHeaders(),
         });
-        return response.ok ? response.json() : { data: [], last_page: 1 };
+        return response.ok ? response.json() : emptyPaginatedResponse<Article>();
     },
 
     // Обновленный метод сохранения

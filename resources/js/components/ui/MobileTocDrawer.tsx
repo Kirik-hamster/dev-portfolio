@@ -1,18 +1,24 @@
 import React from 'react';
-import { createPortal } from 'react-dom'; // Импортируем портал
+import { createPortal } from 'react-dom';
 import { ListTree, X } from 'lucide-react';
+
+export interface TocItem {
+    text: string;
+    level: number;
+    id?: string;
+    pos?: number; 
+}
 
 interface MobileTocDrawerProps {
     isOpen: boolean;
     onClose: () => void;
-    toc: any[];
-    onScrollTo: (id: string) => void;
+    toc: TocItem[];
+    onScrollTo: (target: string | number) => void; 
 }
 
 export const MobileTocDrawer: React.FC<MobileTocDrawerProps> = ({ isOpen, onClose, toc, onScrollTo }) => {
     if (!isOpen) return null;
 
-    // Портируем верстку в document.body, чтобы вырваться из контекста z-index
     return createPortal(
         <div className="lg:hidden fixed inset-0 z-[999] flex flex-col justify-end p-4 animate-in fade-in duration-300">
             {/* Backdrop */}
@@ -31,11 +37,20 @@ export const MobileTocDrawer: React.FC<MobileTocDrawerProps> = ({ isOpen, onClos
                 </div>
                 
                 <nav className="flex flex-col gap-6">
-                    {toc.map((h: any, i: number) => (
+                    {/* ⚡️ УНИЧТОЖЕНО: h теперь строго TocItem */}
+                    {toc.map((h: TocItem, i: number) => (
                         <button 
                             key={i} 
-                            onClick={() => { onScrollTo(h.id); onClose(); }} 
-                            className={`text-left transition-all ${h.level === 1 ? 'text-sm font-black text-white uppercase tracking-tight' : 'text-xs font-bold text-gray-500 pl-4 border-l border-white/5'}`}
+                            onClick={() => { 
+                                const target = h.pos !== undefined ? h.pos : h.id;
+                                if (target !== undefined) onScrollTo(target); 
+                                onClose(); 
+                            }} 
+                            className={`text-left transition-all active:scale-95 ${
+                                h.level === 1 
+                                    ? 'text-sm font-black text-white uppercase tracking-tight' 
+                                    : 'text-xs font-bold text-gray-500 pl-4 border-l border-white/5'
+                            }`}
                         >
                             {h.text}
                         </button>
@@ -43,6 +58,6 @@ export const MobileTocDrawer: React.FC<MobileTocDrawerProps> = ({ isOpen, onClos
                 </nav>
             </div>
         </div>,
-        document.body // Цель портала
+        document.body
     );
 };

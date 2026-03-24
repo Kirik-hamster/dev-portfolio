@@ -13,13 +13,20 @@ import { PremiumLoader } from '../components/PremiumLoader';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
 import { ArticleNavigation } from '@/components/ArticlePage/ArticleNavigation';
 import { MobileTocToggle } from '@/components/ui/MobileTocToggle';
-import { MobileTocDrawer } from '@/components/ui/MobileTocDrawer';
+import { MobileTocDrawer, TocItem } from '@/components/ui/MobileTocDrawer';
 
-export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: any) {
+interface ArticleDetailPageProps {
+    articleId: number | string;
+    onBack: (article: Article) => void;
+    user: User | null;
+    onNavigateToLogin: () => void;
+}
+
+export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: ArticleDetailPageProps) {
     const navigate = useNavigate();
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
-    const [toc, setToc] = useState<{ id: string; text: string; level: number }[]>([]);
+    const [toc, setToc] = useState<TocItem[]>([]);
     const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -67,10 +74,14 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
             const htmlString = data.content ?? "";
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlString, 'text/html');
-            const headings = Array.from(doc.querySelectorAll('h1, h2, h3')).map((h, i) => {
+            const headings: TocItem[] = Array.from(doc.querySelectorAll('h1, h2, h3')).map((h, i) => {
                 const id = `section-${i}`;
                 h.id = id;
-                return { id, text: h.textContent || "", level: parseInt(h.tagName.charAt(1), 10) };
+                return { 
+                    id, 
+                    text: h.textContent || "", 
+                    level: parseInt(h.tagName.charAt(1), 10) 
+                };
             });
 
             setToc(headings);
@@ -80,8 +91,10 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
         return () => { isMounted = false; };
     }, [articleId]);
 
-    const scrollTo = (id: string) => {
-        const el = document.getElementById(id);
+    const scrollTo = (target: string | number) => {
+        if (typeof target !== 'string') return;
+
+        const el = document.getElementById(target);
         if (el) {
             const offset = 100;
             const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;

@@ -47,7 +47,7 @@ export function RegisterPage({
                     message: errorData.message || 'Проверьте правильность введенных данных.'
                 });
             }
-        } catch (e) {
+        } catch (error: unknown) {
             setModal({
                 isOpen: true,
                 type: 'error',

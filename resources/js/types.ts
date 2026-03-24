@@ -5,7 +5,7 @@ export interface User {
     email: string;
     email_verified_at: string | null;
 }
-
+export type SortOption = 'latest' | 'popular' | 'popular_views' | 'most_viewed';
 // Новый интерфейс для комментариев
 export interface Comment {
     id: number;
@@ -20,6 +20,14 @@ export interface Comment {
     created_at: string;
     user?: User;
     replies?: Comment[];
+}
+
+export type CommentSort = 'new' | 'popular' | 'discussed';
+
+export interface ErrorModalState {
+    isOpen: boolean;
+    title: string;
+    message: string;
 }
 
 export interface Blog {
@@ -51,6 +59,11 @@ export interface BlogInput {
     title: string;
     description: string;
 }
+export interface ArticleTag {
+    id: number;
+    name: string;
+    slug?: string;
+}
 
 export interface Article {
     id: number;
@@ -72,6 +85,12 @@ export interface Article {
     is_liked?: boolean;
     is_favorited?: boolean;
     user?: User;
+    tags?: ArticleTag[];
+}
+
+// Специальный тип для комментария с вложенной статьей (для списка истории)
+export interface CommentWithArticle extends Comment {
+    article: Article;
 }
 
 // Данные для создания/редактирования статьи
@@ -97,4 +116,38 @@ export interface Settings {
     email: string;
     githubUrl: string;
     resumeUrl?: string;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    per_page: number;
+}
+
+// Если в ответе только статус или сообщение
+export interface SimpleResponse {
+    message: string;
+    status?: string;
+    url?: string;
+}
+
+// Интерфейс для фильтров (параметров URL)
+export interface ArticleQueryParams {
+    page?: number;
+    tag?: string | null;
+    search?: string;
+    search_type?: 'title' | 'author';
+    sort?: string;
+    favorites_only?: boolean | number;
+}
+
+export interface HomeSettings {
+    name?: string;
+    specialization?: string;
+    about_text?: string;
+    photo_url?: string;
+    stack_current?: string;
+    stack_learning?: string; 
 }

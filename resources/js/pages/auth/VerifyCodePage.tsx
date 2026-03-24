@@ -1,3 +1,4 @@
+import { AuthApiService } from '@/services/AuthApiService';
 import React, { useEffect, useState, useRef } from 'react';
 
 const VERIFY_CONFIG = {
@@ -47,11 +48,7 @@ export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
         setIsResending(true);
         setStatus(null);
         try {
-            const response = await fetch(VERIFY_CONFIG.API_RESEND, {
-                method: 'POST',
-                headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') || '' },
-                credentials: 'include'
-            });
+            const response = await AuthApiService.resendVerifyCode();
 
             // ПРОВЕРЯЕМ, ЧТО СЕРВЕР РЕАЛЬНО ОТПРАВИЛ КОД
             if (response.ok) {
@@ -65,7 +62,7 @@ export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
                 const error = await response.json();
                 setStatus({ message: error.message || 'Ошибка отправки', type: 'error' });
             }
-        } catch (e) {
+        } catch (error: unknown) {
             setStatus({ message: 'Ошибка связи', type: 'error' });
         } finally {
             setIsResending(false);
@@ -83,16 +80,7 @@ export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
         setStatus(null);
         
         try {
-            const response = await fetch(VERIFY_CONFIG.API_VERIFY, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') || ''
-                },
-                credentials: 'include',
-                body: JSON.stringify({ code })
-            });
+            const response = await AuthApiService.verifyCode(code);
 
             if (response.ok) {
                 onVerified();
@@ -102,19 +90,14 @@ export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
                 if (response.status === 422) setCode('');
                 inputRef.current?.focus();
             }
-        } catch (e) {
+        } catch (error: unknown) {
             setStatus({ message: 'Ошибка связи с сервером', type: 'error' });
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Обработчик клика по контейнеру с цифрами
-    const handleContainerClick = () => {
-        inputRef.current?.focus();
-    };
-
-return (
+    return (
         <div className="max-w-md mx-auto py-20 animate-in fade-in zoom-in duration-700">
             <div className="relative p-12 bg-white/[0.01] rounded-[50px] border border-white/5 text-center backdrop-blur-3xl shadow-2xl overflow-hidden">
                 <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] pointer-events-none" />

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SettingsApiService } from '@/services/SettingsApiService';
-import { MailSettings, User } from '@/types';
+import { MailSettings, PaginatedResponse, User } from '@/types';
 
 // Импортируем наши новые кусочки
 import { ConfigTab } from './ConfigTab';
@@ -9,9 +9,18 @@ import { AdminTabs } from './AdmintPanel';
 import { ContentTab } from './ContentTab';
 import { useSettings } from '@/context/SettingsContext';
 
+export interface AdminPanelProps {
+    allBlogsCount: number; 
+    demoDuration: number;
+    setDemoDuration: (d: number) => void;
+    startDemo: () => void;
+    cancelDemo: () => void;
+    demoLoading: boolean;
+}
+
 export const AdminPanel = ({ 
     demoDuration, setDemoDuration, startDemo, cancelDemo, demoLoading 
-}: any) => {
+}: AdminPanelProps) => {
     const [activeSubTab, setActiveSubTab] = useState<'config' | 'content' | 'users'>('config');
     const { settings, setSettings } = useSettings();
 
@@ -27,7 +36,7 @@ export const AdminPanel = ({
 
     // --- LOGIC: USERS ---
     const fetchUsers = async (page: number = 1) => {
-        const res = await SettingsApiService.getUsers(searchQuery, page);
+        const res: PaginatedResponse<User> = await SettingsApiService.getUsers(searchQuery, page);
         setUsers(res.data);
         setCurrentPage(res.current_page);
         setLastPage(res.last_page);

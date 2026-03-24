@@ -44,7 +44,7 @@ export function LoginPage({
                     message: 'Неверный логин или пароль. Проверьте данные и попробуйте снова.'
                 });
             }
-        } catch (e) {
+        } catch (error: unknown) {
             setModal({
                 isOpen: true,
                 type: 'error',

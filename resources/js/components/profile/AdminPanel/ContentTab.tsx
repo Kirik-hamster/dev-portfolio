@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { ExternalLink, FileText, Layout, Trash2, UploadCloud, X } from 'lucide-react';
 import { PremiumLoader } from '../../PremiumLoader';
 import { SettingsApiService } from '@/services/SettingsApiService';
+import { Settings } from '@/types';
 
 interface Props {
-    settings: any;
-    setSettings: (s: any) => void;
+    settings: Settings;
+    setSettings: (s: Settings) => void;
     demoDuration: number;
     setDemoDuration: (d: number) => void;
     startDemo: () => void;
@@ -42,8 +43,10 @@ export const ContentTab: React.FC<Props> = ({
         if (!window.confirm("Удалить файл резюме из облака?")) return;
         
         try {
-            const res = await SettingsApiService.deleteResume();
-            setSettings({ ...settings, resumeUrl: undefined });
+            await SettingsApiService.deleteResume();
+            const updated = { ...settings };
+            delete updated.resumeUrl; 
+            setSettings(updated);
         } catch (error) {
             alert("Ошибка при удалении");
         }
