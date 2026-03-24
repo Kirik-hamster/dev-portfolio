@@ -22,6 +22,14 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
     const [toc, setToc] = useState<{ id: string; text: string; level: number }[]>([]);
     const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
 
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const handleToggleLike = async () => {
         // Если юзер не залогинен — отправляем на вход
         if (!user) return onNavigateToLogin();
@@ -86,7 +94,7 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
 
     return (
         <div className="max-w-6xl mx-auto px-4 md:px-6 relative animate-in fade-in duration-700">
-            <ScrollToTop hasOffset={toc.length > 0 && isMobileTocOpen} />
+            <ScrollToTop hasOffset={toc.length > 0 && isMobile} />
             
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_350px] gap-8 xl:gap-16 items-start">
                 <main className="min-w-0 py-6">
