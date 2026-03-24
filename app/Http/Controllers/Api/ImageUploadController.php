@@ -21,6 +21,8 @@ class ImageUploadController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240', // до 10МБ
         ]);
 
+        $disk = config('filesystems.uploads');
+
         $file = $request->file('image');
         
         // ОБРАБОТКА (Уменьшение и конвертация в WebP)
@@ -34,32 +36,41 @@ class ImageUploadController extends Controller
         $path = "blog/content/{$fileName}";
 
         // ЗАГРУЗКА В S3 (Яндекс)
-        Storage::disk('s3')->put($path, (string) $img);
+        Storage::disk($disk)->put($path, (string) $img);
 
         // ОТВЕТ
         return response()->json([
-            'url' => Storage::disk('s3')->url($path),
+            'url' => Storage::disk($disk)->url($path),
             'message' => 'Image processed and uploaded'
         ]);
     }
     public function destroy(Request $request)
     {
-        $request->validate(['url' => 'required|string']);
-        $path = parse_url($request->url, PHP_URL_PATH);
-        $bucketName = config('filesystems.disks.s3.bucket');
-        $cleanPath = ltrim($path, '/');
-        $cleanPath = str_replace($bucketName . '/', '', $cleanPath);
-        \Log::info("S3 DELETE ATTEMPT", [
-            'original_url' => $request->url,
-            'calculated_path' => $cleanPath,
-            'exists' => Storage::disk('s3')->exists($cleanPath)
-        ]);
-
-        if (Storage::disk('s3')->exists($cleanPath)) {
-            Storage::disk('s3')->delete($cleanPath);
-            return response()->json(['message' => 'Deleted']);
+        if ($request->user()->role !== 'admin' && !str_contains($request->user()->role, '-img')) {
+            return response()->json(['message' => 'У вас нет прав для удаления медиа'], 403);
         }
 
-        return response()->json(['message' => 'Not found'], 404);
+        $request->validate(['url' => 'required|string']);
+
+        $disk = config('filesystems.uploads');
+        $url = $request->url;
+
+        $baseUrl = Storage::disk($disk)->url('/');
+        $cleanPath = str_replace($baseUrl, '', $url);
+        $cleanPath = ltrim($cleanPath, '/');
+
+        \Log::info("MEDIA DELETE ATTEMPT", [
+            'disk' => $disk,
+            'original_url' => $url,
+            'calculated_path' => $cleanPath,
+            'exists' => Storage::disk($disk)->exists($cleanPath)
+        ]);
+
+        if (Storage::disk($disk)->exists($cleanPath)) {
+            Storage::disk($disk)->delete($cleanPath);
+            return response()->json(['message' => 'Файл успешно удален']);
+        }
+
+        return response()->json(['message' => 'Файл не найден на диске ' . $disk], 404);
     }
 }

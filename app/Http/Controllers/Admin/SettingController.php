@@ -93,38 +93,68 @@ class SettingController extends Controller
 
     public function uploadResume(Request $request)
     {
+        // 1. ПРОВЕРКА ДОСТУПА (Резюме может менять ТОЛЬКО админ)
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'У вас нет прав для редактирования резюме'], 403);
+        }
+
+        // 2. ВАЛИДАЦИЯ (Только PDF, до 5МБ)
         $request->validate([
             'resume' => 'required|file|mimes:pdf|max:5120',
         ]);
 
-        $file = $request->file('resume');
-        $path = 'documents/resume_kirill.pdf';
-
         try {
-            // Проверь, что диск 's3' прописан в config/filesystems.php
-            Storage::disk('s3')->put($path, file_get_contents($file));
-            $url = Storage::disk('s3')->url($path);
+            $disk = config('filesystems.uploads');
+            $file = $request->file('resume');
+            $path = 'documents/resume_kirill_myakotin.pdf';
 
-            Setting::updateOrCreate(['key' => 'resume_url'], ['value' => $url]);
+            // Используем put, чтобы перезаписать существующий файл
+            Storage::disk($disk)->put($path, file_get_contents($file));
+
+            // ПОЛУЧЕНИЕ ПУБЛИЧНОГО URL
+            $url = Storage::disk($disk)->url($path);
+
+            // СОХРАНЕНИЕ В ТАБЛИЦУ НАСТРОЕК
+            Setting::updateOrCreate(
+                ['key' => 'resume_url'],
+                ['value' => $url]
+            );
+
+            // ОЧИСТКА КЭША
             Cache::forget('site_settings');
 
-            return response()->json(['url' => $url, 'message' => 'OK']);
-        } catch (\Exception $e) {
-            // Это поможет тебе увидеть реальную ошибку в Telescope вместо общей 500
-            \Log::error("RESUME UPLOAD ERROR: " . $e->getMessage());
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
-}
+            return response()->json([
+                'url' => $url,
+                'message' => 'Резюме успешно загружено в облако и обновлено' . $disk
+            ]);
 
-    public function deleteResume()
-    {
-        $path = 'documents/resume_kirill.pdf';
-        if (Storage::disk('s3')->exists($path)) {
-            Storage::disk('s3')->delete($path);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Ошибка при загрузке: ' . $e->getMessage()
+            ], 500);
         }
-        Setting::where('key', 'resume_url')->delete();
-        \Illuminate\Support\Facades\Cache::forget('site_settings');
+    }
+
+    public function deleteResume(Request $request)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $setting = Setting::where('key', 'resume_url')->first();
         
-        return response()->json(['message' => 'Удалено']);
+        if ($setting) {
+            $disk = config('filesystems.uploads');
+            $path = 'documents/resume_kirill_myakotin.pdf';
+            
+            if (Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
+            }
+
+            $setting->delete();
+            Cache::forget('site_settings');
+        }
+
+        return response()->json(['message' => 'Резюме удалено']);
     }
 }
