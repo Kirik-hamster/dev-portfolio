@@ -31,7 +31,23 @@ class ArticleController extends Controller
         // ПОИСК
         if ($request->filled('search')) {
             $search = $request->query('search');
-            $query->where('title', 'like', "%{$search}%");
+            $type = $request->get('search_type', 'title');
+
+            $query->where(function($q) use ($search, $type) {
+                if ($type === 'author') {
+                    $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                } else {
+                    $q->where('title', 'like', "%{$search}%");
+                }
+            });
+        }
+
+        if ($request->filled('tag')) {
+            $tag = mb_strtolower($request->tag);
+            $query->whereHas('tags', function($q) use ($tag) {
+                // Ищем по имени тега в связанной таблице tags
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$tag}%"]);
+            });
         }
 
         // ТОЛЬКО ИЗБРАННОЕ (внутри этого блога)

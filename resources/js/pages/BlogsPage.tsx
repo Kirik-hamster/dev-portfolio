@@ -250,12 +250,14 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                 setIsSearchMode={setIsSearchMode}
                 selectedTag={selectedTag}
                 setSelectedTag={setSelectedTag}
-                globalTags={globalTags}
+                globalTags={selectedBlogId && activeBlog?.top_tags ? activeBlog.top_tags : globalTags}
                 setCurrentPage={setCurrentPage}
                 viewMode={viewMode}
                 isInsideBlog={!!selectedBlogId}
                 setViewMode={handleViewChange} 
                 setSelectedBlogId={setSelectedBlogId}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
             />
 
             <div className="max-w-6xl mx-auto px-6">
@@ -320,7 +322,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                 setSort={setSort}
                                 favoritesOnly={favoritesOnly}
                                 setFavoritesOnly={setFavoritesOnly}
-                                isProfileMode={false}
+                                isProfileMode={true}
                             />
                         </div>
                     </>

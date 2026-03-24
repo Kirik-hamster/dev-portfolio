@@ -12,11 +12,13 @@ interface TagCapsuleProps {
     setViewMode: (mode: 'blogs' | 'posts') => void;
     setSelectedBlogId: (id: number | null) => void;
     isInsideBlog?: boolean;
+    searchQuery: string;
+    setSearchQuery: (val: string) => void;
 }
 
 export const TagCapsule: React.FC<TagCapsuleProps> = ({
     isInsideBlog = false, isSearchMode, setIsSearchMode, selectedTag, setSelectedTag, globalTags,
-    setCurrentPage, viewMode, setViewMode, setSelectedBlogId
+    setCurrentPage, viewMode, setViewMode, setSelectedBlogId, searchQuery, setSearchQuery
 }) => {
     const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -86,22 +88,38 @@ export const TagCapsule: React.FC<TagCapsuleProps> = ({
                         >
                             {isSearchMode ? (
                                 <input 
-                                    autoFocus type="text" placeholder="Поиск..." value={selectedTag || ''} 
-                                    onChange={(e) => { setSelectedTag(e.target.value || null); setCurrentPage(1); }}
+                                    autoFocus 
+                                    type="text" 
+                                    placeholder="Поиск..." 
+                                    value={searchQuery} 
+                                    onChange={(e) => { 
+                                        setSearchQuery(e.target.value); 
+                                        setSelectedTag(null);
+                                        setCurrentPage(1); 
+                                    }}
                                     className="bg-transparent border-none outline-none text-[9px] sm:text-[10px] font-bold uppercase text-white w-full placeholder:text-gray-600"
                                 />
                             ) : (
                                 <>
                                     <button 
-                                        onClick={() => { setSelectedTag(null); setCurrentPage(1); }} 
-                                        className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest shrink-0 ${!selectedTag ? 'text-white' : 'text-gray-500'}`}
+                                        onClick={() => { setSelectedTag(null); setSearchQuery(''); setCurrentPage(1); }} 
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shrink-0 active:scale-95
+                                            ${!selectedTag && !searchQuery 
+                                                ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]' 
+                                                : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'
+                                            }`}
                                     >
-                                        All
+                                        <LayoutGrid size={11} className={!selectedTag && !searchQuery ? 'animate-pulse' : ''} />
+                                        <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">Все</span>
                                     </button>
                                     {globalTags.map((tag) => (
                                         <button 
                                             key={tag} 
-                                            onClick={() => { setSelectedTag(tag); setCurrentPage(1); }} 
+                                            onClick={() => { 
+                                                setSelectedTag(tag);
+                                                setSearchQuery(''); 
+                                                setCurrentPage(1); 
+                                            }} 
                                             className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-widest whitespace-nowrap shrink-0 transition-all ${selectedTag === tag ? 'text-blue-400' : 'text-gray-500 hover:text-white'}`}
                                         >
                                             {tag}
