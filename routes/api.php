@@ -10,6 +10,7 @@ use App\Http\Controllers\HomeSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\ResumeUploadController;
 use App\Http\Controllers\Api\ImageUploadController;
+use App\Http\Controllers\Api\AvatarUploadController;
 use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -84,6 +85,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
+        Route::post('/admin/home/avatar', [AvatarUploadController::class, 'upload']);
     });
 
     // Роуты для лайков и избранного постов/блогов

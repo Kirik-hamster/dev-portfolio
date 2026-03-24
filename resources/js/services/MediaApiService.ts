@@ -1,17 +1,4 @@
-import { get } from "node:http";
-
-const getXsrfToken = () => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; XSRF-TOKEN=`);
-    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-    return '';
-};
-
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': getXsrfToken()
-});
+import { getHeaders, getXsrfToken } from "./apiUtils";
 
 export const MediaApiService = {
     async uploadImage(file: File): Promise<{ url: string }> {

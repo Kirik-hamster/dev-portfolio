@@ -1,16 +1,6 @@
 import { MailSettings } from "@/types";
 
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
-});
-const getXsrfToken = () => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; XSRF-TOKEN=`);
-    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-    return '';
-};
+import { getHeaders } from "./apiUtils";
 
 export const SettingsApiService = {
     // Получить текущие настройки
@@ -63,12 +53,7 @@ export const SettingsApiService = {
 
         const response = await fetch('/api/admin/settings/resume', {
             method: 'POST',
-            headers: {
-                // ⚡️ ВАЖНО: Мы НЕ ПИШЕМ 'Content-Type': 'application/json' здесь!
-                // Браузер сам поймет, что это FormData.
-                'Accept': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken() 
-            },
+            headers: getHeaders(false),
             body: formData,
             credentials: 'include'
         });

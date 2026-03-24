@@ -1,13 +1,9 @@
 import { Blog, BlogInput, BlogPagination } from '../types';
+import { getHeaders } from './apiUtils';
 
 const BLOG_URL = '/api/blogs';
 
-// Вспомогательная функция для заголовков (можно вынести в общий utils)
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
-});
+
 
 export const BlogApiService = {
     async fetchAll(params: { 

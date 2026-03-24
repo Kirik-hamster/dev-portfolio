@@ -1,10 +1,5 @@
-import { Comment } from '../types';
+import { getHeaders } from "./apiUtils";
 
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
-});
 
 // Тип для параметров фильтрации
 export interface HistoryParams {

@@ -1,15 +1,4 @@
-const getXsrfToken = () => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; XSRF-TOKEN=`);
-    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-    return '';
-};
-
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': getXsrfToken()
-});
+import { getHeaders } from "./apiUtils";
 
 export const HomeApiService = {
     async fetchSettings() {
@@ -39,5 +28,21 @@ export const HomeApiService = {
             console.error("Update error:", error);
             return false;
         }
+    },
+
+    async uploadAvatar(blob: Blob) {
+        const formData = new FormData();
+        formData.append('image', blob, 'avatar.webp');
+
+        // Для FormData шлем getHeaders(false), чтобы не ставить JSON content-type
+        const response = await fetch('/api/admin/home/avatar', {
+            method: 'POST',
+            headers: getHeaders(false),
+            body: formData,
+            credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error('Ошибка при загрузке аватара');
+        return response.json();
     }
 };

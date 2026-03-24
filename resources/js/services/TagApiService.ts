@@ -1,17 +1,6 @@
+import { getHeaders } from "./apiUtils";
+
 const BASE_URL = '/api/top-tags';
-
-const getXsrfToken = () => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; XSRF-TOKEN=`);
-    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-    return '';
-};
-
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': getXsrfToken()
-});
 
 export const TagApiService = {
     /**

@@ -1,19 +1,7 @@
 import { Article, ArticleInput } from '../types';
-
-const getXsrfToken = () => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; XSRF-TOKEN=`);
-    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-    return '';
-};
+import { getHeaders } from './apiUtils';
 
 const BASE_URL = '/api/articles';
-
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': getXsrfToken()
-});
 
 export const ArticleApiService = {
      // Получить статьи конкретного блога (папки)

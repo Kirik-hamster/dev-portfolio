@@ -1,8 +1,4 @@
-const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
-});
+import { getHeaders } from "./apiUtils";
 
 export const AuthApiService = {
     // CSRF Cookie
