@@ -16,7 +16,7 @@ export const BioSection: React.FC<BioSectionProps> = ({ aboutText }) => {
                     <div className="h-px w-24 bg-gradient-to-r from-white/20 to-transparent" />
                 </div>
                 <div className="relative z-10 space-y-8">
-                    {aboutText.split('\n').filter(p => p.trim() !== '').map((paragraph, index) => (
+                    {(aboutText || "").split('\n').filter(p => p.trim() !== '').map((paragraph, index) => (
                         <p 
                             key={index} 
                             style={{ hyphens: 'auto' }} 

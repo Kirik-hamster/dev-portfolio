@@ -17,7 +17,19 @@ export const Footer = () => {
                         <a href={`mailto:${settings.email}`} className="p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-blue-600 transition-all duration-500"><Mail size={20} /></a>
                     </div>
                     <div className="flex items-center gap-6 text-[9px] font-black tracking-[0.4em] text-gray-600 uppercase">
-                        <span className="hover:text-white transition-colors cursor-pointer flex items-center gap-1">Resume <ArrowUpRight size={10}/></span>
+                        {settings.resumeUrl ? (
+    <a 
+        href={settings.resumeUrl} 
+        target="_blank" 
+        rel="noreferrer"
+        className="hover:text-white transition-colors cursor-pointer flex items-center gap-2 group"
+    >
+        Resume 
+        <ArrowUpRight size={10} className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
+    </a>
+) : (
+    <span className="opacity-20 cursor-not-allowed flex items-center gap-1">Resume <ArrowUpRight size={10}/></span>
+)}                     
                         <span>© 2026 KIRILL MYAKOTIN</span>
                     </div>
                 </div>

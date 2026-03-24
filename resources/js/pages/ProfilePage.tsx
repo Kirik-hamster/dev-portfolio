@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
 import { User as UserType, Blog, Article, BlogPagination } from '../types';
 import { PremiumLoader } from '../components/PremiumLoader';
-import { AdminPanel } from '@/components/profile/AdminPanel';
+import { AdminPanel } from '@/components/profile/AdminPanel/index';
 import { BlogApiService } from '../services/BlogApiService';
 import { UserBlogsList } from '../components/profile/UserBlogsList';
 import { ProfileInfo } from '../components/profile/ProfileInfo';

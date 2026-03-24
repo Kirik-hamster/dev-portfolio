@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Auth\VerifyCodeController;
 use App\Http\Controllers\Auth\PasswordUpdateController;
 use App\Http\Controllers\HomeSettingController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Api\ResumeUploadController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Auth;
@@ -36,7 +38,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/home-settings', [App\Http\Controllers\HomeSettingController::class, 'show']);
+Route::get('/home-settings', [HomeSettingController::class, 'show']);
 
 // 2. Закрытые маршруты (только после логина)
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
@@ -74,6 +76,14 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::get('/mail', [SettingController::class, 'getMail']);
         Route::post('/mail', [SettingController::class, 'updateMail']);
         Route::post('/mail-test', [SettingController::class, 'testMail']);
+
+        Route::post('/resume', [SettingController::class, 'uploadResume']);
+        Route::delete('/resume', [SettingController::class, 'deleteResume']);
+    });
+
+    Route::prefix('admin')->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+        Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
     });
 
     // Роуты для лайков и избранного постов/блогов

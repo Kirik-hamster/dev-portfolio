@@ -274,7 +274,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                             <div className="w-px h-5 bg-white/10 mx-2 self-center" />
                             <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')}><List size={18}/></ToolbarButton>
                             <ToolbarButton onClick={setLink} isActive={editor.isActive('link')}><LinkIcon size={18}/></ToolbarButton>
-                            {(user?.role === 'admin') && (
+                            {(user?.role === 'admin' || user?.role?.includes('-img')) && (
                                 <label className="p-2.5 rounded-xl cursor-pointer text-gray-500 hover:text-white hover:bg-white/5 transition-all group relative">
                                     {isUploading ? (
                                         <div className="animate-spin"><UploadCloud size={18} /></div>

@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // 1. Описываем, какие данные будут лежать в "облаке"
 interface Settings {
     email: string;
     githubUrl: string;
+    resumeUrl?: string;
 }
 
 // 2. Описываем структуру самого контекста (данные + функция их смены)
@@ -19,6 +20,18 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         email: 'kir.myak@bk.ru',
         githubUrl: 'https://github.com/Kirik-hamster'
     });
+
+    useEffect(() => {
+        fetch('/api/home-settings')
+            .then(res => res.json())
+            .then(data => {
+                setSettings({
+                    email: data.email,
+                    githubUrl: data.githubUrl,
+                    resumeUrl: data.resumeUrl // ⚡️ Проверь, что это поле записывается!
+                });
+            });
+    }, []);
 
     return (
         <SettingsContext.Provider value={{ settings, setSettings }}>

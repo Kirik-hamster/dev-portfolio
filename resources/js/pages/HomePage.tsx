@@ -36,14 +36,14 @@ export function HomePage({ onNavigateToPortfolio, user }: HomePageProps) {
     useEffect(() => {
         HomeApiService.fetchSettings().then(res => {
             setData({
-                name: res.name,
-                specialization: res.specialization,
-                aboutText: res.about_text,
+                name: res.name || "",
+                specialization: res.specialization || "",
+                aboutText: res.about_text || "", // ⚡️ Гарантируем строку вместо undefined
                 photoUrl: res.photo_url || ""
             });
             setStack({
-                current: res.stack_current,
-                learning: res.stack_learning
+                current: res.stack_current || "",
+                learning: res.stack_learning || ""
             });
             setLoading(false);
         });

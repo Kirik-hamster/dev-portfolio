@@ -5,6 +5,12 @@ const getHeaders = () => ({
     'Accept': 'application/json',
     'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
 });
+const getXsrfToken = () => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; XSRF-TOKEN=`);
+    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+    return '';
+};
 
 export const SettingsApiService = {
     // Получить текущие настройки
@@ -32,5 +38,59 @@ export const SettingsApiService = {
             headers: getHeaders(),
             body: JSON.stringify({ email })
         });
+    },
+
+    async getUsers(query: string = '', page: number = 1) {
+        const response = await fetch(`/api/admin/users?search=${query}&page=${page}`, {
+            headers: getHeaders(),
+            credentials: 'include'
+        });
+        return response.json();
+    },
+
+    async updateUserRole(userId: number, role: string) {
+        return fetch(`/api/admin/users/${userId}/role`, {
+            method: 'PATCH',
+            headers: getHeaders(),
+            credentials: 'include',
+            body: JSON.stringify({ role })
+        });
+    },
+
+    async uploadResume(file: File) {
+        const formData = new FormData();
+        formData.append('resume', file);
+
+        const response = await fetch('/api/admin/settings/resume', {
+            method: 'POST',
+            headers: {
+                // ⚡️ ВАЖНО: Мы НЕ ПИШЕМ 'Content-Type': 'application/json' здесь!
+                // Браузер сам поймет, что это FormData.
+                'Accept': 'application/json',
+                'X-XSRF-TOKEN': getXsrfToken() 
+            },
+            body: formData,
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Ошибка сервера');
+        }
+        
+        return response.json();
+    },
+
+    async deleteResume() {
+        const response = await fetch('/api/admin/settings/resume', {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
+            },
+            credentials: 'include'
+        });
+        return response.json();
     }
 };

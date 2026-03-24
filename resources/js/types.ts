@@ -1,7 +1,7 @@
 export interface User {
     id: number;
     name: string;
-    role: 'admin' | 'user';
+    role: string;
     email: string;
     email_verified_at: string | null;
 }
@@ -91,4 +91,10 @@ export interface MailSettings {
     mail_username: string;
     mail_password?: string;
     mail_from_name: string;
+}
+
+export interface Settings {
+    email: string;
+    githubUrl: string;
+    resumeUrl?: string;
 }
