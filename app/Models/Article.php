@@ -22,7 +22,8 @@ class Article extends Model
         'slug', 
         'tech_stack', 
         'github_url',
-        'views_count'
+        'views_count',
+        'image_url'
     ];
 
 

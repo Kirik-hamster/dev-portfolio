@@ -73,4 +73,51 @@ class ImageUploadController extends Controller
 
         return response()->json(['message' => 'Файл не найден на диске ' . $disk], 404);
     }
+
+    public function uploadCover(Request $request)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+        ]);
+
+        try {
+            $disk = config('filesystems.uploads');
+            $file = $request->file('image');
+            
+            // Читаем и конвертируем в WebP. 
+            // scale здесь не нужен жесткий, так как кроп уже пришел с фронта
+            $img = Image::read($file)->toWebp(85);
+
+            $fileName = 'cover_' . Str::random(12) . '.webp';
+            $path = "blog/covers/{$fileName}"; // 👈 Своя папка для обложек
+
+            Storage::disk($disk)->put($path, (string) $img);
+
+            return response()->json([
+                'url' => Storage::disk($disk)->url($path),
+                'message' => 'Cover uploaded successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteArticle(Article $article): ?bool
+    {
+        if ($article->image_url) {
+            $disk = config('filesystems.uploads');
+            $baseUrl = Storage::disk($disk)->url('/');
+            $path = str_replace($baseUrl, '', $article->image_url);
+            
+            if (Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
+            }
+        }
+
+        return $this->repository->delete($article);
+    }
 }

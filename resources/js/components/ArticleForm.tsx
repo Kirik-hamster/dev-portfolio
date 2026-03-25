@@ -60,6 +60,8 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
 
     const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
 
+    const [imageUrl, setImageUrl] = useState(article?.image_url || '');
+
     const [isMobile, setIsMobile] = React.useState(window.innerWidth < 1024);
 
     const [status, setStatus] = useState<{
@@ -240,6 +242,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                 content: editor.getHTML(), 
                 tech_stack: techStack, 
                 github_url: githubUrl,
+                image_url: imageUrl,
                 slug: title.toLowerCase().replace(/[^\w\sа-яё-]/gi, "").replace(/\s+/g, "-") 
             });
 
@@ -265,29 +268,70 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
             <div className="max-w-[1500px] mx-auto px-4 sm:px-6 w-full space-y-8 animate-in fade-in duration-700 relative z-10">
             
                 {/* ВЕРХНЯЯ ЧАСТЬ: TITLE + META */}
-                <div className="flex flex-col lg:flex-row gap-6 items-end">
-                    <div className="flex-1 w-full">
-                        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название проекта..." className="w-full bg-transparent text-5xl sm:text-8xl font-black uppercase tracking-tighter outline-none border-none p-0 placeholder:text-white/5 focus:ring-0 text-white" />
+                <div className="flex flex-col lg:flex-row gap-10 items-start lg:items-center mb-16">
+                    {/* ЛЕВАЯ ЧАСТЬ: ЗАГОЛОВОК */}
+                    <div className="flex-1 w-full group/title">
+                        <span className="block text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/40 mb-4 ml-2">Назнвание поста</span>
+                        <input 
+                            value={title} 
+                            onChange={(e) => setTitle(e.target.value)} 
+                            placeholder="Название..." 
+                            className="w-full bg-transparent text-5xl sm:text-7xl lg:text-8xl font-black uppercase tracking-tighter outline-none border-none p-0 placeholder:text-white/5 focus:ring-0 text-white transition-all focus:placeholder:opacity-0" 
+                        />
                     </div>
                     
-                    {/* КНОПКА МЕТАДАННЫХ: Теперь аккуратно и с подписями */}
-                    <div className="w-full lg:w-[450px]">
+                    {/* ПРАВАЯ ЧАСТЬ: ПРЕМИУМ ПАНЕЛЬ МЕТАДАННЫХ */}
+                    <div className="w-full lg:w-[480px] shrink-0">
                         <div 
                             onClick={() => setIsMetaModalOpen(true)}
-                            className="bg-white/[0.02] border border-white/5 p-6 rounded-[35px] backdrop-blur-md cursor-pointer hover:bg-white/[0.05] transition-all group flex items-center justify-between"
+                            className="relative overflow-hidden bg-white/[0.01] border border-white/5 hover:border-blue-500/30 p-1 rounded-[40px] backdrop-blur-3xl cursor-pointer transition-all duration-500 group/meta shadow-2xl"
                         >
-                            <div className="space-y-3 flex-1 min-w-0">
-                                <div className="space-y-1">
-                                    <span className="block text-[8px] font-black uppercase text-blue-500/50 tracking-widest">Теги</span>
-                                    <p className="text-xs text-gray-300 font-bold truncate pr-4">{techStack || 'Не указано'}</p>
+                            <div className="flex items-center p-4 gap-5">
+                                {/* 1. ПРЕВЬЮ ОБЛОЖКИ (Кинематографичный вид) */}
+                                <div className="relative w-32 h-20 rounded-[28px] overflow-hidden border border-white/10 shrink-0 bg-black shadow-2xl transition-transform duration-500 group-hover/meta:scale-[1.02]">
+                                    {imageUrl ? (
+                                        <img 
+                                            src={imageUrl} 
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover/meta:scale-110" 
+                                            alt="Preview" 
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-transparent">
+                                            <ImageIcon size={20} className="text-white/10" />
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover/meta:opacity-100 transition-opacity" />
                                 </div>
-                                <div className="space-y-1">
-                                    <span className="block text-[8px] font-black uppercase text-blue-500/50 tracking-widest">Ссылка</span>
-                                    <p className="text-xs text-blue-400/80 font-bold truncate pr-4">{githubUrl || 'Ссылка отсутствует'}</p>
+
+                                {/* 2. ИНФО-ДАННЫЕ */}
+                                <div className="flex-1 min-w-0 py-1">
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <Tag size={10} className="text-blue-500 opacity-50" />
+                                                <span className="text-[8px] font-black uppercase text-blue-500/40 tracking-[0.2em]">Keywords</span>
+                                            </div>
+                                            <p className="text-[11px] text-gray-300 font-bold truncate max-w-[200px]">
+                                                {techStack ? techStack.split(',').map(t => `#${t.trim()}`).join(' ') : 'No tags assigned'}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <LinkIcon size={10} className="text-blue-500 opacity-50" />
+                                                <span className="text-[8px] font-black uppercase text-blue-500/40 tracking-[0.2em]">Source Path</span>
+                                            </div>
+                                            <p className="text-[11px] text-blue-400/60 font-medium truncate max-w-[200px] italic">
+                                                {githubUrl || 'private-repository.git'}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                <ChevronRight size={20} />
+
+                                {/* 3. КНОПКА-ИНДИКАТОР */}
+                                <div className="w-14 h-14 rounded-[24px] bg-white/[0.03] border border-white/5 flex items-center justify-center shrink-0 group-hover/meta:bg-blue-600 group-hover/meta:border-blue-500 transition-all duration-500 group-hover/meta:shadow-[0_0_30px_rgba(37,99,235,0.4)]">
+                                    <ChevronRight size={20} className="text-white/20 group-hover/meta:text-white group-hover/meta:translate-x-0.5 transition-all" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -373,6 +417,9 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                 onClose={() => setIsMetaModalOpen(false)}
                 techStack={techStack} setTechStack={setTechStack}
                 githubUrl={githubUrl} setGithubUrl={setGithubUrl}
+                imageUrl={imageUrl} 
+                user={user}
+                setImageUrl={setImageUrl}
             />
             {/* МОБИЛЬНЫЕ КОМПОНЕНТЫ СОДЕРЖАНИЯ (Порталы) */}
             {toc.length > 0 && (

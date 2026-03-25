@@ -1,6 +1,10 @@
-import React from 'react';
-import { X, Tag, Link as LinkIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Tag, Link as LinkIcon, Camera, Trash2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { MediaApiService } from '@/services/MediaApiService';
+import { ImageCropModal } from '../ImageCropModal';
+import { User } from '@/types';
+import { StatusModal } from '../StatusModal';
 
 interface ArticleMetaModalProps {
     isOpen: boolean;
@@ -9,11 +13,68 @@ interface ArticleMetaModalProps {
     setTechStack: (val: string) => void;
     githubUrl: string;
     setGithubUrl: (val: string) => void;
+    imageUrl: string;
+    setImageUrl: (url: string) => void;
+    user: User | null;
 }
 
 export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({ 
-    isOpen, onClose, techStack, setTechStack, githubUrl, setGithubUrl 
+    isOpen, onClose, techStack, setTechStack, githubUrl, setGithubUrl, imageUrl, setImageUrl, user
 }) => {
+
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const [showNoAccess, setShowNoAccess] = useState(false); // Для показа ошибки
+    const isAdmin = user?.role === 'admin'; // Проверка роли
+
+    const handleUploadClick = (e: React.MouseEvent) => {
+        if (!isAdmin) {
+            e.preventDefault(); // Блокируем открытие окна выбора файла
+            e.stopPropagation(); // Останавливаем событие
+            setShowNoAccess(true); // Показываем модалку "Нет прав"
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => setTempImage(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleDeleteImage = async () => {
+        if (!imageUrl) return;
+        
+        try {
+            // Вызываем твой метод удаления (он у тебя уже есть в MediaApiService)
+            await MediaApiService.deleteImage(imageUrl); 
+            setImageUrl(''); // Чистим ссылку в статье
+        } catch (e) {
+            console.error("Ошибка при удалении файла:", e);
+        }
+    };
+
+    const handleSaveCrop = async (blob: Blob) => {
+        setIsUploading(true);
+        try {
+            if (imageUrl) {
+                await MediaApiService.deleteImage(imageUrl).catch(() => {});
+            }
+            const file = new File([blob], 'cover.webp', { type: 'image/webp' });
+            
+            const res = await MediaApiService.uploadCover(file); 
+            
+            setImageUrl(res.url);
+            setTempImage(null);
+        } catch (e) {
+            alert("Ошибка загрузки");
+        } finally {
+            setIsUploading(false);
+        }
+    };
     if (!isOpen) return null;
 
     return createPortal(
@@ -34,6 +95,33 @@ export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({
                 
                 {/* FORM */}
                 <div className="space-y-8">
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest pl-1">Обложка (16:10)</label>
+                        <div className="relative aspect-[16/10] w-full rounded-3xl bg-white/5 border border-white/10 overflow-hidden group">
+                            <div className="w-full h-full" onClickCapture={handleUploadClick}>
+                                {imageUrl ? (
+                                    <>
+                                        <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                            <label className="p-3 bg-white text-black rounded-xl cursor-pointer hover:scale-110 transition-transform">
+                                                <Camera size={20} />
+                                                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                                            </label>
+                                            <button onClick={handleDeleteImage} className="p-3 bg-red-600 text-white rounded-xl hover:scale-110 transition-transform">
+                                                <Trash2 size={20} />
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.03] transition-colors border-2 border-dashed border-white/5">
+                                        <Camera size={32} className="text-gray-600 mb-2" />
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Загрузить превью</span>
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                     {/* TECH STACK TEXTAREA */}
                     <div className="space-y-2">
                         <label className="flex items-center gap-2 text-[10px] font-black uppercase text-gray-500 tracking-widest pl-1">
@@ -69,6 +157,22 @@ export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({
                     </button>
                 </div>
             </div>
+            {tempImage && (
+                <ImageCropModal 
+                    image={tempImage} 
+                    aspectRatio={16/10} 
+                    onClose={() => setTempImage(null)} 
+                    onSave={handleSaveCrop}
+                    isUploading={isUploading}
+                />
+            )}
+            <StatusModal 
+                isOpen={showNoAccess}
+                type="error"
+                title="Доступ ограничен"
+                message="Изменять обложку может только администратор."
+                onClose={() => setShowNoAccess(false)}
+            />
         </div>,
         document.body
     );

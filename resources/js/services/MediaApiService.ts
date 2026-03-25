@@ -29,5 +29,19 @@ export const MediaApiService = {
             credentials: 'include',
             body: JSON.stringify({ url })
         });
-    }
+    },
+    async uploadCover(file: File): Promise<{ url: string }> {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch('/api/upload-cover', { // 👈 Наш новый роут
+            method: 'POST',
+            headers: getHeaders(false),
+            credentials: 'include',
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Upload failed');
+        return response.json();
+    },
 };

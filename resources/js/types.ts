@@ -86,6 +86,7 @@ export interface Article {
     is_favorited?: boolean;
     user?: User;
     tags?: ArticleTag[];
+    image_url?: string;
 }
 
 // Специальный тип для комментария с вложенной статьей (для списка истории)

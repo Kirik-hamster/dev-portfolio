@@ -19,93 +19,72 @@ export const PortfolioPostCard: React.FC<PortfolioPostCardProps> = ({
     return (
         <div 
             onClick={() => onSelect(article)} 
-            className="group cursor-pointer relative flex flex-col bg-white/[0.01] border border-white/5 rounded-[24px] sm:rounded-[45px] overflow-hidden transition-all duration-700 hover:border-blue-500/30 hover:bg-white/[0.02] backdrop-blur-2xl shadow-2xl h-full"
+            className="group cursor-pointer relative flex flex-col bg-white/[0.01] border border-white/5 rounded-[24px] sm:rounded-[45px] overflow-hidden transition-all duration-700 hover:border-blue-500/30 hover:bg-white/[0.02] backdrop-blur-sm shadow-xl h-full"
         >
-            <div className="absolute top-0 left-0 right-0 h-12 sm:h-14 bg-white/[0.01] border-b border-white/5 flex items-center justify-between px-5 sm:px-10 z-30 backdrop-blur-md">
-                
+            {/* 1. ВЕРХНЯЯ ПАНЕЛЬ: Теперь она relative и занимает свое место */}
+            <div className="relative h-12 sm:h-14 bg-white/[0.03] border-b border-white/5 flex items-center justify-between px-5 sm:px-10 z-30 ">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+                
+                {/* Точки macOS */}
                 <div className="flex gap-1.5 sm:gap-2.5 opacity-20 group-hover:opacity-60 transition-opacity">
                     <div className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full bg-white/40 border border-white/5" />
                     <div className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full bg-white/40 border border-white/5" />
                     <div className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full bg-white/40 border border-white/5" />
                 </div>
 
-                {/* Metrics Cluster (Повысили контраст white/60 и gap-3 для мобилок) */}
+                {/* Метрики и админ-тулзы */}
                 <div className="flex items-center gap-3 sm:gap-6">
                     <div className="flex items-center gap-3 sm:gap-6">
-                        {/* Views */}
                         <div className="flex items-center gap-1.5 sm:gap-2">
                             <Eye size={12} className="text-white/30" />
-                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/60">
-                                {article.views_count || 0}
-                            </span>
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/60">{article.views_count || 0}</span>
                         </div>
-
                         <div className="w-px h-3 sm:h-4 bg-white/10" />
-
-                        {/* Comments */}
                         <div className="flex items-center gap-1.5 sm:gap-2">
                             <MessageSquare size={12} className="text-white/30" />
-                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/60">
-                                {article.comments_count || 0}
-                            </span>
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/60">{article.comments_count || 0}</span>
                         </div>
-
                         <div className="w-px h-3 sm:h-4 bg-white/10" />
-
-                        {/* Likes */}
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onToggleLike(e, article); }}
-                            className="flex items-center gap-1.5 sm:gap-2 group/like"
-                        >
-                            <Heart 
-                                size={12} 
-                                fill={article.is_liked ? "currentColor" : "none"} 
-                                className={`transition-all duration-300 ${article.is_liked ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'text-white/30 group-hover/like:text-red-400'}`} 
-                            />
-                            <span className={`text-[9px] sm:text-[10px] font-black ${article.is_liked ? 'text-white' : 'text-white/60 group-hover/like:text-white'}`}>
-                                {article.likes_count || 0}
-                            </span>
+                        <button onClick={(e) => { e.stopPropagation(); onToggleLike(e, article); }} className="flex items-center gap-1.5 sm:gap-2 group/like">
+                            <Heart size={12} fill={article.is_liked ? "currentColor" : "none"} className={`transition-all duration-300 ${article.is_liked ? 'text-red-500' : 'text-white/30 group-hover/like:text-red-400'}`} />
+                            <span className={`text-[9px] sm:text-[10px] font-black ${article.is_liked ? 'text-white' : 'text-white/60 group-hover/like:text-white'}`}>{article.likes_count || 0}</span>
                         </button>
                     </div>
 
-                    {/* Star */}
                     <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(e, article); }}>
-                        <Star 
-                            size={14} 
-                            fill={article.is_favorited ? "currentColor" : "none"} 
-                            className={`transition-all ${article.is_favorited ? 'text-yellow-500 drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]' : 'text-white/20 hover:text-white'}`} 
-                        />
+                        <Star size={14} fill={article.is_favorited ? "currentColor" : "none"} className={`transition-all ${article.is_favorited ? 'text-yellow-500' : 'text-white/20 hover:text-white'}`} />
                     </button>
 
-                    {/* ADMIN TOOLS: Теперь видны везде, но на мобилках gap меньше */}
                     {isAdmin && (
                         <div className="flex items-center gap-3 sm:gap-4 ml-1 pl-3 sm:pl-6 border-l border-white/10">
-                            <button onClick={(e) => { e.stopPropagation(); onEdit(article); }}>
-                                <Edit3 size={14} className="text-white/30 hover:text-blue-400 transition-colors" />
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); onDelete(article.id); }}>
-                                <Trash2 size={14} className="text-white/30 hover:text-red-500 transition-colors" />
-                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onEdit(article); }}><Edit3 size={14} className="text-white/30 hover:text-blue-400 transition-colors" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); onDelete(article.id); }}><Trash2 size={14} className="text-white/30 hover:text-red-500 transition-colors" /></button>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* PREVIEW AREA (Ratio 16/10) */}
-            <div className="relative aspect-[16/10] w-full bg-gradient-to-br from-white/[0.03] to-transparent border-b border-white/5 overflow-hidden pt-12 sm:pt-14">
-                <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] group-hover:opacity-[0.05] transition-all duration-1000 group-hover:scale-110">
-                    <Layout strokeWidth={1} className="w-16 h-16 sm:w-[120px] sm:h-[120px]" />
-                </div>
-                
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/[0.02] via-transparent to-white/[0.02] pointer-events-none" />
+            {/* 2. PREVIEW AREA: Больше никакого padding-top! Картинка встанет сразу за панелью */}
+            <div className="relative aspect-[16/10] w-full bg-gradient-to-br from-white/[0.03] to-transparent border-b border-white/5 overflow-hidden">
+                {article.image_url ? (
+                    <img 
+                        src={article.image_url} 
+                        alt={article.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                    />
+                ) : (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] group-hover:opacity-[0.05] transition-all duration-1000 group-hover:scale-110">
+                        <Layout strokeWidth={1} className="w-16 h-16 sm:w-[120px] sm:h-[120px]" />
+                    </div>
+                )}
+
+                {/* Градиент снизу для читаемости заголовка */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/60 via-transparent to-transparent pointer-events-none" />
 
                 {article.type && (
                     <div className="absolute bottom-4 sm:bottom-6 left-6 sm:left-10">
-                        <div className="px-3 sm:px-4 py-1 sm:py-1.5 bg-blue-500/5 border border-blue-500/20 rounded-full backdrop-blur-xl">
-                            <span className="text-[8px] sm:text-[9px] font-black uppercase text-blue-400 tracking-[0.2em]">
-                                {article.type}
-                            </span>
+                        <div className="px-3 sm:px-4 py-1 sm:py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                            <span className="text-[8px] sm:text-[9px] font-black uppercase text-blue-400 tracking-[0.2em]">{article.type}</span>
                         </div>
                     </div>
                 )}

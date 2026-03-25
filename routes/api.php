@@ -97,6 +97,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
     Route::post('/upload', [ImageUploadController::class, 'upload']);
     Route::post('/upload/delete', [ImageUploadController::class, 'destroy']);
+    Route::post('/upload-cover', [ImageUploadController::class, 'uploadCover']);
 
     Route::put('/home-settings', [HomeSettingController::class, 'update']);
 });

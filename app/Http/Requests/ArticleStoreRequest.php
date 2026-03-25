@@ -25,6 +25,7 @@ class ArticleStoreRequest extends FormRequest
             'title'      => 'required|string|max:255',
             'content'    => 'required|string',
             'tech_stack' => 'nullable|string',
+            'image_url'  => 'nullable|string',
             'slug'       => 'required|string|unique:articles,slug,' . ($this->article?->id ?? ''),
         ];
     }
