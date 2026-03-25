@@ -166,6 +166,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
             setSelectedTag(null);
             setSort('latest');
             setFavoritesOnly(false);
+            setSearchType('title');
             setCurrentPage(1);
 
             window.scrollTo({ top: 0, behavior: 'instant' });
@@ -299,7 +300,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                         setSort={setSort}
                         favoritesOnly={favoritesOnly}
                         setFavoritesOnly={setFavoritesOnly}
-                        isProfileMode={viewMode === 'posts'}
+                        isProfileMode={false}
                         
                     />
                 )}
