@@ -186,20 +186,32 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
 
             {/* Форма создания/редактирования */}
             {(isCreating || editingBlog) && (
-                <div ref={formRef} className="relative group mb-12 animate-in zoom-in-95 duration-500">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-[40px] blur-2xl opacity-50" />
-                    <div className="relative bg-[#0a0a0a]/80 border border-white/10 backdrop-blur-3xl p-10 rounded-[40px]">
-                        <div className="flex justify-between items-center mb-10">
-                            <h4 className="font-black uppercase text-[11px] text-blue-500 tracking-[0.2em]">{editingBlog ? 'Управление категорией' : 'Новое пространство'}</h4>
-                            <button onClick={() => { setIsCreating(false); setEditingBlog(null); }} className="p-3 hover:bg-white/5 rounded-full text-gray-500"><X size={20}/></button>
+                <div ref={formRef} className="relative group mb-8 sm:mb-12 animate-in zoom-in-95 duration-500">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-[30px] sm:rounded-[40px] blur-2xl opacity-50" />
+                    
+                    {/* Адаптивные отступы: p-5 для мобилок, p-10 для десктопа */}
+                    <div className="relative bg-[#0a0a0a]/90 border border-white/10 backdrop-blur-3xl p-5 sm:p-10 rounded-[30px] sm:rounded-[40px]">
+                        
+                        <div className="flex justify-between items-center mb-6 sm:mb-10">
+                            <h4 className="font-black uppercase text-[10px] sm:text-[11px] text-blue-500 tracking-[0.2em]">
+                                {editingBlog ? 'Управление категорией' : 'Новое пространство'}
+                            </h4>
+                            <button 
+                                onClick={() => { setIsCreating(false); setEditingBlog(null); }} 
+                                className="p-2 sm:p-3 hover:bg-white/5 rounded-full text-gray-500"
+                            >
+                                <X size={20}/>
+                            </button>
                         </div>
-                        <div className="space-y-8">
+
+                        <div className="space-y-6 sm:y-8">
+                            {/* ЗОНА ОБЛОЖКИ */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] ml-2">Обложка блога (21:9)</label>
-                                <div 
-                                    onClickCapture={handleUploadClick}
-                                    className="relative aspect-[21/9] w-full rounded-[25px] overflow-hidden bg-white/[0.02] border border-white/5 group/cover"
-                                >
+                                <label className="text-[9px] sm:text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] ml-2">
+                                    Обложка (16:10)
+                                </label>
+                                
+                                <div className="relative aspect-[16/10] w-full rounded-[20px] sm:rounded-[25px] overflow-hidden bg-white/[0.02] border border-white/5 group/cover">
                                     {(isCreating ? newBlog.image_url : editingBlog?.image_url) ? (
                                         <>
                                             <img 
@@ -207,33 +219,67 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                                                 className="w-full h-full object-cover" 
                                                 alt="Preview" 
                                             />
-                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                                <label className="p-4 bg-white text-black rounded-2xl cursor-pointer hover:scale-110 transition-all">
+                                            {/* УПРАВЛЕНИЕ: На мобилках (lg:opacity-0) всегда visible, на ПК - по ховеру */}
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-3 sm:gap-4 transition-opacity duration-300 lg:opacity-0 lg:group-hover/cover:opacity-100">
+                                                <label className="p-3 sm:p-4 bg-white text-black rounded-xl sm:rounded-2xl cursor-pointer active:scale-90 transition-all shadow-xl">
                                                     <Camera size={20} />
                                                     <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                                                 </label>
                                                 <button 
                                                     onClick={handleDeleteCover}
-                                                    className="p-4 bg-red-600 text-white rounded-2xl hover:scale-110 transition-all"
+                                                    className="p-3 sm:p-4 bg-red-600 text-white rounded-xl sm:rounded-2xl active:scale-90 transition-all shadow-xl"
                                                 >
                                                     <Trash2 size={20} />
                                                 </button>
                                             </div>
                                         </>
                                     ) : (
-                                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all border-2 border-dashed border-white/5">
-                                            <ImageIcon size={32} className="text-gray-700 mb-2" />
-                                            <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center px-10">Нажмите, чтобы добавить обложку пространства</span>
+                                        <label 
+                                            onClickCapture={handleUploadClick}
+                                            className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.05] transition-all border-2 border-dashed border-white/5"
+                                        >
+                                            <ImageIcon size={28} className="text-gray-700 mb-2" />
+                                            <span className="text-[9px] sm:text-[10px] font-black text-gray-600 uppercase tracking-widest text-center px-6">
+                                                Нажмите для загрузки
+                                            </span>
                                             <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                                         </label>
                                     )}
                                 </div>
                             </div>
-                            <input type="text" placeholder="Название..." className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 transition-all text-sm" value={isCreating ? newBlog.title : editingBlog?.title || ''} onChange={e => isCreating ? setNewBlog({...newBlog, title: e.target.value}) : setEditingBlog({...editingBlog!, title: e.target.value})} />
-                            <textarea placeholder="Описание..." className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 transition-all text-sm min-h-[120px]" value={isCreating ? newBlog.description : editingBlog?.description || ''} onChange={e => isCreating ? setNewBlog({...newBlog, description: e.target.value}) : setEditingBlog({...editingBlog!, description: e.target.value})} />
-                            <div className="flex gap-4">
-                                <button onClick={editingBlog ? handleUpdateSubmit : handleCreateSubmit} className="flex-1 py-5 bg-blue-600 text-white rounded-[22px] font-black uppercase text-[10px] tracking-[0.2em]">{editingBlog ? 'Сохранить изменения' : 'Создать раздел'}</button>
-                                <button onClick={() => { setIsCreating(false); setEditingBlog(null); }} className="px-10 py-5 bg-white/5 text-gray-400 rounded-[22px] font-black uppercase text-[10px]">Отмена</button>
+
+                            {/* ПОЛЯ ВВОДА: Уменьшили padding на мобилках */}
+                            <div className="space-y-4">
+                                <input 
+                                    type="text" 
+                                    placeholder="Название..." 
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-[18px] sm:rounded-[22px] px-6 py-4 sm:px-8 sm:py-5 outline-none focus:border-blue-500/40 transition-all text-sm" 
+                                    value={isCreating ? newBlog.title : editingBlog?.title || ''} 
+                                    onChange={e => isCreating ? setNewBlog({...newBlog, title: e.target.value}) : setEditingBlog({...editingBlog!, title: e.target.value})} 
+                                />
+                                
+                                <textarea 
+                                    placeholder="Описание..." 
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-[18px] sm:rounded-[22px] px-6 py-4 sm:px-8 sm:py-5 outline-none focus:border-blue-500/40 transition-all text-sm min-h-[100px] sm:min-h-[120px] resize-none" 
+                                    value={isCreating ? newBlog.description : editingBlog?.description || ''} 
+                                    onChange={e => isCreating ? setNewBlog({...newBlog, description: e.target.value}) : setEditingBlog({...editingBlog!, description: e.target.value})} 
+                                />
+                            </div>
+
+                            {/* КНОПКИ ДЕЙСТВИЯ: На мобилках стакаются или идут в ряд */}
+                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-2">
+                                <button 
+                                    onClick={editingBlog ? handleUpdateSubmit : handleCreateSubmit} 
+                                    className="flex-1 py-4 sm:py-5 bg-blue-600 text-white rounded-[18px] sm:rounded-[22px] font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+                                >
+                                    {editingBlog ? 'Сохранить изменения' : 'Создать раздел'}
+                                </button>
+                                <button 
+                                    onClick={() => { setIsCreating(false); setEditingBlog(null); }} 
+                                    className="py-4 sm:py-5 px-8 sm:px-10 bg-white/5 text-gray-400 rounded-[18px] sm:rounded-[22px] font-black uppercase text-[10px] active:bg-white/10 transition-all"
+                                >
+                                    Отмена
+                                </button>
                             </div>
                         </div>
                     </div>

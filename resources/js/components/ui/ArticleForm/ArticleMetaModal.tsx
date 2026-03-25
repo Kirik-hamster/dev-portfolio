@@ -102,12 +102,15 @@ export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({
                                 {imageUrl ? (
                                     <>
                                         <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                            <label className="p-3 bg-white text-black rounded-xl cursor-pointer hover:scale-110 transition-transform">
+                                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100">
+                                            <label className="p-4 bg-white text-black rounded-2xl cursor-pointer shadow-2xl active:scale-95 transition-all">
                                                 <Camera size={20} />
                                                 <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                                             </label>
-                                            <button onClick={handleDeleteImage} className="p-3 bg-red-600 text-white rounded-xl hover:scale-110 transition-transform">
+                                            <button 
+                                                onClick={handleDeleteImage} 
+                                                className="p-4 bg-red-600 text-white rounded-2xl shadow-2xl active:scale-95 transition-all"
+                                            >
                                                 <Trash2 size={20} />
                                             </button>
                                         </div>
