@@ -43,6 +43,7 @@ export interface Blog {
     is_liked?: boolean;
     is_favorited?: boolean;
     user?: User;
+    image_url?: string;
 }
 
 
@@ -58,6 +59,7 @@ export interface BlogPagination {
 export interface BlogInput {
     title: string;
     description: string;
+    image_url?: string;
 }
 export interface ArticleTag {
     id: number;

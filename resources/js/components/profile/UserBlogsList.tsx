@@ -1,12 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'; // Убрали лишний useEffect, оставили useMemo
 import { useNavigate } from 'react-router-dom';
-import { Plus,X } from 'lucide-react';
-import { Blog, User, Article, BlogInput, BlogPagination } from '../../types';
+import { Camera, ImageIcon, Plus,Trash2,X } from 'lucide-react';
+import { Blog, User, Article, BlogInput, BlogPagination, SortOption } from '../../types';
 import { UserArticlesList } from './UserArticlesList';
 import { Pagination } from '../ui/Pagination';
 import { FilterBar } from '../ui/FilterBar';
 import { BlogHeader } from '../blog/BlogHeader';
 import { BlogCard } from '../blog/BlogCard';
+import { MediaApiService } from '@/services/MediaApiService';
+import { ImageCropModal } from '../ui/ImageCropModal';
+import { StatusModal } from '../ui/StatusModal';
 
 interface UserBlogsListProps {
     user: User;
@@ -43,8 +46,72 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
     } = props;
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [sort, setSort] = useState<'latest' | 'popular'>('latest');
+    const [sort, setSort] = useState<SortOption>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
+
+    const [tempImage, setTempImage] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const [showNoAccess, setShowNoAccess] = useState(false);
+    const hasUploadAccess = user?.role === 'admin' || user?.role?.includes('-img');
+
+    const handleUploadClick = (e: React.MouseEvent) => {
+        if (!hasUploadAccess) {
+            e.preventDefault(); // Запрещаем открывать выбор файла
+            e.stopPropagation(); // Останавливаем событие
+            setShowNoAccess(true); // Включаем модалку ошибки
+        }
+    }
+
+    const handleSaveCrop = async (blob: Blob) => {
+        setIsUploading(true);
+        try {
+            const file = new File([blob], 'blog_cover.webp', { type: 'image/webp' });
+            const res = await MediaApiService.uploadCover(file);
+            
+            // Обновляем нужный стейт (новый блог или редактируемый)
+            if (isCreating) {
+                setNewBlog({ ...newBlog, image_url: res.url });
+            } else {
+                setEditingBlog({ ...editingBlog!, image_url: res.url });
+            }
+            setTempImage(null);
+        } catch (e) {
+            alert("Ошибка загрузки обложки");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleDeleteCover = async () => {
+        // Определяем, какую ссылку удалять
+        const urlToDelete = isCreating ? newBlog.image_url : editingBlog?.image_url;
+        
+        if (!urlToDelete) return;
+
+        try {
+            // 1. Вызываем API удаления физического файла
+            await MediaApiService.deleteImage(urlToDelete);
+            
+            // 2. Очищаем стейт на фронте
+            if (isCreating) {
+                setNewBlog({ ...newBlog, image_url: '' });
+            } else {
+                setEditingBlog({ ...editingBlog!, image_url: '' });
+            }
+        } catch (e) {
+            console.error("Ошибка при удалении файла из хранилища:", e);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => setTempImage(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
 
     const formRef = useRef<HTMLDivElement>(null);
 
@@ -127,6 +194,41 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                             <button onClick={() => { setIsCreating(false); setEditingBlog(null); }} className="p-3 hover:bg-white/5 rounded-full text-gray-500"><X size={20}/></button>
                         </div>
                         <div className="space-y-8">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] ml-2">Обложка блога (21:9)</label>
+                                <div 
+                                    onClickCapture={handleUploadClick}
+                                    className="relative aspect-[21/9] w-full rounded-[25px] overflow-hidden bg-white/[0.02] border border-white/5 group/cover"
+                                >
+                                    {(isCreating ? newBlog.image_url : editingBlog?.image_url) ? (
+                                        <>
+                                            <img 
+                                                src={isCreating ? newBlog.image_url : editingBlog?.image_url} 
+                                                className="w-full h-full object-cover" 
+                                                alt="Preview" 
+                                            />
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                                <label className="p-4 bg-white text-black rounded-2xl cursor-pointer hover:scale-110 transition-all">
+                                                    <Camera size={20} />
+                                                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                                                </label>
+                                                <button 
+                                                    onClick={handleDeleteCover}
+                                                    className="p-4 bg-red-600 text-white rounded-2xl hover:scale-110 transition-all"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all border-2 border-dashed border-white/5">
+                                            <ImageIcon size={32} className="text-gray-700 mb-2" />
+                                            <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center px-10">Нажмите, чтобы добавить обложку пространства</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                                        </label>
+                                    )}
+                                </div>
+                            </div>
                             <input type="text" placeholder="Название..." className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 transition-all text-sm" value={isCreating ? newBlog.title : editingBlog?.title || ''} onChange={e => isCreating ? setNewBlog({...newBlog, title: e.target.value}) : setEditingBlog({...editingBlog!, title: e.target.value})} />
                             <textarea placeholder="Описание..." className="w-full bg-white/[0.02] border border-white/5 rounded-[22px] px-8 py-5 outline-none focus:border-blue-500/40 transition-all text-sm min-h-[120px]" value={isCreating ? newBlog.description : editingBlog?.description || ''} onChange={e => isCreating ? setNewBlog({...newBlog, description: e.target.value}) : setEditingBlog({...editingBlog!, description: e.target.value})} />
                             <div className="flex gap-4">
@@ -172,6 +274,23 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
             {filteredBlogs.length === 0 && (
                 <div className="py-20 text-center opacity-30 italic">Ничего не найдено...</div>
             )}
+
+            {tempImage && (
+                <ImageCropModal 
+                    image={tempImage} 
+                    aspectRatio={21/9} // 👈 Используем наш новый формат для блогов
+                    onClose={() => setTempImage(null)} 
+                    onSave={handleSaveCrop}
+                    isUploading={isUploading}
+                />
+            )}
+            <StatusModal 
+                isOpen={showNoAccess}
+                type="error"
+                title="Доступ ограничен"
+                message="У вас нет прав для изменения обложки. Эта функция доступна администраторам и редакторам медиа."
+                onClose={() => setShowNoAccess(false)}
+            />
 
             {blogPagination && (
                 <Pagination 

@@ -75,6 +75,7 @@ class BlogController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'image_url' => 'nullable|string',
         ]);
 
         $blog->update($data);
@@ -98,6 +99,7 @@ class BlogController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'image_url' => 'nullable|string',
         ]);
 
         $data['user_id'] = Auth::id();

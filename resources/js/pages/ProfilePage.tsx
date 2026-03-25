@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
-import { User as UserType, Blog, Article, BlogPagination } from '../types';
+import { User as UserType, Blog, Article, BlogPagination, BlogInput } from '../types';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { AdminPanel } from '@/components/profile/AdminPanel/index';
 import { BlogApiService } from '../services/BlogApiService';
@@ -57,7 +57,11 @@ export function ProfilePage({
     const [allBlogsCount, setAllBlogsCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
-    const [newBlog, setNewBlog] = useState({ title: '', description: '' });
+    const [newBlog, setNewBlog] = useState<BlogInput>({ 
+        title: '', 
+        description: '', 
+        image_url: ''
+    });
     const [insideBlogTitle, setInsideBlogTitle] = useState('');
 
     // Лаборатория лоадера
@@ -132,7 +136,13 @@ export function ProfilePage({
 
     const handleCreateSubmit = async () => {
         if (!newBlog.title) return alert("Введите название папки!");
-        const res = await BlogApiService.save(newBlog);
+        
+        // Добавляем поле image_url в отправку
+        const res = await BlogApiService.save({
+            ...newBlog,
+            image_url: newBlog.image_url || ''
+        });
+
         if (res.ok) {
             setIsCreating(false);
             setNewBlog({ title: '', description: '' });
@@ -142,10 +152,13 @@ export function ProfilePage({
 
     const handleUpdateSubmit = async () => {
         if (!editingBlog) return;
+        
         const res = await BlogApiService.save({
             title: editingBlog.title,
-            description: editingBlog.description ?? '' 
+            description: editingBlog.description ?? '',
+            image_url: editingBlog.image_url || ''
         }, editingBlog.id);
+
         if (res.ok) {
             setEditingBlog(null);
             fetchBlogs();

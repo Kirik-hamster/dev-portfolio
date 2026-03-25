@@ -76,7 +76,7 @@ class ImageUploadController extends Controller
 
     public function uploadCover(Request $request)
     {
-        if ($request->user()->role !== 'admin') {
+        if ($request->user()->role !== 'admin' && !str_contains($request->user()->role, '-img')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 

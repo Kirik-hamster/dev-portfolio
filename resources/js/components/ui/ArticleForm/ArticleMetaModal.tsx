@@ -26,13 +26,13 @@ export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({
     const [isUploading, setIsUploading] = useState(false);
 
     const [showNoAccess, setShowNoAccess] = useState(false); // Для показа ошибки
-    const isAdmin = user?.role === 'admin'; // Проверка роли
+    const hasUploadAccess = user?.role === 'admin' || user?.role?.includes('-img');
 
     const handleUploadClick = (e: React.MouseEvent) => {
-        if (!isAdmin) {
-            e.preventDefault(); // Блокируем открытие окна выбора файла
-            e.stopPropagation(); // Останавливаем событие
-            setShowNoAccess(true); // Показываем модалку "Нет прав"
+        if (!hasUploadAccess) {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowNoAccess(true);
         }
     };
 

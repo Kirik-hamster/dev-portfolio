@@ -14,7 +14,7 @@ class Blog extends Model
     protected $appends = ['is_liked', 'is_favorited'];
 
     // Поля, которые можно заполнять массово (как в твоем сидере)
-    protected $fillable = ['user_id', 'title', 'description', 'is_portfolio', 'top_tags', 'total_views'];
+    protected $fillable = ['user_id', 'title', 'description', 'is_portfolio', 'top_tags', 'total_views', 'image_url'];
 
     protected $casts = [
         'top_tags' => 'array', // Авто-превращение JSON из базы в массив для фронта

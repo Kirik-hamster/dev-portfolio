@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, Trash2, Plus, FileText, Loader2 } from 'lucide-react'; // Добавили Loader2
 import { useArticles } from '../../hooks/useArticles';
-import { Article, User } from '../../types';
+import { Article, User, SortOption } from '../../types';
 import { ConfirmModal } from '../ui/ConfirmModel';
 import { Pagination } from '../ui/Pagination';
 import { PremiumLoader } from '../PremiumLoader';
@@ -22,7 +22,7 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
     const [debouncedSearch, setDebouncedSearch] = useState(''); 
 
     const [searchType, setSearchType] = useState<'title' | 'author'>('title');
-    const [sort, setSort] = useState<'latest' | 'popular'>('latest');
+    const [sort, setSort] = useState<SortOption>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
 
     // Debounce для сервера (500мс)
