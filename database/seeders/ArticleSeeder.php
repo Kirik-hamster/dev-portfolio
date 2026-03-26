@@ -16,7 +16,7 @@ class ArticleSeeder extends Seeder
         $adminPassword = env('ADMIN_PASSWORD', 'password123');
         // 1. Админ
         $admin = User::firstOrCreate(
-            ['email' => $adminPassword],
+            ['email' => $adminEmail],
             [
                 'name' => 'Kirik-hamster',
                 'password' => Hash::make($adminPassword),
