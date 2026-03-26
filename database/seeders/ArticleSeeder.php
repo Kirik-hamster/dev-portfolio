@@ -12,12 +12,14 @@ class ArticleSeeder extends Seeder
 {
     public function run(): void
     {
+        $adminEmail = env('ADMIN_EMAIL', 'admin@example.com');
+        $adminPassword = env('ADMIN_PASSWORD', 'password123');
         // 1. Админ
         $admin = User::firstOrCreate(
-            ['email' => 'kir.myak@bk.ru'],
+            ['email' => $adminPassword],
             [
                 'name' => 'Kirik-hamster',
-                'password' => Hash::make('qwerty12345678'),
+                'password' => Hash::make($adminPassword),
                 'role' => 'admin',
                 'email_verified_at' => Carbon::now(),
             ]

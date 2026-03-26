@@ -11,8 +11,8 @@ export function LoginPage({
     onLoginSuccess: (user: User) => void,
     onNavigateToRegister: () => void
 }) {
-    const [email, setEmail] = useState('kir.myak@bk.ru');
-    const [password, setPassword] = useState('qwerty12345678');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     // Возможность посмотреть пароль
     const [showPasswords, setShowPasswords] = useState(false);
