@@ -32,11 +32,17 @@ Route::get('/portfolio', [ArticleController::class, 'portfolio']);
 
 Route::get('/top-tags', [TagController::class, 'top']);
 
-Route::post('/verify-code', VerifyCodeController::class)->middleware('auth:sanctum');
-Route::post('/verify-resend', [VerifyCodeController::class, 'resend'])
-    ->middleware('auth:sanctum', 'throttle:1,1');
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/verify-code', VerifyCodeController::class);
+    Route::post('/verify-resend', [VerifyCodeController::class, 'resend'])
+        ->middleware('throttle:1,1');
+        
+    // Новый маршрут для отмены регистрации
+    Route::delete('/verify-cancel', [VerifyCodeController::class, 'destroy']); 
+
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 });
 
 Route::get('/home-settings', [HomeSettingController::class, 'show']);

@@ -60,9 +60,9 @@ export function RegisterPage({
     };
 
     return (
-        <div className="max-w-md mx-auto py-20 animate-in fade-in zoom-in duration-500">
-            <h1 className="text-4xl font-black mb-8 text-center uppercase tracking-tighter">Регистрация</h1>
-            <form onSubmit={handleSubmit} className="space-y-4 bg-white/[0.02] p-8 rounded-[30px] border border-white/5">
+        <div className="max-w-md mx-auto py-10 sm:py-20 px-4 animate-in fade-in zoom-in duration-500">
+            <h1 className="text-3xl sm:text-4xl font-black mb-6 sm:mb-8 text-center uppercase tracking-tighter">Регистрация</h1>
+            <form onSubmit={handleSubmit} className="space-y-4 bg-white/[0.02] p-6 sm:p-8 rounded-[30px] border border-white/5">
                 <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all" placeholder="Имя" required />
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-blue-500 transition-all" placeholder="Email" required />
                 <div className="relative group">
@@ -91,7 +91,7 @@ export function RegisterPage({
                         {showPasswords ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                 </div>
-                <button type="submit" disabled={isLoading} className="w-full py-4 bg-white text-black rounded-full font-bold uppercase text-xs tracking-widest hover:scale-105 transition-all">
+                <button type="submit" disabled={isLoading} className="w-full py-4 bg-white text-black rounded-full font-bold uppercase text-xs tracking-widest active:scale-95 sm:hover:scale-105 transition-all">
                     {isLoading ? 'Создание...' : 'Создать аккаунт'}
                 </button>
             </form>

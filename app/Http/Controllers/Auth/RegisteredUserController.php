@@ -36,25 +36,21 @@ class RegisteredUserController extends Controller
             }
 
             // Если НЕ верифицирован — просто обновляем его данные
-            $code = rand(100000, 999999);
             $user->update([
                 'name' => $request->name,
                 'password' => Hash::make($request->password),
-                'verification_code' => $code,
             ]);
         } else {
             // Если юзера нет совсем — создаем
-            $code = rand(100000, 999999);
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'verification_code' => $code,
             ]);
         }
 
         // Отправляем наше новое уведомление с кодом
-        $user->notify(new VerifyEmailCode($code));
+        $user->sendOtp();
 
         Auth::login($user);
 

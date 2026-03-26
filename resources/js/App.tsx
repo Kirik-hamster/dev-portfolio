@@ -11,6 +11,8 @@ import { Footer } from './components/Footer';
 import { SettingsProvider } from './context/SettingsContext';
 import { AppRoutes } from './router/AppRoutes';
 import { VerifyCodePage } from './pages/auth/VerifyCodePage';
+import { AuthApiService } from './services/AuthApiService';
+import { ConfirmModal } from './components/ui/ConfirmModel';
 
 
 /**
@@ -23,28 +25,36 @@ function AppContent() {
     const [portfolioBlogId, setPortfolioBlogId] = useState<number | null>(null);
     const glowRef = useRef<HTMLDivElement>(null);
 
-    // 1. Помощник для получения токена из куки
-    const getXsrfToken = () => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; XSRF-TOKEN=`);
-        if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
-        return '';
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const handleLogout = async () => {
+        try {
+            await AuthApiService.logout();
+        } catch (e) {
+            console.error("Ошибка при выходе:", e);
+        } finally {
+            setUser(null);
+            navigate('/');
+            window.location.reload();
+        }
     };
 
-    // 2. Функция выхода
-    const handleLogout = async () => {
-        await fetch('/api/logout', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'X-XSRF-TOKEN': getXsrfToken()
-            },
-            credentials: 'include'
-        });
-        
-        setUser(null);
-        navigate('/');
-        window.location.reload();
+    const handleConfirmCancel = async () => {
+        setIsConfirmOpen(false);
+        setLoading(true);
+        try {
+            const res = await AuthApiService.cancelRegistration();
+            if (res.ok) {
+                setUser(null);
+                navigate('/');
+                // Принудительно чистим куки, если нужно
+                window.location.reload(); 
+            }
+        } catch (e) {
+            console.error("Ошибка удаления");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const refreshUser = async (): Promise<void> => {
@@ -112,19 +122,38 @@ function AppContent() {
 
     if (user && !user.email_verified_at) {
         return (
-            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-                {/* Твои красивые эффекты фона */}
-                <div ref={glowRef} className="pointer-events-none fixed -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px] z-0" />
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+                <div ref={glowRef} className="pointer-events-none fixed -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px]" />
                 
-                <main className="relative z-10 w-full">
+                <main className="relative z-10 w-full max-w-md">
                     <VerifyCodePage onVerified={refreshUser} />
-                    <button 
-                        onClick={handleLogout}
-                        className="w-full mt-4 text-[10px] text-gray-500 hover:text-white uppercase font-black tracking-widest transition-colors"
-                    >
-                        Выйти и ввести другую почту
-                    </button>
+                    <div className="mt-8 flex flex-col items-center gap-4">
+                        <div className="flex flex-col items-center gap-4">
+                            <button 
+                                onClick={() => setIsConfirmOpen(true)}
+                                className="text-[9px] font-black uppercase tracking-[0.2em] text-rose-500/40 hover:text-rose-500 transition-colors"
+                            >
+                                Ошибка в почте? Начать заново
+                            </button>
+                            
+                            <button 
+                                onClick={handleLogout}
+                                className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-white transition-colors"
+                            >
+                                Выйти из системы
+                            </button>
+                        </div>
+                    </div>
                 </main>
+
+                {/* МОДАЛКА ПОДТВЕРЖДЕНИЯ (рендер в портал или просто тут) */}
+                <ConfirmModal 
+                    isOpen={isConfirmOpen}
+                    title="Сброс регистрации"
+                    message="Все ваши текущие данные будут удалены из системы. Вы уверены, что хотите начать регистрацию с нуля?"
+                    onConfirm={handleConfirmCancel}
+                    onCancel={() => setIsConfirmOpen(false)}
+                />
             </div>
         );
     }

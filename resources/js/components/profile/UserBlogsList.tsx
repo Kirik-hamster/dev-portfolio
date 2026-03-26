@@ -66,10 +66,20 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
     const handleSaveCrop = async (blob: Blob) => {
         setIsUploading(true);
         try {
+            const oldImageUrl = isCreating ? newBlog.image_url : editingBlog?.image_url;
+
+            // УДАЛЯЕМ старый файл из S3, если он существовал
+            if (oldImageUrl) {
+                await MediaApiService.deleteImage(oldImageUrl).catch(err => 
+                    console.warn("Старый файл не найден или уже удален:", err)
+                );
+            }
+
+            // ЗАГРУЖАЕМ новый файл
             const file = new File([blob], 'blog_cover.webp', { type: 'image/webp' });
             const res = await MediaApiService.uploadCover(file);
             
-            // Обновляем нужный стейт (новый блог или редактируемый)
+            // ОБНОВЛЯЕМ стейт новой ссылкой
             if (isCreating) {
                 setNewBlog({ ...newBlog, image_url: res.url });
             } else {

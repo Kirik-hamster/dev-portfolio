@@ -30,7 +30,14 @@ export const AuthApiService = {
             credentials: 'include'
         });
     },
-
+    // Выход
+    async logout(): Promise<Response> {
+        return fetch('/api/logout', {
+            method: 'POST',
+            headers: getHeaders(),
+            credentials: 'include'
+        });
+    },
     // Регистрация
     async register(data: RegisterData) {
         await this.getCsrf();
@@ -71,6 +78,13 @@ export const AuthApiService = {
     async resendVerifyCode(): Promise<Response> {
         return fetch('/api/verify-resend', {
             method: 'POST',
+            headers: getHeaders(),
+            credentials: 'include'
+        });
+    },
+    async cancelRegistration(): Promise<Response> {
+        return fetch('/api/verify-cancel', {
+            method: 'DELETE',
             headers: getHeaders(),
             credentials: 'include'
         });

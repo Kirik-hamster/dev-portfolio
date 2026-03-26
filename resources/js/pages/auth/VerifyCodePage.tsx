@@ -1,3 +1,4 @@
+import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { AuthApiService } from '@/services/AuthApiService';
 import React, { useEffect, useState, useRef } from 'react';
 
@@ -14,12 +15,15 @@ function getCookie(name: string) {
     if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(";").shift() || '');
 }
 
-export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
+export function VerifyCodePage({ 
+    onVerified
+}: { 
+    onVerified: () => void
+}) {
     const [code, setCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
     const [status, setStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
-    
 
     const [timeLeft, setTimeLeft] = useState<number>(VERIFY_CONFIG.TIMER_SECONDS);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +42,6 @@ export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
 
     useEffect(() => {
         if (effectRan.current) return;
-        handleResend(true);
         effectRan.current = true;
         inputRef.current?.focus();
     }, []);
@@ -99,7 +102,7 @@ export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
 
     return (
         <div className="max-w-md mx-auto py-20 animate-in fade-in zoom-in duration-700">
-            <div className="relative p-12 bg-white/[0.01] rounded-[50px] border border-white/5 text-center backdrop-blur-3xl shadow-2xl overflow-hidden">
+            <div className="relative mx-4 sm:mx-0 p-6 sm:p-12 bg-white/[0.01] rounded-[50px] border border-white/5 text-center backdrop-blur-3xl shadow-2xl overflow-hidden">
                 <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] pointer-events-none" />
                 <h2 className="relative z-10 text-4xl font-black mb-2 uppercase tracking-tighter text-white">
                     Верификация
@@ -123,9 +126,9 @@ export function VerifyCodePage({ onVerified }: { onVerified: () => void }) {
                             disabled={timeLeft <= 0}
                         />
 
-                        <div className="flex gap-3 justify-center">
+                        <div className="flex gap-2 sm:gap-3 justify-center">
                             {[...Array(6)].map((_, index) => (
-                                <div key={index} className={`w-14 h-20 flex items-center justify-center rounded-2xl border text-4xl font-black transition-all duration-300
+                                <div key={index} className={`w-10 h-16 sm:w-14 sm:h-20 flex items-center justify-center rounded-2xl border text-4xl font-black transition-all duration-300
                                     ${index === code.length ? 'border-blue-500/50 bg-white/[0.07] scale-105' : 'border-white/10 bg-white/[0.03]'}
                                     ${code[index] ? 'text-white border-white/30' : 'text-white/20'}
                                     ${timeLeft <= 0 ? 'grayscale opacity-50' : ''}
