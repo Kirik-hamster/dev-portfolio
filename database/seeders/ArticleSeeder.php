@@ -64,7 +64,10 @@ class ArticleSeeder extends Seeder
     private function syncTags($article, $blog, $techStack) {
         $tags = collect(explode(',', $techStack))->map(fn($t) => trim($t))->filter();
         foreach ($tags as $tagName) {
-            $tag = Tag::firstOrCreate(['name' => $tagName]);
+            $tag = Tag::firstOrCreate(
+                ['name' => $tagName],
+                ['slug' => Str::slug($tagName)] 
+            );
             $article->tags()->syncWithoutDetaching([$tag->id]);
             $blog->tags()->syncWithoutDetaching([$tag->id]);
             $tag->increment('usage_count');
