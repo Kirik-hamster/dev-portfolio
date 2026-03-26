@@ -12,7 +12,10 @@ class TagController extends Controller
      */
     public function top()
     {
-        return Tag::orderByDesc('usage_count')
+        return Tag::whereHas('articles.blog', function ($query) {
+                $query->where('is_portfolio', false);
+            })
+            ->orderByDesc('usage_count')
             ->limit(15)
             ->pluck('name');
     }

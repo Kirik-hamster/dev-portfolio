@@ -59,6 +59,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [tagSearchQuery, setTagSearchQuery] = useState('');
 
     const [globalTags, setGlobalTags] = useState<string[]>([]);
 
@@ -93,26 +94,13 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         TagApiService.fetchTopTags().then(setGlobalTags);
     }, []);
 
-    // Загружаем статьи один раз только для формирования облака тегов (topTags)
-    useEffect(() => {
-        const loadTagsData = async () => {
-            try {
-                const res = await fetch('/api/community-articles');
-                const responseData = await res.json();
-                const cleanArticles = Array.isArray(responseData) ? responseData : (responseData.data || []);
-                setArticles(cleanArticles);
-            } catch (e) { console.error("Fetch error in tags:",e); }
-        };
-        loadTagsData();
-    }, []);
-
     const loadContent = async (isCancelled: () => boolean) => {
         setLoading(true);
         try {
             let data;
             const params = {
                 page: currentPage, 
-                tag: selectedTag || '',
+                tag: tagSearchQuery || selectedTag || '',
                 search: searchQuery,
                 search_type: searchType,
                 sort: sort,
@@ -152,7 +140,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         return () => {
             active = false;
         };
-    }, [currentPage, selectedTag, viewMode, selectedBlogId, searchType, sort, favoritesOnly, searchQuery, initialBlogId]);
+    }, [currentPage, selectedTag, tagSearchQuery, viewMode, selectedBlogId, searchType, sort, favoritesOnly, searchQuery, initialBlogId]);
         
     useEffect(() => {
         if (!initialBlogId) {
@@ -257,8 +245,8 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                 isInsideBlog={!!selectedBlogId}
                 setViewMode={handleViewChange} 
                 setSelectedBlogId={setSelectedBlogId}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
+                searchQuery={tagSearchQuery}
+                setSearchQuery={setTagSearchQuery}
             />
 
             <div className="max-w-6xl mx-auto px-6">
