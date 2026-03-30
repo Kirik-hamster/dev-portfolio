@@ -84,6 +84,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
     
 
     React.useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
@@ -130,7 +131,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
             const coords = editor.view.coordsAtPos(pos);
 
             if (coords) {
-                const yOffset = -150; // Твой отступ под тулбар
+                const yOffset = -220;
                 const y = coords.top + window.pageYOffset + yOffset;
 
                 window.scrollTo({
@@ -145,7 +146,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
         } finally {
             setIsMobileTocOpen(false);
         }
-};
+    };
 
 
     const updateToc = (editor: Editor) => {
@@ -187,6 +188,17 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
         onUpdate: ({ editor }) => {
             updateToc(editor);
             // Здесь удалили старую логику удаления — она мешала!
+        },
+
+        onFocus: ({ editor }) => {
+            // Получаем текущую позицию курсора
+            const pos = editor.state.selection.from;
+            
+            // Даем небольшую задержку (100мс), чтобы мобильная клавиатура 
+            // успела начать выезжать и viewport изменился
+            setTimeout(() => {
+                scrollToPos(pos);
+            }, 100);
         }
     });
 
@@ -373,7 +385,7 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                             <ToolbarButton onClick={() => editor.chain().focus().undo().run()}><Undo size={18}/></ToolbarButton>
                             <ToolbarButton onClick={() => editor.chain().focus().redo().run()}><Redo size={18}/></ToolbarButton>
                         </div>
-                        <div className="flex-1 overflow-y-auto sm:p-14 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             <EditorContent editor={editor} />
                         </div>
                     </div>
