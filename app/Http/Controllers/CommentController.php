@@ -149,4 +149,18 @@ class CommentController extends Controller {
         // 7. Отдаем с пагинацией по 10 штук
         return $query->paginate(10);
     }
+
+    public function ancestors($id) {
+        $comment = Comment::findOrFail($id);
+        $ancestors = [];
+        $current = $comment;
+
+        while ($current->parent_id) {
+            $ancestors[] = (int)$current->parent_id;
+            $current = Comment::find($current->parent_id);
+            if (!$current) break;
+        }
+
+        return response()->json($ancestors);
+    }
 }

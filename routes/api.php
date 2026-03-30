@@ -71,6 +71,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::put('/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
     Route::get('/user/comments', [CommentController::class, 'userHistory']);
+    Route::get('/comments/{id}/ancestors', [CommentController::class, 'ancestors']);
 
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout(); // Выходим из сессии

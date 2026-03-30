@@ -75,5 +75,13 @@ export const CommentApiService = {
             headers: getHeaders(),
         });
         return response.json();
+    },
+
+    async getAncestors(commentId: number): Promise<number[]> {
+        const response = await fetch(`/api/comments/${commentId}/ancestors`, {
+            headers: getHeaders(),
+        });
+        if (!response.ok) return [];
+        return response.json();
     }
 };

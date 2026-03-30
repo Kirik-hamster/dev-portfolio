@@ -14,6 +14,7 @@ interface ItemProps {
     sort: string;
     onAuthRequired: () => void;
     targetCommentId?: number | null | undefined;
+    ancestorIds?: number[];
     onAction: () => void;
     handleLike: (id: number) => void;
     onDelete: (id: number) => void
@@ -35,7 +36,8 @@ const getTotalRepliesCount = (c: Comment): number => {
 };
 
 export const CommentItem: React.FC<ItemProps> = ({ 
-    comment, user, depth, onAction, handleLike, targetCommentId, sort, onAuthRequired, onDelete
+    comment, user, depth, onAction, handleLike, targetCommentId, sort, onAuthRequired, onDelete,
+    ancestorIds = []
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -57,7 +59,7 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     const isTarget = targetCommentId === comment.id;
 
-    const isTargetInside = targetCommentId && hasTargetChild(comment, targetCommentId);
+    const isTargetInside = ancestorIds.includes(comment.id);
 
     const loadReplies = async (isInitial = false) => {
         if (repliesLoading) return;
@@ -107,15 +109,22 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     useEffect(() => {
         if (isTargetInside && !showReplies && !repliesLoading) loadReplies(true);
-    }, [targetCommentId, isTargetInside]);
+    }, [targetCommentId, ancestorIds]);
 
     useLayoutEffect(() => {
+        // Если этот коммент — цель, скроллим и включаем сияние
         if (isTarget && commentRef.current) {
-            requestAnimationFrame(() => {
-                commentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Небольшая задержка, чтобы страница успела отрисовать контент
+            const timer = setTimeout(() => {
+                commentRef.current?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' // Центрируем коммент на экране
+                });
                 setIsActiveGlow(true);
                 setTimeout(() => setIsActiveGlow(false), GLOW_DURATION);
-            });
+            }, 300); // Даем 300мс на стабилизацию DOM
+            
+            return () => clearTimeout(timer);
         }
     }, [isTarget]);
 
@@ -317,6 +326,8 @@ export const CommentItem: React.FC<ItemProps> = ({
                                     user={user} 
                                     depth={depth + 1}
                                     onAuthRequired={onAuthRequired}
+                                    targetCommentId={targetCommentId}
+                                    ancestorIds={ancestorIds}
                                     onAction={onAction} 
                                     handleLike={handleReplyLike} 
                                     onDelete={(id) => {

@@ -12,6 +12,7 @@ interface CommentSectionProps {
     targetCommentId: number | null;
     user: User | null;
     onNavigateToLogin: () => void;
+    ancestorIds?: number[];
 }
 
 const MAX_CHARS = 1000;
@@ -21,7 +22,8 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     comments, 
     targetCommentId, 
     user, 
-    onNavigateToLogin 
+    onNavigateToLogin, 
+    ancestorIds = []
 }) => {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -218,6 +220,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                         user={user} 
                         depth={0}
                         targetCommentId={targetCommentId}
+                        ancestorIds={ancestorIds}
                         onAction={() => loadRootComments(true)}
                         handleLike={handleLike} 
                         onAuthRequired={() => setIsAuthModalOpen(true)}

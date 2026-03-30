@@ -1,6 +1,6 @@
 // resources/js/pages/ArticleDetailPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Article, User } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/comments/CommentSection';
@@ -14,6 +14,7 @@ import { ScrollToTop } from '../components/ui/ScrollToTop';
 import { ArticleNavigation } from '@/components/ArticlePage/ArticleNavigation';
 import { MobileTocToggle } from '@/components/ui/MobileTocToggle';
 import { MobileTocDrawer, TocItem } from '@/components/ui/MobileTocDrawer';
+import { CommentApiService } from '@/services/CommentApiService';
 
 interface ArticleDetailPageProps {
     articleId: number | string;
@@ -24,10 +25,13 @@ interface ArticleDetailPageProps {
 
 export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: ArticleDetailPageProps) {
     const navigate = useNavigate();
+    const location = useLocation();
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
     const [toc, setToc] = useState<TocItem[]>([]);
     const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
+
+    const [ancestorIds, setAncestorIds] = useState<number[]>([]);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
@@ -102,6 +106,19 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
             setIsMobileTocOpen(false);
         }
     };
+
+    const targetCommentId = location.hash.startsWith('#comment-') 
+        ? Number(location.hash.replace('#comment-', '')) 
+        : null;
+
+    useEffect(() => {
+        if (targetCommentId) {
+            CommentApiService.getAncestors(targetCommentId).then(ids => {
+                setAncestorIds(ids);
+            });
+        }
+    }, [targetCommentId]);
+    
 
     if (loading || !article) return <PremiumLoader />;
 
@@ -229,7 +246,14 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                     <article className="prose-editor w-full mb-40" dangerouslySetInnerHTML={{ __html: article.content }} />
 
                     <div id="discussion-area" className="mt-32 border-t border-white/5 pt-20">
-                        <CommentSection articleId={article.id} comments={article.comments || []} user={user} onNavigateToLogin={onNavigateToLogin} targetCommentId={0} />
+                        <CommentSection 
+                            articleId={article.id} 
+                            comments={article.comments || []} 
+                            user={user} 
+                            onNavigateToLogin={onNavigateToLogin} 
+                            targetCommentId={targetCommentId} 
+                            ancestorIds={ancestorIds}
+                        />
                     </div>
                 </main>
 
