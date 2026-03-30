@@ -57,6 +57,11 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         }
     };
 
+    const handleDelete = (id: number) => {
+        setLocalComments(prev => prev.filter(c => c.id !== id));
+        setTotal(prev => prev - 1);
+    };
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Этот эффект будет срабатывать при каждом изменении контента
@@ -216,6 +221,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                         onAction={() => loadRootComments(true)}
                         handleLike={handleLike} 
                         onAuthRequired={() => setIsAuthModalOpen(true)}
+                        onDelete={handleDelete}
                     />
                 ))}
             </div>

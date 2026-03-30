@@ -16,6 +16,7 @@ interface ItemProps {
     targetCommentId?: number | null | undefined;
     onAction: () => void;
     handleLike: (id: number) => void;
+    onDelete: (id: number) => void
 }
 
 const hasTargetChild = (comment: Comment, targetId: number): boolean => {
@@ -34,7 +35,7 @@ const getTotalRepliesCount = (c: Comment): number => {
 };
 
 export const CommentItem: React.FC<ItemProps> = ({ 
-    comment, user, depth, onAction, handleLike, targetCommentId, sort, onAuthRequired
+    comment, user, depth, onAction, handleLike, targetCommentId, sort, onAuthRequired, onDelete
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -48,6 +49,11 @@ export const CommentItem: React.FC<ItemProps> = ({
     const [replyText, setReplyText] = useState('');
     const [isActiveGlow, setIsActiveGlow] = useState(false);
     const commentRef = useRef<HTMLDivElement>(null);
+
+    const [displayContent, setDisplayContent] = useState(comment.content);
+
+    // Инициализируем значением из пропсов
+    const [localRepliesCount, setLocalRepliesCount] = useState(comment.replies_count);
 
     const isTarget = targetCommentId === comment.id;
 
@@ -91,6 +97,15 @@ export const CommentItem: React.FC<ItemProps> = ({
     };
 
     useEffect(() => {
+        setDisplayContent(comment.content);
+    }, [comment.content]);
+
+    // Синхронизируем, если пропсы обновятся (например, при смене сортировки)
+    useEffect(() => {
+        setLocalRepliesCount(comment.replies_count);
+    }, [comment.replies_count]);
+
+    useEffect(() => {
         if (isTargetInside && !showReplies && !repliesLoading) loadReplies(true);
     }, [targetCommentId, isTargetInside]);
 
@@ -111,7 +126,11 @@ export const CommentItem: React.FC<ItemProps> = ({
     const handleUpdate = async () => {
         if (!editText.trim()) return;
         const res = await CommentApiService.update(comment.id, editText);
-        if (res.ok) { setIsEditing(false); onAction(); }
+        if (res.ok) { 
+            setDisplayContent(editText);
+            setIsEditing(false); 
+            onAction(); 
+        }
     };
 
     const handleReply = async () => {
@@ -127,6 +146,7 @@ export const CommentItem: React.FC<ItemProps> = ({
                 setShowReplies(true);
 
                 setReplies(prev => [newReply, ...prev]);
+                setLocalRepliesCount(prev => prev + 1);
             }
         } catch (e) { console.error(e); }
     };
@@ -134,7 +154,10 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     const handleConfirmDelete = async () => {
         const res = await CommentApiService.delete(comment.id);
-        if (res.ok) { setIsDeleteModalOpen(false); onAction(); }
+        if (res.ok) { 
+            setIsDeleteModalOpen(false); 
+            onDelete(comment.id);
+        }
     };
 
     // Константа для ограничения вложенности
@@ -236,7 +259,7 @@ export const CommentItem: React.FC<ItemProps> = ({
                             </div>
                         </div>
                     ) : (
-                        <p className="text-gray-400/80 text-[13px] sm:text-[15px] leading-relaxed font-medium italic break-words">{comment.content}</p>
+                        <p className="text-gray-400/80 text-[13px] sm:text-[15px] leading-relaxed font-medium italic break-words">{displayContent}</p>
                     )}
                 </div>
 
@@ -265,12 +288,11 @@ export const CommentItem: React.FC<ItemProps> = ({
             </div>
 
             {/* 3. ВЛОЖЕННОСТЬ */}
-            {/* Если replies_count > 0 или уже есть загруженные ответы */}
-            {(comment.replies_count > 0 || replies.length > 0) && (
+            {(localRepliesCount > 0 || replies.length > 0) && (
                 <div className={`flex flex-col ${!isMaxDepth ? 'ml-4 sm:ml-10 border-l pt-3 border-white/5 pl-4 sm:pl-10' : 'ml-0 mt-4'}`}>
                     
                     {/* Показываем кнопку загрузки только если ветка не раскрыта и есть что грузить */}
-                    {!showReplies && comment.replies_count > 0 && (
+                    {!showReplies && localRepliesCount > 0 && (
                         <div className="flex items-center gap-4 w-full my-4">
                             <div className="w-8 h-px bg-white/5" />
                             <button 
@@ -297,6 +319,10 @@ export const CommentItem: React.FC<ItemProps> = ({
                                     onAuthRequired={onAuthRequired}
                                     onAction={onAction} 
                                     handleLike={handleReplyLike} 
+                                    onDelete={(id) => {
+                                        setReplies(prev => prev.filter(r => r.id !== id));
+                                        setLocalRepliesCount(prev => Math.max(0, prev - 1));
+                                    }}
                                 />
                             ))}
                             
