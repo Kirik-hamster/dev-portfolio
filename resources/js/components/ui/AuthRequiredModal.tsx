@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, X, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 
 interface Props {
     isOpen: boolean;
@@ -11,7 +12,7 @@ export const AuthRequiredModal: React.FC<Props> = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
             <div 
                 className="absolute inset-0 bg-[#050505]/60 backdrop-blur-md transition-opacity" 
@@ -56,6 +57,7 @@ export const AuthRequiredModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

@@ -18,18 +18,18 @@ export const Footer = () => {
                     </div>
                     <div className="flex items-center gap-6 text-[9px] font-black tracking-[0.4em] text-gray-600 uppercase">
                         {settings.resumeUrl ? (
-    <a 
-        href={settings.resumeUrl} 
-        target="_blank" 
-        rel="noreferrer"
-        className="hover:text-white transition-colors cursor-pointer flex items-center gap-2 group"
-    >
-        Resume 
-        <ArrowUpRight size={10} className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
-    </a>
-) : (
-    <span className="opacity-20 cursor-not-allowed flex items-center gap-1">Resume <ArrowUpRight size={10}/></span>
-)}                     
+                            <a 
+                                href={settings.resumeUrl} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="hover:text-white transition-colors cursor-pointer flex items-center gap-2 group"
+                            >
+                                Resume 
+                                <ArrowUpRight size={10} className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
+                            </a>
+                        ) : (
+                            <span className="opacity-20 cursor-not-allowed flex items-center gap-1">Resume <ArrowUpRight size={10}/></span>
+                        )}                     
                         <span>© 2026 KIRILL MYAKOTIN</span>
                     </div>
                 </div>

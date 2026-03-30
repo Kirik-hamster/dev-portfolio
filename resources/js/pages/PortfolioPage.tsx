@@ -166,8 +166,8 @@ export function PortfolioPage({
             {/* ХЕДЕР */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-12 border-b border-white/5 pb-12 text-white">
                 <div>
-                    <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter mb-2">Portfolio</h1>
-                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.3em]">Engineering & Design Cases</p>
+                    <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter mb-2">Портфолио</h1>
+                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.3em]">Кейсы по разработке</p>
                 </div>
                 {isAdmin && (
                     <button onClick={onCreateArticle} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-2xl">

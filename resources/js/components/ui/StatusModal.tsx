@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, CheckCircle, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface Props {
     isOpen: boolean;
@@ -14,13 +15,11 @@ export const StatusModal: React.FC<Props> = ({ isOpen, type, title, message, onC
 
     const isSuccess = type === 'success';
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-            {/* BACKDROP */}
+   return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-300">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
             
-            {/* ОКНО */}
-            <div className="relative bg-[#0a0a0a] border border-white/10 p-10 rounded-[45px] max-w-sm w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] border-t-white/10 overflow-hidden">
+            <div className="relative bg-[#0a0a0a] border border-white/10 p-10 rounded-[45px] max-w-sm w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
                 {/* Декоративное свечение внутри */}
                 <div className={`absolute -top-20 -left-20 w-40 h-40 rounded-full blur-[80px] pointer-events-none ${isSuccess ? 'bg-emerald-500/10' : 'bg-red-500/10'}`} />
                 
@@ -53,6 +52,7 @@ export const StatusModal: React.FC<Props> = ({ isOpen, type, title, message, onC
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

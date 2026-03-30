@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Tag } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface TagsModalProps {
     isOpen: boolean;
@@ -15,7 +16,7 @@ export const TagsModal: React.FC<TagsModalProps> = ({
 }) => {
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} />
             
@@ -70,6 +71,7 @@ export const TagsModal: React.FC<TagsModalProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

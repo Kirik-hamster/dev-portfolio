@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface Props {
     isOpen: boolean;
@@ -12,7 +13,7 @@ interface Props {
 export const ConfirmModal: React.FC<Props> = ({ isOpen, title, message, onConfirm, onCancel }) => {
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
             {/* BACKDROP: Размытие фона как в премиум интерфейсах */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onCancel} />
@@ -47,6 +48,7 @@ export const ConfirmModal: React.FC<Props> = ({ isOpen, title, message, onConfir
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
