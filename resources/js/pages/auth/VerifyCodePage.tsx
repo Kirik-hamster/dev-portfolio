@@ -1,6 +1,14 @@
-import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { AuthApiService } from '@/services/AuthApiService';
 import React, { useEffect, useState, useRef } from 'react';
+
+interface VerifyCodePageProps {
+    email?: string;           // Почта (если передана)
+    onVerified: (code: string) => void; // Что делать после ввода кода
+    title?: string;           // Кастомный заголовок
+    description?: string;     // Кастомное описание
+    isProcessing?: boolean;   // Состояние загрузки снаружи
+    skipApi?: boolean;
+}
 
 const VERIFY_CONFIG = {
     CODE_LENGTH: 6,
@@ -16,10 +24,13 @@ function getCookie(name: string) {
 }
 
 export function VerifyCodePage({ 
-    onVerified
-}: { 
-    onVerified: () => void
-}) {
+    email, 
+    onVerified, 
+    title = "Верификация", 
+    description = "Введите 6-значный ключ, отправленный на почту",
+    isProcessing = false,
+    skipApi = false
+}: VerifyCodePageProps) {
     const [code, setCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
@@ -79,6 +90,12 @@ export function VerifyCodePage({
             return;
         }
 
+        // Если нам нужно просто вернуть код родителю (для ForgotPassword)
+        if (skipApi) {
+            onVerified(code);
+            return;
+        }
+
         setIsLoading(true);
         setStatus(null);
         
@@ -86,12 +103,11 @@ export function VerifyCodePage({
             const response = await AuthApiService.verifyCode(code);
 
             if (response.ok) {
-                onVerified();
+                onVerified(code);
             } else {
                 const data = await response.json();
                 setStatus({ message: data.message || 'Ошибка', type: 'error' });
                 if (response.status === 422) setCode('');
-                inputRef.current?.focus();
             }
         } catch (error: unknown) {
             setStatus({ message: 'Ошибка связи с сервером', type: 'error' });
@@ -105,10 +121,11 @@ export function VerifyCodePage({
             <div className="relative mx-4 sm:mx-0 p-6 sm:p-12 bg-white/[0.01] rounded-[50px] border border-white/5 text-center backdrop-blur-3xl shadow-2xl overflow-hidden">
                 <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] pointer-events-none" />
                 <h2 className="relative z-10 text-4xl font-black mb-2 uppercase tracking-tighter text-white">
-                    Верификация
+                    {title}
                 </h2>
-                <p className="relative z-10 text-white/70 mb-10 text-[11px] font-bold uppercase tracking-[0.3em] leading-relaxed">
-                    Введите 6-значный ключ, <br/> отправленный на почту
+                <p className="relative z-10 text-white/70 mb-10 text-[11px] font-bold leading-relaxed">
+                    {description} <br/> 
+                    {email && <span className="text-blue-500">{email}</span>}
                 </p>
                 
                 
@@ -157,7 +174,7 @@ export function VerifyCodePage({
 
                     <button 
                         onClick={() => handleResend()}
-                        disabled={timeLeft > 0 || isResending}
+                        disabled={isLoading || isProcessing || code.length !== 6 || timeLeft <= 0}
                         className={`block w-full text-[10px] uppercase font-black tracking-[0.2em] transition-all
                             ${timeLeft > 0 ? 'text-blue-400 cursor-not-allowed drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'text-gray-400 hover:text-blue-400'}`}
                     >

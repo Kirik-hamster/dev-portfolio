@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use \App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -46,5 +47,47 @@ class PasswordUpdateController extends Controller
         $user->clearOtp();
 
         return response()->json(['message' => 'Пароль успешно обновлен!']);
+    }
+
+    // --- МЕТОДЫ ДЛЯ ГОСТЕЙ (забыли пароль) ---
+    public function forgotRequest(Request $request) 
+    {
+        $request->validate(['email' => 'required|email|exists:users,email']);
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user->canResendOtp()) {
+            return response()->json(['message' => 'Слишком много запросов.'], 429);
+        }
+
+        $user->sendOtp();
+
+        return response()->json([
+            'message' => 'Код восстановления отправлен',
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role
+            ]
+        ]);
+    }
+
+    public function forgotUpdate(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'code' => 'required|string|size:6',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user->isValidOtp($request->code)) {
+            return response()->json(['message' => 'Код неверный или истек'], 422);
+        }
+
+        $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+        $user->clearOtp();
+
+        return response()->json(['message' => 'Пароль изменен!']);
     }
 }

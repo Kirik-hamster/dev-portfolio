@@ -12,6 +12,7 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 import { BlogsPage } from '../pages/BlogsPage'; 
 import { ProfilePage } from '../pages/ProfilePage';
 import { VerifyCodePage } from '../pages/auth/VerifyCodePage';
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 
 // Типы для пропсов
 interface AppRoutesProps {
@@ -111,7 +112,7 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ user, portfolioBlogId, set
             
             <Route path="/login" element={<LoginPage onLoginSuccess={(u: User) => { setUser(u); navigate('/'); }} onNavigateToRegister={() => navigate('/register')} />} />
             <Route path="/register" element={<RegisterPage onRegisterSuccess={(u: User) => { setUser(u); navigate('/'); }} onNavigateToLogin={() => navigate('/login')} />} />
-            
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
     );

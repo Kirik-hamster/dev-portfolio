@@ -88,5 +88,22 @@ export const AuthApiService = {
             headers: getHeaders(),
             credentials: 'include'
         });
+    },
+    // Запрос кода для ГОСТЯ (забыл пароль)
+    async forgotPasswordRequest(email: string) {
+        return fetch('/api/password/forgot-request', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ email })
+        });
+    },
+
+    // Сброс пароля для ГОСТЯ
+    async forgotPasswordUpdate(data: { email: string; code: string; password: string; password_confirmation: string }) {
+        return fetch('/api/password/forgot-update', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
     }
 };

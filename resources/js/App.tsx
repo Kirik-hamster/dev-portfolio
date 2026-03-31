@@ -126,7 +126,9 @@ function AppContent() {
                 <div ref={glowRef} className="pointer-events-none fixed -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px]" />
                 
                 <main className="relative z-10 w-full max-w-md">
-                    <VerifyCodePage onVerified={refreshUser} />
+                    <VerifyCodePage 
+                        onVerified={() => refreshUser()}
+                    />
                     <div className="mt-8 flex flex-col items-center gap-4">
                         <div className="flex flex-col items-center gap-4">
                             <button 

@@ -47,6 +47,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::get('/home-settings', [HomeSettingController::class, 'show']);
 
+Route::post('/password/forgot-request', [PasswordUpdateController::class, 'forgotRequest']);
+Route::post('/password/forgot-update', [PasswordUpdateController::class, 'forgotUpdate']);
+
 // 2. Закрытые маршруты (только после логина)
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Получение данных текущего юзера

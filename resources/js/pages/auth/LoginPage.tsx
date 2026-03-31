@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { AuthApiService } from '@/services/AuthApiService';
 import { StatusModal } from '@/components/ui/StatusModal';
 import { Eye, EyeOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function LoginPage({ 
     onLoginSuccess, 
@@ -11,6 +12,7 @@ export function LoginPage({
     onLoginSuccess: (user: User) => void,
     onNavigateToRegister: () => void
 }) {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -88,14 +90,33 @@ export function LoginPage({
                 message={modal.message}
                 onClose={() => setModal({ ...modal, isOpen: false })}
             />
-            <div className="mt-6 text-center">
-                <p className="text-gray-500 text-xs uppercase tracking-widest font-bold">Нет аккаунта?</p>
-                <button 
-                    onClick={onNavigateToRegister} 
-                    className="mt-2 text-blue-500 hover:text-white transition-colors text-xs font-black uppercase tracking-tighter"
-                >
-                    Создать аккаунт
-                </button>
+            {/* ФУТЕР ФОРМЫ С РАЗДЕЛИТЕЛЕМ */}
+            <div className="mt-12 relative flex items-start">
+                {/* Вертикальная линия-разделитель ровно по центру */}
+                <div className="absolute left-1/2 top-1 bottom-1 w-px bg-white/10 -translate-x-1/2" />
+
+                {/* ЛЕВАЯ ПОЛОВИНА: Пароль */}
+                <div className="flex-1 flex flex-col items-center gap-2 text-center px-2">
+                    <p className="text-gray-600 text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em]">Проблема?</p>
+                    <button 
+                        type="button"
+                        onClick={() => navigate('/forgot-password')}
+                        className="text-blue-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-tight"
+                    >
+                        Забыли пароль?
+                    </button>
+                </div>
+
+                {/* ПРАВАЯ ПОЛОВИНА: Регистрация */}
+                <div className="flex-1 flex flex-col items-center gap-2 text-center px-2">
+                    <p className="text-gray-600 text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em]">Нет аккаунта?</p>
+                    <button 
+                        onClick={onNavigateToRegister} 
+                        className="text-blue-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-tight"
+                    >
+                        Создать аккаунт
+                    </button>
+                </div>
             </div>
         </div>
     );
