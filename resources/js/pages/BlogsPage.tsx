@@ -15,6 +15,7 @@ import { PostCard } from '../components/blog/PostCard';
 import { BlogCard } from '../components/blog/BlogCard';
 import { BlogHeader } from '../components/blog/BlogHeader';
 import { TagCapsule } from '../components/blog/TagCapsule';
+import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -66,6 +67,8 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     const [searchType, setSearchType] = useState<'title' | 'author'>('title');
     const [sort, setSort] = useState<SortOption>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
+
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     
     const handleViewChange = (mode: 'blogs' | 'posts') => {
@@ -179,12 +182,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
     const handleToggleLike = async (id: number, type: 'blog' | 'article') => {
         if (!user) {
-            setModal({
-                isOpen: true,
-                type: 'error',
-                title: 'Доступ ограничен',
-                message: 'Войдите в аккаунт, чтобы ставить лайки и поддерживать авторов.'
-            });
+            setIsAuthModalOpen(true);
             return;
         }
         const service = type === 'blog' ? BlogApiService : ArticleApiService;
@@ -213,7 +211,10 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     };
 
     const handleToggleFavorite = async (id: number, type: 'blog' | 'article') => {
-        if (!user) return;
+        if (!user) {
+            setIsAuthModalOpen(true);
+            return;
+        }
         const service = type === 'blog' ? BlogApiService : ArticleApiService;
         const res = await service.toggleFavorite(id);
         if (res.ok) {
@@ -289,7 +290,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                         favoritesOnly={favoritesOnly}
                         setFavoritesOnly={setFavoritesOnly}
                         isProfileMode={false}
-                        
+                        isAuthenticated={!!user}
                     />
                 )}
 
@@ -312,6 +313,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                 favoritesOnly={favoritesOnly}
                                 setFavoritesOnly={setFavoritesOnly}
                                 isProfileMode={true}
+                                isAuthenticated={!!user}
                             />
                         </div>
                     </>
@@ -377,6 +379,10 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                 onTagClick={(tag) => {
                     setSelectedTag(tag);
                 }}
+            />
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={() => setIsAuthModalOpen(false)} 
             />
         </div>
     );

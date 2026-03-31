@@ -32,7 +32,7 @@ export const AuthRequiredModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
                     <h3 className="text-3xl font-black uppercase tracking-tighter text-white mb-4">Нужен аккаунт</h3>
                     <p className="text-gray-500 text-xs font-medium leading-relaxed mb-12 italic">
-                        Чтобы ставить лайки и участвовать в обсуждении, пожалуйста, зарегистрируйтесь или войдите  в свою учетную запись.
+                        Чтобы добавлять в избранное, ставить лайки и участвовать в обсуждении, пожалуйста, зарегистрируйтесь или войдите  в свою учетную запись.
                     </p>
                     
                     <div className="flex flex-col w-full gap-3">

@@ -9,16 +9,17 @@ interface FilterBarProps {
     setSearchQuery: (val: string) => void;
     searchType: 'title' | 'author';
     setSearchType: (val: 'title' | 'author') => void;
-    /* Расширили типы сортировки */
     sort: 'latest' | 'popular' | 'popular_views' | 'most_viewed'; 
     setSort: (val: SortOption) => void;
     favoritesOnly: boolean;
     setFavoritesOnly: (val: boolean) => void;
     isProfileMode?: boolean;
+    isAuthenticated: boolean;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
-    searchQuery, setSearchQuery, searchType, setSearchType, sort, setSort, favoritesOnly, setFavoritesOnly, isProfileMode = false
+    searchQuery, setSearchQuery, searchType, setSearchType, sort, setSort, favoritesOnly, 
+    setFavoritesOnly, isProfileMode = false, isAuthenticated = false
 }) => {
     const [isTypeOpen, setIsTypeOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
@@ -124,9 +125,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* ИЗБРАННОЕ И СБРОС (без изменений) */}
-                <button onClick={() => setFavoritesOnly(!favoritesOnly)} className={`h-full w-12 sm:w-14 rounded-2xl border flex items-center justify-center transition-all duration-300 shrink-0 ${favoritesOnly ? 'border-yellow-500/40 bg-yellow-500/10 text-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.1)]' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'}`}>
-                    <Star size={16} fill={favoritesOnly ? "currentColor" : "none"} className={favoritesOnly ? "animate-pulse" : ""} />
-                </button>
+                {isAuthenticated && (
+                    <button onClick={() => setFavoritesOnly(!favoritesOnly)} className={`h-full w-12 sm:w-14 rounded-2xl border flex items-center justify-center transition-all duration-300 shrink-0 ${favoritesOnly ? 'border-yellow-500/40 bg-yellow-500/10 text-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.1)]' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'}`}>
+                        <Star size={16} fill={favoritesOnly ? "currentColor" : "none"} className={favoritesOnly ? "animate-pulse" : ""} />
+                    </button>
+                )}
 
                 <button onClick={() => { setSearchQuery(''); setSearchType('title'); setSort('latest'); setFavoritesOnly(false); }} className={`h-full w-12 sm:w-14 rounded-2xl border flex items-center justify-center transition-all duration-300 shrink-0 ${hasActiveFilters ? 'border-red-500/40 bg-red-500/10 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : 'border-white/10 bg-white/5 text-gray-600 hover:text-white'}`}>
                     <RotateCcw size={16} className={hasActiveFilters ? "animate-spin-slow" : ""} />
