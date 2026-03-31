@@ -94,6 +94,7 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
                     favoritesOnly={favoritesOnly}
                     setFavoritesOnly={setFavoritesOnly}
                     isProfileMode={true}
+                    isAuthenticated={!!user}
                 />
             </div>
 

@@ -11,6 +11,7 @@ import { TagsModal } from '@/components/ui/blogPage/TagsModal';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { StatusModal } from '../components/ui/StatusModal';
 import { PortfolioPostCard } from '@/components/portfolio/PortfolioPostCard';
+import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
 
 interface PortfolioPageProps {
     user: User | null;
@@ -28,6 +29,7 @@ export function PortfolioPage({
     const [searchType, setSearchType] = useState<'title' | 'author'>('title');
     const [sort, setSort] = useState<SortOption>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     
     // ЛОКАЛЬНЫЙ СПИСОК: Используем его как единственный источник правды для UI
     const [localArticles, setLocalArticles] = useState<Article[]>([]);
@@ -86,12 +88,7 @@ export function PortfolioPage({
     const handleToggleLike = async (e: React.MouseEvent, article: Article) => {
         e.stopPropagation();
         if (!user) {
-            setStatusModal({
-                isOpen: true,
-                type: 'error',
-                title: 'Авторизация',
-                message: 'Лайки доступны только зарегистрированным пользователям.'
-            });
+            setIsAuthModalOpen(true);
             return;
         }
         
@@ -128,12 +125,7 @@ export function PortfolioPage({
         
         // Проверка авторизации через твою модлаку
         if (!user) {
-            setStatusModal({
-                isOpen: true,
-                type: 'error',
-                title: 'Авторизация',
-                message: 'Сохранять проекты в избранное могут только авторизованные пользователи.'
-            });
+            setIsAuthModalOpen(true);
             return;
         }
 
@@ -191,6 +183,7 @@ export function PortfolioPage({
                     favoritesOnly={favoritesOnly}
                     setFavoritesOnly={setFavoritesOnly}
                     isProfileMode={true}
+                    isAuthenticated={!!user}
                 />
             </div>
 
@@ -231,6 +224,10 @@ export function PortfolioPage({
                 }}
             />
             <ConfirmModal isOpen={isDeleteModalOpen} title="Удалить проект?" message="Это действие нельзя отменить." onConfirm={() => { if(articleToDelete) deleteArticle(articleToDelete); setIsDeleteModalOpen(false); }} onCancel={() => setIsDeleteModalOpen(false)} />
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={() => setIsAuthModalOpen(false)} 
+            />
             <StatusModal 
                 isOpen={statusModal.isOpen}
                 type={statusModal.type}

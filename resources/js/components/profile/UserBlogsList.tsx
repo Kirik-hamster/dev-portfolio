@@ -308,6 +308,7 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                     favoritesOnly={favoritesOnly}
                     setFavoritesOnly={setFavoritesOnly}
                     isProfileMode={true}
+                    isAuthenticated={!!user}
                 />
             </div>
 
