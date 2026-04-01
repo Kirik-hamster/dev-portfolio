@@ -38,4 +38,39 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Role updated', 'user' => $user]);
     }
+
+    // --- НОВЫЕ МЕТОДЫ МОДЕРАЦИИ ---
+
+    public function ban(Request $request, User $user)
+    {
+        // 1. numeric вместо integer — разрешаем 0.05
+        $request->validate([
+            'hours' => 'required|numeric|min:0'
+        ]);
+
+        $hours = (float) $request->hours;
+
+        if ($hours <= 0) {
+            // Ставим 2037 год (максимум для TIMESTAMP в MySQL)
+            $until = now()->setYear(2037);
+        } else {
+            // Считаем минуты. 0.05 часа * 60 = 3 минуты.
+            // Используем round, чтобы не было дробных минут
+            $minutes = max(1, (int)round($hours * 60));
+            $until = now()->addMinutes($minutes);
+        }
+
+        $user->update(['banned_until' => $until]);
+
+        return response()->json([
+            'message' => 'Пользователь заблокирован',
+            'until' => $until->toDateTimeString()
+        ]);
+    }
+
+    public function unban(User $user)
+    {
+        $user->update(['banned_until' => null]);
+        return response()->json(['message' => 'Пользователь разблокирован']);
+    }
 }

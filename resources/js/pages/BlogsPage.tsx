@@ -16,6 +16,7 @@ import { BlogCard } from '../components/blog/BlogCard';
 import { BlogHeader } from '../components/blog/BlogHeader';
 import { TagCapsule } from '../components/blog/TagCapsule';
 import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
+import { UserPublicModal } from '@/components/ui/UserPublicModal';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -76,6 +77,21 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         setSearchParams({ view: mode }, { replace: true }); // replace: true, чтобы не плодить историю переходов
     };
     
+    // состояние для модалки с информацией о пользователе
+    const [userModal, setUserModal] = useState<{
+        isOpen: boolean; 
+        userId: number; 
+        context: { id: number; type: 'article' | 'comment' | 'blog' } | null 
+    }>({
+        isOpen: false,
+        userId: 0,
+        context: null
+    });
+
+    // Функция-обработчик
+    const handleShowUser = (userId: number, context: any) => {
+        setUserModal({ isOpen: true, userId, context });
+    };
 
     const [modal, setModal] = useState({ 
         isOpen: false, 
@@ -301,6 +317,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                             onToggleLike={handleToggleLike} 
                             onToggleFavorite={handleToggleFavorite} 
                             onOpenTags={(tags, title) => setTagsModal({ isOpen: true, tags, title })}
+                            onShowUser={handleShowUser}
                         />
                         <div className="mb-12">
                             <FilterBar 
@@ -333,6 +350,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                     onToggleLike={handleToggleLike}
                                     onToggleFavorite={handleToggleFavorite}
                                     onOpenTags={(tags, title) => setTagsModal({ isOpen: true, tags, title })}
+                                    onShowUser={handleShowUser}
                                 />
                             ))}
 
@@ -348,6 +366,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                                         onToggleLike={handleToggleLike}
                                         onToggleFavorite={handleToggleFavorite}
                                         onOpenTags={(tags, title) => setTagsModal({ isOpen: true, tags, title })}
+                                        onShowUser={handleShowUser}
                                     />
                                 );
                             })}
@@ -379,6 +398,13 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                 onTagClick={(tag) => {
                     setSelectedTag(tag);
                 }}
+            />
+            <UserPublicModal 
+                isOpen={userModal.isOpen}
+                userId={userModal.userId}
+                context={userModal.context as any}
+                currentUser={user}
+                onClose={() => setUserModal(prev => ({ ...prev, isOpen: false }))}
             />
             <AuthRequiredModal 
                 isOpen={isAuthModalOpen} 

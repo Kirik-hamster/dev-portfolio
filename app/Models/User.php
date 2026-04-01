@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Article;
+use App\Models\Blog;
+use App\Models\Comment;
+use App\Models\Report;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -28,6 +31,7 @@ class User extends Authenticatable
         'role',
         'verification_code',
         'verification_code_expires_at',
+        'banned_until'
     ];
 
     /**
@@ -51,6 +55,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'banned_until' => 'datetime',
         ];
     }
 
@@ -72,5 +77,21 @@ class User extends Authenticatable
     public function favoriteBlogs() 
     {
         return $this->belongsToMany(Blog::class, 'blog_favorites');
+    }
+
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class);
+    }
+
+    public function receivedReports()
+    {
+        return $this->hasMany(Report::class, 'reported_id');
+    }
+
+    // Удобный метод для проверки, забанен ли юзер прямо сейчас
+    public function isBanned(): bool
+    {
+        return $this->banned_until && $this->banned_until->isFuture();
     }
 }

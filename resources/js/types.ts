@@ -4,6 +4,8 @@ export interface User {
     role: string;
     email: string;
     email_verified_at: string | null;
+    banned_until: string | null;
+    reports_count?: number;
 }
 export type SortOption = 'latest' | 'popular' | 'popular_views' | 'most_viewed';
 // Новый интерфейс для комментариев

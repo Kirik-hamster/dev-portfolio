@@ -12,10 +12,11 @@ interface BlogCardProps {
     onOpenTags: (tags: string[], title: string) => void;
     onEdit?: (blog: Blog) => void;
     onDelete?: (id: number) => void;
+    onShowUser: (userId: number, context: any) => void;
 }
 
 export const BlogCard: React.FC<BlogCardProps> = ({ 
-    blog, mode = 'public', onNavigate, onToggleLike, onToggleFavorite, onOpenTags, onEdit, onDelete
+    blog, mode = 'public', onNavigate, onToggleLike, onToggleFavorite, onOpenTags, onEdit, onDelete, onShowUser
 }) => {
     const isProfile = mode === 'profile';
 
@@ -69,7 +70,13 @@ export const BlogCard: React.FC<BlogCardProps> = ({
             <div className="flex flex-col flex-1 min-w-0">
                 
                 {/* БЛОК АВТОРА (с отступом) */}
-                <div className="px-5 pt-2 mb-2 flex items-center gap-2.5 shrink-0">
+                <div 
+                    onClick={(e) => { 
+                        e.stopPropagation(); 
+                        onShowUser(blog.user_id, { id: blog.id, type: 'blog' }); 
+                    }}
+                    className="px-5 pt-2 mb-2 flex items-center gap-2.5 shrink-0"
+                >
                     <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 shrink-0">
                         {blog.user?.role === 'admin' ? <ShieldCheck size={12} className="text-blue-500" /> : <UserIcon size={12} className="text-gray-500" />}
                     </div>

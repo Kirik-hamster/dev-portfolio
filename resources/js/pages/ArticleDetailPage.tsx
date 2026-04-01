@@ -15,6 +15,7 @@ import { ArticleNavigation } from '@/components/ArticlePage/ArticleNavigation';
 import { MobileTocToggle } from '@/components/ui/MobileTocToggle';
 import { MobileTocDrawer, TocItem } from '@/components/ui/MobileTocDrawer';
 import { CommentApiService } from '@/services/CommentApiService';
+import { UserPublicModal } from '@/components/ui/UserPublicModal';
 
 interface ArticleDetailPageProps {
     articleId: number | string;
@@ -34,6 +35,14 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
     const [ancestorIds, setAncestorIds] = useState<number[]>([]);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    const [userModal, setUserModal] = useState<{isOpen: boolean, userId: number, context: any}>({
+        isOpen: false, userId: 0, context: null
+    });
+
+    const handleShowUser = (uId: number, ctx: any) => {
+        setUserModal({ isOpen: true, userId: uId, context: ctx });
+    };
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -171,7 +180,10 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                         {/* СТРОКА 2: ИНФО-ПАНЕЛЬ (АВТОР + ДАТЫ) */}
                         <div className="flex flex-wrap items-center justify-between gap-y-6 border-b border-white/5 pb-8">
                             {/* БЛОК АВТОРА */}
-                            <div className="flex items-center gap-4">
+                            <div 
+                                onClick={() => handleShowUser(article.user_id, { id: article.id, type: 'article' })}
+                                className="flex items-center gap-4 cursor-pointer group/user"
+                            >
                                 <div className="relative">
                                     <div className="w-11 h-11 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shadow-2xl">
                                         <UserIcon size={20} />
@@ -253,6 +265,14 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                             onNavigateToLogin={onNavigateToLogin} 
                             targetCommentId={targetCommentId} 
                             ancestorIds={ancestorIds}
+                            onShowUser={handleShowUser}
+                        />
+                        <UserPublicModal 
+                            isOpen={userModal.isOpen}
+                            userId={userModal.userId}
+                            context={userModal.context}
+                            currentUser={user}
+                            onClose={() => setUserModal(prev => ({ ...prev, isOpen: false }))}
                         />
                     </div>
                 </main>

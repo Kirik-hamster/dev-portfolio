@@ -17,7 +17,8 @@ interface ItemProps {
     ancestorIds?: number[];
     onAction: () => void;
     handleLike: (id: number) => void;
-    onDelete: (id: number) => void
+    onDelete: (id: number) => void;
+    onShowUser: (userId: number, context: any) => void;
 }
 
 const hasTargetChild = (comment: Comment, targetId: number): boolean => {
@@ -37,7 +38,7 @@ const getTotalRepliesCount = (c: Comment): number => {
 
 export const CommentItem: React.FC<ItemProps> = ({ 
     comment, user, depth, onAction, handleLike, targetCommentId, sort, onAuthRequired, onDelete,
-    ancestorIds = []
+    ancestorIds = [], onShowUser
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -220,7 +221,10 @@ export const CommentItem: React.FC<ItemProps> = ({
                             {isAdminAuthor ? <ShieldCheck size={18} className="text-blue-500" /> : <UserIcon size={18} className="text-gray-600" />}
                         </div>
                         <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div 
+                                onClick={() => onShowUser(comment.user_id, { id: comment.id, type: 'comment' })}
+                                className="flex items-center gap-3 cursor-pointer group/user"
+                            >
                                 <span className="text-[12px] font-black uppercase text-white/90">{comment.user?.name}</span>
                                 {isAdminAuthor && <span className="text-[7px] px-1.5 py-0.5 border border-blue-500/20 text-blue-500/50 rounded font-black uppercase">Admin</span>}
                             </div>
@@ -251,7 +255,10 @@ export const CommentItem: React.FC<ItemProps> = ({
                         {isAdminAuthor ? <ShieldCheck size={22} className="text-blue-500" /> : <UserIcon size={22} className="text-gray-600" />}
                     </div>
                     <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div 
+                            onClick={() => onShowUser(comment.user_id, { id: comment.id, type: 'comment' })}
+                            className="flex items-center gap-3 cursor-pointer group/user"
+                        >
                             <span className="text-[14px] font-black uppercase text-white/90 truncate">{comment.user?.name}</span>
                             {isAdminAuthor && <span className="text-[8px] px-2 py-0.5 border border-blue-500/20 text-blue-500/50 rounded font-black uppercase">Admin</span>}
                         </div>
@@ -334,6 +341,7 @@ export const CommentItem: React.FC<ItemProps> = ({
                                         setReplies(prev => prev.filter(r => r.id !== id));
                                         setLocalRepliesCount(prev => Math.max(0, prev - 1));
                                     }}
+                                    onShowUser={onShowUser}
                                 />
                             ))}
                             

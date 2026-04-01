@@ -12,10 +12,11 @@ interface PostCardProps {
     onOpenTags: (tags: string[], title: string) => void;
     onEdit?: (article: Article) => void;
     onDelete?: (id: number) => void;
+    onShowUser: (userId: number, context: any) => void;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ 
-    article, mode = 'public', onSelect, onToggleLike, onToggleFavorite, onOpenTags, onEdit, onDelete 
+    article, mode = 'public', onSelect, onToggleLike, onToggleFavorite, onOpenTags, onEdit, onDelete , onShowUser
 }) => {
     const isProfile = mode === 'profile';
 
@@ -68,7 +69,13 @@ export const PostCard: React.FC<PostCardProps> = ({
             <div className="flex flex-col flex-1 min-w-0">
                             
                 {/* БЛОК АВТОРА (с отступом) */}
-                <div className="px-5 pt-2 mb-2 flex items-center gap-2.5 shrink-0">
+                <div 
+                    onClick={(e) => {
+                        e.stopPropagation(); // Чтобы не открылся пост при клике на автора
+                        onShowUser(article.user_id, { id: article.id, type: 'article' });
+                    }}
+                    className="px-5 pt-2 mb-2 flex items-center gap-2.5 shrink-0 cursor-pointer group/user"
+                >
                     <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 shrink-0">
                         {article.user?.role === 'admin' ? <ShieldCheck size={12} className="text-blue-500" /> : <UserIcon size={12} className="text-gray-500" />}
                     </div>

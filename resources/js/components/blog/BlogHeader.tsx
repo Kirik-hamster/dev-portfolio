@@ -10,6 +10,7 @@ interface BlogHeaderProps {
     onToggleLike?: (id: number, type: 'blog') => void;
     onToggleFavorite?: (id: number, type: 'blog') => void;
     onOpenTags: (tags: string[], title: string) => void;
+    onShowUser: (userId: number, context: any) => void;
 }
 
 export const BlogHeader: React.FC<BlogHeaderProps> = ({ 
@@ -17,7 +18,8 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
     mode = 'public', 
     onToggleLike, 
     onToggleFavorite, 
-    onOpenTags 
+    onOpenTags,
+    onShowUser
 }) => {
     const navigate = useNavigate();
     const tagsContainerRef = useRef<HTMLDivElement>(null);
@@ -77,7 +79,10 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-12">
                     
                     {/* АВТОРСКИЙ БЛОК */}
-                    <div className="flex items-center gap-5 sm:gap-7">
+                    <div 
+                        onClick={() => activeBlog && onShowUser(activeBlog.user_id, { id: activeBlog.id, type: 'blog' })}
+                        className="flex items-center gap-5 sm:gap-7 cursor-pointer group/user"
+                    >
                         <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-[35px] sm:rounded-[45px] bg-[#0a0a0a] border-4 border-[#080808] flex items-center justify-center shrink-0 shadow-2xl relative overflow-hidden group/avatar">
                             {activeBlog?.user?.role === 'admin' 
                                 ? <ShieldCheck size={40} className="text-blue-500" /> 

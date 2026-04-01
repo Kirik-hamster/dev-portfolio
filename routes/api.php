@@ -7,11 +7,13 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Auth\VerifyCodeController;
 use App\Http\Controllers\Auth\PasswordUpdateController;
 use App\Http\Controllers\HomeSettingController;
-use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\Api\ResumeUploadController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\AvatarUploadController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\Admin\UserController as AdminUserController; // Админский (через alias)
+use App\Http\Controllers\ModerationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,9 @@ Route::get('/community-articles', [ArticleController::class, 'community']);
 Route::get('/portfolio', [ArticleController::class, 'portfolio']);
 
 Route::get('/top-tags', [TagController::class, 'top']);
+
+// Публичный профиль (доступен всем)
+Route::get('/users/{user}/public-profile', [UserController::class, 'publicProfile']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/verify-code', VerifyCodeController::class);
@@ -93,8 +98,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     });
 
     Route::prefix('admin')->group(function () {
-        Route::get('/users', [UserController::class, 'index']);
-        Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
+        Route::get('/users', [AdminUserController::class, 'index']);
+        Route::patch('/users/{user}/role', [AdminUserController::class, 'updateRole']);
         Route::post('/home/avatar', [AvatarUploadController::class, 'upload']);
     });
 
@@ -110,4 +115,17 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/upload-cover', [ImageUploadController::class, 'uploadCover']);
 
     Route::put('/home-settings', [HomeSettingController::class, 'update']);
+
+    // Админка и модерация (только для топ-состава)
+    Route::middleware(['role:admin,moderator'])->group(function () {
+        // Список жалоб
+        Route::get('/admin/reports', [ModerationController::class, 'index']);
+        
+        // Управление юзерами (используем AdminUserController)
+        Route::get('/admin/users', [AdminUserController::class, 'index']);
+        Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole']);
+        Route::post('/admin/users/{user}/ban', [AdminUserController::class, 'ban']);
+        Route::post('/admin/users/{user}/unban', [AdminUserController::class, 'unban']);
+    });
+    Route::post('/reports', [ModerationController::class, 'report']);
 });
