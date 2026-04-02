@@ -1,5 +1,5 @@
-// resources/js/pages/ArticleDetailPage.tsx
 import React, { useEffect, useState } from 'react';
+import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Article, User } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
@@ -27,6 +27,7 @@ interface ArticleDetailPageProps {
 export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }: ArticleDetailPageProps) {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
     const [toc, setToc] = useState<TocItem[]>([]);
@@ -52,7 +53,10 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
 
     const handleToggleLike = async () => {
         // Если юзер не залогинен — отправляем на вход
-        if (!user) return onNavigateToLogin();
+        if (!user) {
+            setIsAuthModalOpen(true); 
+            return;
+        }
         if (!article) return;
 
         try {
@@ -280,6 +284,11 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                 {/* СОДЕРЖАНИЕ (Desktop) */}
                 <ArticleNavigation toc={toc} onItemClick={(h) => scrollTo(h.id!)} />
             </div>
+
+            <AuthRequiredModal 
+                isOpen={isAuthModalOpen} 
+                onClose={() => setIsAuthModalOpen(false)} 
+            />
 
             {/* МОБИЛЬНОЕ СОДЕРЖАНИЕ (Кнопка) */}
             {toc.length > 0 && (
