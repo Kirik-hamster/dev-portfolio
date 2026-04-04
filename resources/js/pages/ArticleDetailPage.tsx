@@ -16,6 +16,8 @@ import { MobileTocToggle } from '@/components/ui/MobileTocToggle';
 import { MobileTocDrawer, TocItem } from '@/components/ui/MobileTocDrawer';
 import { CommentApiService } from '@/services/CommentApiService';
 import { UserPublicModal } from '@/components/ui/UserPublicModal';
+import { BannedUserModal } from '@/components/ui/moderation/BannedUserModal';
+import { useBanCheck } from '../hooks/useBanCheck';
 
 interface ArticleDetailPageProps {
     articleId: number | string;
@@ -51,12 +53,15 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const { isBanModalOpen, checkBan, closeBanModal } = useBanCheck(user);
+
     const handleToggleLike = async () => {
         // Если юзер не залогинен — отправляем на вход
         if (!user) {
             setIsAuthModalOpen(true); 
             return;
         }
+        if (checkBan()) return;
         if (!article) return;
 
         try {
@@ -304,6 +309,11 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                 onClose={() => setIsMobileTocOpen(false)} 
                 toc={toc} 
                 onScrollTo={scrollTo} 
+            />
+            <BannedUserModal 
+                isOpen={isBanModalOpen} 
+                onClose={closeBanModal} 
+                user={user} 
             />
         </div>
     );

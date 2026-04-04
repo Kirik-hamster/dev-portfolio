@@ -12,6 +12,8 @@ import { ArticleApiService } from '../services/ArticleApiService';
 import { StatusModal } from '../components/ui/StatusModal';
 import { PortfolioPostCard } from '@/components/portfolio/PortfolioPostCard';
 import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
+import { BannedUserModal } from '@/components/ui/moderation/BannedUserModal';
+import { useBanCheck } from '../hooks/useBanCheck';
 
 interface PortfolioPageProps {
     user: User | null;
@@ -48,12 +50,10 @@ export function PortfolioPage({
         message: '' 
     });
 
+    const { isBanModalOpen, checkBan, closeBanModal } = useBanCheck(user);
+
     const lastArticlesRef = useRef<string>("");
 
-
-
-    // 1. ИСПРАВЛЕНИЕ ПОИСКА: Убираем setCurrentPage(1) из общего потока, 
-    // чтобы не провоцировать лишние рендеры
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
@@ -91,6 +91,7 @@ export function PortfolioPage({
             setIsAuthModalOpen(true);
             return;
         }
+        if (checkBan()) return;
         
         // ⚡️ Умное оптимистичное обновление
         setLocalArticles(prev => prev.map(a => {
@@ -128,6 +129,7 @@ export function PortfolioPage({
             setIsAuthModalOpen(true);
             return;
         }
+        if (checkBan()) return;
 
         // Оптимистичное обновление стейта (звёздочка загорится сразу)
         setLocalArticles(prev => prev.map(a => 
@@ -212,7 +214,11 @@ export function PortfolioPage({
                     />
                 </div>
             )}
-
+            <BannedUserModal 
+                isOpen={isBanModalOpen} 
+                onClose={closeBanModal} 
+                user={user} 
+            />
             <TagsModal 
                 isOpen={tagsModal.isOpen} 
                 tags={tagsModal.tags} 

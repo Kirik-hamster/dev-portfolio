@@ -19,6 +19,7 @@ interface ItemProps {
     handleLike: (id: number) => void;
     onDelete: (id: number) => void;
     onShowUser: (userId: number, context: any) => void;
+    onCheckBan: () => boolean;
 }
 
 const hasTargetChild = (comment: Comment, targetId: number): boolean => {
@@ -38,7 +39,7 @@ const getTotalRepliesCount = (c: Comment): number => {
 
 export const CommentItem: React.FC<ItemProps> = ({ 
     comment, user, depth, onAction, handleLike, targetCommentId, sort, onAuthRequired, onDelete,
-    ancestorIds = [], onShowUser
+    ancestorIds = [], onShowUser, onCheckBan
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -82,6 +83,7 @@ export const CommentItem: React.FC<ItemProps> = ({
 
     const handleReplyLike = async (id: number) => {
         if (!user) return onAuthRequired();
+        if (onCheckBan()) return;
 
         try {
             const data = await CommentApiService.toggleLike(id);
@@ -190,14 +192,27 @@ export const CommentItem: React.FC<ItemProps> = ({
                                 <Trash2 size={13} />
                             </button>
                         )}
-                        <button onClick={() => setIsReplying(!isReplying)} className="p-1 text-white/40">
+                        <button 
+                            onClick={() => {
+                                if (!isReplying && onCheckBan()) return;
+                                setIsReplying(!isReplying);
+                            }}
+                            className="p-1 text-white/40"
+                        >
                             <Undo2 size={14} />
                         </button>
 
                         <div className="w-px h-3 bg-white/10 mx-1" />
                     </div>
                 )}
-                <div onClick={() => handleLike(comment.id)} className="flex items-center gap-1.5 px-1 text-white/60">
+                <div 
+                    onClick={(e) => {
+                        e.stopPropagation(); 
+                        if (onCheckBan()) return;
+                        handleLike(comment.id);
+                    }} 
+                    className="flex items-center gap-1.5 px-1 text-white/60"
+                >
                     <Heart size={14} className={comment.likes_count > 0 ? 'fill-blue-600 text-blue-600' : ''} />
                     <span className="text-[10px] font-black">{comment.likes_count}</span>
                 </div>
@@ -237,11 +252,25 @@ export const CommentItem: React.FC<ItemProps> = ({
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all">
                                 {isOwner && <button onClick={() => setIsEditing(true)} className="p-2 text-white/30 hover:text-blue-400"><Pencil size={15} /></button>}
                                 {canDelete && <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 text-white/30 hover:text-red-500"><Trash2 size={15} /></button>}
-                                <button onClick={() => setIsReplying(!isReplying)} className="p-2 text-gray-500 hover:text-blue-400"><Undo2 size={16} /></button>
+                                <button 
+                                    onClick={() => {
+                                        if (!isReplying && onCheckBan()) return;
+                                        setIsReplying(!isReplying);
+                                    }}
+                                    className="p-2 text-gray-500 hover:text-blue-400"
+                                >
+                                    <Undo2 size={16} />
+                                </button>
                                 <div className="w-px h-3 bg-white/10 mx-2" />
                             </div>
                         )}
-                        <button onClick={() => handleLike(comment.id)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-xl transition-all active:scale-90">
+                        <button 
+                            onClick={() => {
+                                if (onCheckBan()) return;
+                                handleLike(comment.id);
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-xl transition-all active:scale-90"
+                        >
                             <Heart size={16} className={comment.likes_count > 0 ? 'fill-blue-600 text-blue-600' : 'text-gray-700'} />
                             <span className="text-[11px] font-black text-gray-700">{comment.likes_count}</span>
                         </button>
@@ -342,6 +371,7 @@ export const CommentItem: React.FC<ItemProps> = ({
                                         setLocalRepliesCount(prev => Math.max(0, prev - 1));
                                     }}
                                     onShowUser={onShowUser}
+                                    onCheckBan={onCheckBan}
                                 />
                             ))}
                             

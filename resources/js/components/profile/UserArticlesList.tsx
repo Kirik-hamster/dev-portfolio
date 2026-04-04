@@ -15,9 +15,13 @@ interface Props {
     onEditArticle: (article: Article) => void;
     onCreateArticle: () => void;
     onOpenTags: (tags: string[], title: string) => void;
+    onShowUser: (userId: number, context: any) => void;
+    onCheckBan: () => boolean;
 }
 
-export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle, onCreateArticle, onOpenTags }: Props) {
+export function UserArticlesList({ 
+    user, blogId, onArticleSelect, onEditArticle, onCreateArticle, onOpenTags, onShowUser, onCheckBan
+}: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState(''); 
 
@@ -63,6 +67,11 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
             header.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, [currentPage])
+
+    const handleCreateClick = () => {
+        if (onCheckBan()) return; // Если забанен — модалка откроется, выполнение прервется
+        onCreateArticle();
+    };
 
     // Показываем большой лоадер только при ПЕРВОЙ загрузке
     if (loading && articles.length === 0) return <PremiumLoader />;
@@ -125,6 +134,7 @@ export function UserArticlesList({ user, blogId, onArticleSelect, onEditArticle,
                                 onOpenTags={onOpenTags}
                                 onEdit={onEditArticle} // Передаем функцию редактирования
                                 onDelete={handleDeleteTrigger}// Передаем удаление
+                                onShowUser={onShowUser}
                             />
                         ))}
                     </div>

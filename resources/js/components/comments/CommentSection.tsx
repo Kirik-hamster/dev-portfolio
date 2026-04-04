@@ -5,6 +5,8 @@ import { CommentApiService } from '@/services/CommentApiService';
 import { CommentItem } from './CommentItem';
 import { AuthRequiredModal } from '../ui/AuthRequiredModal';
 import { StatusModal } from '../ui/StatusModal';
+import { BannedUserModal } from '../ui/moderation/BannedUserModal';
+import { useBanCheck } from '../../hooks/useBanCheck'
 
 interface CommentSectionProps {
     articleId: number;
@@ -45,6 +47,17 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         message: '' 
     });
 
+    const { isBanModalOpen, checkBan, closeBanModal } = useBanCheck(user);
+
+    const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const val = e.target.value;
+        // Если юзер начинает писать (был пустой текст, стал не пустой)
+        if (val.length > 0 && content.length === 0) {
+            if (checkBan()) return; // Останавливаем ввод и показываем модалку
+        }
+        setContent(val);
+    };
+
     const loadRootComments = async (isInitial = false) => {
         setLoading(true);
         const targetPage = isInitial ? 1 : page;
@@ -79,6 +92,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     useEffect(() => { loadRootComments(true); }, [sort, articleId]);
 
     const handleSubmit = async () => {
+        if (checkBan()) return;
         if (!content.trim() || isSubmitting) return;
         setIsSubmitting(true);
         try {
@@ -152,7 +166,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                     <textarea 
                         ref={textareaRef}
                         value={content} 
-                        onChange={e => setContent(e.target.value)}
+                        onChange={handleTextChange}
                         placeholder={`${user.name}, что думаете?`}
                         /* ⚡️ Убрали pb-16, так как плашка больше не абсолютная и не перекрывает текст */
                         className="w-full bg-transparent border-none text-white outline-none text-sm min-h-[100px] resize-none pb-6 placeholder:text-gray-600 overflow-hidden transition-[height] duration-200"
@@ -227,6 +241,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                         handleLike={handleLike} 
                         onAuthRequired={() => setIsAuthModalOpen(true)}
                         onDelete={handleDelete}
+                        onCheckBan={checkBan}
                         onShowUser={onShowUser}
                     />
                 ))}
@@ -237,6 +252,11 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                     {loading ? 'Загрузка...' : 'Показать больше'}
                 </button>
             )}
+            <BannedUserModal 
+                isOpen={isBanModalOpen} 
+                onClose={closeBanModal} 
+                user={user} 
+            />
         </div>
     );
 };

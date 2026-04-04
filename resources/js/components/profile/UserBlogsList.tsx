@@ -33,12 +33,14 @@ interface UserBlogsListProps {
     onPageChange: (page: number) => void; 
     onFilterChange?: (params: { search: string; sort: string; favorites: boolean }) => void;
     onOpenTags: (tags: string[], title: string) => void;
+    onShowUser: (userId: number, context: any) => void;
+    onCheckBan: () => boolean;
 }
 
 export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
     const navigate = useNavigate();
     const { 
-        user, blogs, insideBlogId, insideBlogTitle, isCreating, editingBlog, 
+        user, blogs, insideBlogId, onShowUser, onCheckBan, insideBlogTitle, isCreating, editingBlog, 
         newBlog, setIsCreating, setEditingBlog, setNewBlog, 
         handleCreateSubmit, handleUpdateSubmit, handleDeleteBlog,
         onBlogSelect, onArticleSelect, onEditArticle, onTriggerCreate,
@@ -62,6 +64,13 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
             setShowNoAccess(true); // Включаем модалку ошибки
         }
     }
+
+    // Защищаем вход в режим создания
+    const handleStartCreating = () => {
+        if (onCheckBan()) return;
+        props.setEditingBlog(null);
+        props.setIsCreating(true);
+    };
 
     const handleSaveCrop = async (blob: Blob) => {
         setIsUploading(true);
@@ -168,6 +177,7 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                     activeBlog={currentBlog || null}
                     mode="profile" // Указываем режим профиля
                     onOpenTags={onOpenTags} // Передаем функцию открытия модалки
+                    onShowUser={onShowUser}
                 />
                 <UserArticlesList 
                     user={user}
@@ -176,6 +186,8 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                     onEditArticle={onEditArticle}
                     onCreateArticle={() => onTriggerCreate(insideBlogId)}
                     onOpenTags={onOpenTags}
+                    onShowUser={onShowUser}
+                    onCheckBan={onCheckBan}
                 />
             </div>
         );
@@ -188,7 +200,7 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
             <div className="flex justify-between items-center mb-6 px-2">
                 <h3 className="text-xl font-bold uppercase tracking-tight">Ваши блоги</h3>
                 {!isCreating && (
-                    <button onClick={() => { setEditingBlog(null); setIsCreating(true); }} className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase hover:scale-105 transition-all">
+                    <button onClick={() => { if(onCheckBan()) return; setEditingBlog(null); setIsCreating(true); }} className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase hover:scale-105 transition-all">
                         <Plus size={14}/> Создать папку
                     </button>
                 )}
@@ -323,6 +335,7 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                         onOpenTags={onOpenTags}
                         onEdit={setEditingBlog} 
                         onDelete={handleDeleteBlog}
+                        onShowUser={onShowUser}
                     />
                 ))}
             </div>

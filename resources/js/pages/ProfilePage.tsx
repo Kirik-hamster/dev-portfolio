@@ -11,6 +11,8 @@ import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { UserCommentsList } from '../components/profile/UserCommentsList';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
 import { TagsModal } from '@/components/ui/blogPage/TagsModal';
+import { BannedUserModal } from '@/components/ui/moderation/BannedUserModal';
+import {useBanCheck } from '../hooks/useBanCheck';
 
 interface ProfilePageProps {
     user: UserType | null;
@@ -67,9 +69,17 @@ export function ProfilePage({
     // Лаборатория лоадера
     const [demoLoading, setDemoLoading] = useState(false);
     const [demoDuration, setDemoDuration] = useState(3);
-    const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
+    const [timerId, setTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
     const [blogPagination, setBlogPagination] = useState<BlogPagination | null>(null);
     const [currentBlogPage, setCurrentBlogPage] = useState(1);
+
+    const { isBanModalOpen, checkBan, closeBanModal } = useBanCheck(user);
+
+    // Обработчик клика на пользователя (чтобы модалка инфо работала)
+    const [userModal, setUserModal] = useState({ isOpen: false, userId: 0, context: null });
+    const handleShowUser = (userId: number, context: any) => {
+        setUserModal({ isOpen: true, userId, context });
+    };
 
     const [tagsModal, setTagsModal] = useState<{ isOpen: boolean; tags: string[]; title: string }>({
         isOpen: false,
@@ -227,6 +237,8 @@ export function ProfilePage({
                             scrollToContent();
                         }}
                         onOpenTags={(tags, title) => setTagsModal({ isOpen: true, tags, title })}
+                        onShowUser={handleShowUser}
+                        onCheckBan={checkBan}
                     />
                 );
 
@@ -297,6 +309,11 @@ export function ProfilePage({
                 message="Вы уверены? Это действие безвозвратно удалит папку и ВСЕ статьи, которые в ней находятся."
                 onConfirm={confirmDeleteBlog}
                 onCancel={() => setIsDeleteModalOpen(false)}
+            />
+            <BannedUserModal 
+                isOpen={isBanModalOpen} 
+                onClose={closeBanModal} 
+                user={user} 
             />
             <TagsModal 
                 isOpen={tagsModal.isOpen}

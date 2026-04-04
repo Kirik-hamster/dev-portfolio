@@ -17,6 +17,8 @@ import { BlogHeader } from '../components/blog/BlogHeader';
 import { TagCapsule } from '../components/blog/TagCapsule';
 import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
 import { UserPublicModal } from '@/components/ui/UserPublicModal';
+import { BannedUserModal } from '@/components/ui/moderation/BannedUserModal';
+import { useBanCheck } from '../hooks/useBanCheck';
 
 // Расширяем типы
 interface ArticleWithBlog extends Article {
@@ -71,6 +73,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+    const { isBanModalOpen, checkBan, closeBanModal } = useBanCheck(user);
     
     const handleViewChange = (mode: 'blogs' | 'posts') => {
         setViewMode(mode);
@@ -201,6 +204,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
             setIsAuthModalOpen(true);
             return;
         }
+        if (checkBan()) return;
         const service = type === 'blog' ? BlogApiService : ArticleApiService;
         const res = await service.toggleLike(id);
         
@@ -231,6 +235,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
             setIsAuthModalOpen(true);
             return;
         }
+        if (checkBan()) return;
         const service = type === 'blog' ? BlogApiService : ArticleApiService;
         const res = await service.toggleFavorite(id);
         if (res.ok) {
@@ -383,6 +388,11 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
                     </>
                 )}
             </div>
+            <BannedUserModal 
+                isOpen={isBanModalOpen} 
+                onClose={closeBanModal} 
+                user={user} 
+            />
             <StatusModal 
                 isOpen={modal.isOpen}
                 type={modal.type}
