@@ -16,9 +16,8 @@
     "exactOptionalPropertyTypes": true,
     "esModuleInterop": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["resources/js/*"]
+      "@/*": ["./resources/js/*"]
     }
   },
   "include": [

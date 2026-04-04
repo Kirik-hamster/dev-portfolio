@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserCircle, Shield, CheckCircle, Lock, Key, EyeOff, Eye } from 'lucide-react';
+import { UserCircle, Shield, CheckCircle, Lock, Key, EyeOff, Eye, Gavel } from 'lucide-react';
 import { User as UserType } from '../../types';
 import { AuthApiService } from '../../services/AuthApiService';
 import { StatusModal } from '../ui/StatusModal';
@@ -24,6 +24,9 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user }) => {
     const [showPasswords, setShowPasswords] = useState(false);
     
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Проверка: забанен ли юзер прямо сейчас
+    const isBanned = user.banned_until && new Date(user.banned_until) > new Date();
 
     // Логика таймера
     useEffect(() => {
@@ -83,6 +86,42 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user }) => {
     return (
         <div className="max-w-6xl animate-in fade-in duration-700">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {isBanned && (
+                    <div className="bg-rose-500/10 border border-rose-500/20 p-8 rounded-[40px] relative overflow-hidden group animate-in slide-in-from-top-4">
+                        {/* Декор фона */}
+                        <div className="absolute -right-10 -bottom-10 opacity-10 text-rose-500 rotate-12">
+                            <Gavel size={160} />
+                        </div>
+                        
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                            <div className="w-20 h-20 bg-rose-500 text-white rounded-[30px] flex items-center justify-center shrink-0 shadow-[0_0_40px_rgba(244,63,94,0.3)]">
+                                <Lock size={36} />
+                            </div>
+                            
+                            <div className="flex-1 text-center md:text-left space-y-2">
+                                <h2 className="text-2xl font-black uppercase tracking-tighter text-rose-500">Доступ ограничен</h2>
+                                <p className="text-gray-400 text-sm italic leading-relaxed">
+                                    Ваш аккаунт находится в режиме блокировки. Вы не можете совершать активные действия (лайки, комментарии, публикации) до истечения срока.
+                                </p>
+                                
+                                <div className="pt-4 flex flex-wrap justify-center md:justify-start gap-6">
+                                    <div>
+                                        <span className="block text-[8px] font-black uppercase text-rose-500/50 tracking-widest">Разблокировка</span>
+                                        <span className="text-white font-bold text-sm">
+                                            {new Date(user.banned_until!).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="border-l border-white/5 pl-6">
+                                        <span className="block text-[8px] font-black uppercase text-rose-500/50 tracking-widest">Причина</span>
+                                        <span className="text-rose-200/80 font-medium text-sm italic">
+                                            «{user.ban_reason || 'Нарушение правил сообщества'}»
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Карточка данных */}
                 <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[40px] shadow-2xl backdrop-blur-3xl relative overflow-hidden group">
                     <div className="absolute -right-20 -top-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors" />

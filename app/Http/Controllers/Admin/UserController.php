@@ -45,26 +45,22 @@ class UserController extends Controller
     {
         // 1. numeric вместо integer — разрешаем 0.05
         $request->validate([
-            'hours' => 'required|numeric|min:0'
+            'hours' => 'required|numeric|min:0',
+            'reason' => 'required|string|max:500',
         ]);
 
         $hours = (float) $request->hours;
+        $until = $hours <= 0 ? now()->setYear(2037) : now()->addMinutes(max(1, (int)round($hours * 60)));
 
-        if ($hours <= 0) {
-            // Ставим 2037 год (максимум для TIMESTAMP в MySQL)
-            $until = now()->setYear(2037);
-        } else {
-            // Считаем минуты. 0.05 часа * 60 = 3 минуты.
-            // Используем round, чтобы не было дробных минут
-            $minutes = max(1, (int)round($hours * 60));
-            $until = now()->addMinutes($minutes);
-        }
-
-        $user->update(['banned_until' => $until]);
+        $user->update([
+            'banned_until' => $until,
+            'ban_reason' => $request->reason,
+        ]);
 
         return response()->json([
             'message' => 'Пользователь заблокирован',
-            'until' => $until->toDateTimeString()
+            'until' => $until->toDateTimeString(),
+            'reason' => $request->reason,
         ]);
     }
 

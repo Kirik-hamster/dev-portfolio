@@ -15,11 +15,11 @@ export const ModerationApiService = {
         });
     },
 
-    async banUser(userId: number, hours: number) {
+    async banUser(userId: number, hours: number, reason: string) {
         return fetch(`/api/admin/users/${userId}/ban`, {
             method: 'POST',
             headers: getHeaders(),
-            body: JSON.stringify({ hours }),
+            body: JSON.stringify({ hours, reason }),
             credentials: 'include'
         });
     }

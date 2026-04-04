@@ -5,6 +5,7 @@ export interface User {
     email: string;
     email_verified_at: string | null;
     banned_until: string | null;
+    ban_reason: string | null;
     reports_count?: number;
 }
 export type SortOption = 'latest' | 'popular' | 'popular_views' | 'most_viewed';

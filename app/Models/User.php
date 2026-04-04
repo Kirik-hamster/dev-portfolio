@@ -31,7 +31,8 @@ class User extends Authenticatable
         'role',
         'verification_code',
         'verification_code_expires_at',
-        'banned_until'
+        'banned_until',
+        'ban_reason',
     ];
 
     /**

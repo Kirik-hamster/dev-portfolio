@@ -9,6 +9,7 @@ import { AdminTabs } from './AdmintPanel';
 import { ContentTab } from './ContentTab';
 import { useSettings } from '@/context/SettingsContext';
 import { ModerationApiService } from '@/services/ModerationApiService';
+import { BanUserModal } from '@/components/ui/moderation/BanUserModal';
 
 export interface AdminPanelProps {
     allBlogsCount: number; 
@@ -35,6 +36,11 @@ export const AdminPanel = ({
     });
     const [testEmail, setTestEmail] = useState('');
 
+    const [banModal, setBanModal] = useState<{ isOpen: boolean; user: User | null }>({
+        isOpen: false,
+        user: null
+    });
+
     // --- LOGIC: USERS ---
     const fetchUsers = async (page: number = 1) => {
         const res: PaginatedResponse<User> = await SettingsApiService.getUsers(searchQuery, page);
@@ -58,24 +64,19 @@ export const AdminPanel = ({
 
     // --- Ban/Unban
 
-    const handleBan = async (targetUser: User) => {
-        const input = window.prompt(`На сколько часов забанить ${targetUser.name}? (0.016 ≈ 1 мин, 0 = навсегда)`, "24");
-        
-        if (input !== null) {
-            // Заменяем запятую на точку, если ввели по-русски, и превращаем в число
-            const hours = parseFloat(input.replace(',', '.'));
-            
-            if (isNaN(hours)) {
-                alert("Введите корректное число");
-                return;
-            }
+    const handleBan = (targetUser: User) => {
+        setBanModal({ isOpen: true, user: targetUser });
+    };
 
-            const res = await ModerationApiService.banUser(targetUser.id, hours);
-            if (res.ok) {
-                fetchUsers(currentPage);
-            } else {
-                alert("Ошибка при блокировке");
-            }
+    const handleConfirmBan = async (hours: number, reason: string) => {
+        if (!banModal.user) return;
+        
+        const res = await ModerationApiService.banUser(banModal.user.id, hours, reason);
+        if (res.ok) {
+            setBanModal({ isOpen: false, user: null });
+            fetchUsers(currentPage);
+        } else {
+            alert("Ошибка при блокировке");
         }
     };
 
@@ -118,9 +119,16 @@ export const AdminPanel = ({
                     users={users} searchQuery={searchQuery} onSearch={setSearchQuery}
                     onToggleAccess={toggleMediaAccess} currentPage={currentPage}
                     lastPage={lastPage} onPageChange={setCurrentPage}
-                    onBan={handleBan} onUnban={handleUnban}
+                    onBan={handleBan} 
+                    onUnban={handleUnban}
                 />
             )}
+            <BanUserModal 
+                isOpen={banModal.isOpen}
+                userName={banModal.user?.name || ''}
+                onClose={() => setBanModal({ isOpen: false, user: null })}
+                onConfirm={handleConfirmBan} // Вызывает API с 3-мя аргументами
+            />
 
             {activeSubTab === 'config' && (
                 <ConfigTab 
