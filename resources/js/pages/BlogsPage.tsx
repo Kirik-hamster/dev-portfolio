@@ -48,9 +48,16 @@ interface GenericPagination<T> {
 
 export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }: BlogsPageProps) {
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
+
     const [viewMode, setViewMode] = useState<'blogs' | 'posts'>(
         (searchParams.get('view') as 'blogs' | 'posts') || 'blogs'
     );
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+    const [searchType, setSearchType] = useState<'title' | 'author'>(
+        (searchParams.get('search_type') as 'title' | 'author') || 'title'
+    );
+    
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [selectedBlogId, setSelectedBlogId] = useState<number | null>(initialBlogId || null);
     
@@ -62,12 +69,10 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     const [loading, setLoading] = useState(true);
 
     const [isSearchMode, setIsSearchMode] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
     const [tagSearchQuery, setTagSearchQuery] = useState('');
 
     const [globalTags, setGlobalTags] = useState<string[]>([]);
 
-    const [searchType, setSearchType] = useState<'title' | 'author'>('title');
     const [sort, setSort] = useState<SortOption>('latest');
     const [favoritesOnly, setFavoritesOnly] = useState(false);
 
@@ -75,6 +80,19 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
 
     const { isBanModalOpen, checkBan, closeBanModal } = useBanCheck(user);
     
+    useEffect(() => {
+        const v = searchParams.get('view') as 'blogs' | 'posts' | null;
+        const s = searchParams.get('search');
+        const t = searchParams.get('search_type') as 'title' | 'author' | null;
+
+        if (v) setViewMode(v);
+        if (s !== null) setSearchQuery(s);
+        if (t) setSearchType(t);
+        
+        // Если пришли параметры поиска — сбрасываем страницу на первую
+        if (s || v) setCurrentPage(1);
+    }, [searchParams]);
+
     const handleViewChange = (mode: 'blogs' | 'posts') => {
         setViewMode(mode);
         setSearchParams({ view: mode }, { replace: true }); // replace: true, чтобы не плодить историю переходов
@@ -108,8 +126,6 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         tags: [],
         title: ''
     });
-
-    const navigate = useNavigate();
 
     useEffect(() => {
         // Используем сервис вместо прямого fetch
