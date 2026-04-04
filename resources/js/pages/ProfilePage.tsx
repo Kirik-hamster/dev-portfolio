@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
-import { User as UserType, Blog, Article, BlogPagination, BlogInput } from '../types';
+import { User as UserType, Blog, Article, BlogPagination, BlogInput, UserReportContext } from '../types';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { AdminPanel } from '@/components/profile/AdminPanel/index';
 import { BlogApiService } from '../services/BlogApiService';
@@ -12,6 +12,8 @@ import { UserCommentsList } from '../components/profile/UserCommentsList';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
 import { TagsModal } from '@/components/ui/blogPage/TagsModal';
 import { BannedUserModal } from '@/components/ui/moderation/BannedUserModal';
+import { StatusModal } from '../components/ui/StatusModal'
+import { UserPublicModal } from '../components/ui/UserPublicModal'
 import {useBanCheck } from '../hooks/useBanCheck';
 
 interface ProfilePageProps {
@@ -76,8 +78,29 @@ export function ProfilePage({
     const { isBanModalOpen, checkBan, closeBanModal } = useBanCheck(user);
 
     // Обработчик клика на пользователя (чтобы модалка инфо работала)
-    const [userModal, setUserModal] = useState({ isOpen: false, userId: 0, context: null });
-    const handleShowUser = (userId: number, context: any) => {
+    const [userModal, setUserModal] = useState<{
+        isOpen: boolean;
+        userId: number;
+        context: UserReportContext | null; // ✅ Теперь TS знает, что тут будет объект
+    }>({
+        isOpen: false,
+        userId: 0,
+        context: null
+    });
+
+    const [statusModal, setStatusModal] = useState<{
+        isOpen: boolean;
+        type: 'success' | 'error';
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        type: 'error',
+        title: '',
+        message: ''
+    });
+
+    const handleShowUser = (userId: number, context: UserReportContext) => {
         setUserModal({ isOpen: true, userId, context });
     };
 
@@ -145,7 +168,15 @@ export function ProfilePage({
     };
 
     const handleCreateSubmit = async () => {
-        if (!newBlog.title) return alert("Введите название папки!");
+        if (!newBlog.title) {
+            setStatusModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Валидация',
+                message: 'Введите название папки для продолжения.'
+            });
+            return;
+        }
         
         // Добавляем поле image_url в отправку
         const res = await BlogApiService.save({
@@ -325,6 +356,21 @@ export function ProfilePage({
                     // если она тебе понадобится позже
                     setTagsModal(prev => ({ ...prev, isOpen: false }));
                 }}
+            />
+            <StatusModal 
+                isOpen={statusModal.isOpen}
+                type={statusModal.type}
+                title={statusModal.title}
+                message={statusModal.message}
+                onClose={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+            />
+
+            <UserPublicModal 
+                isOpen={userModal.isOpen}
+                userId={userModal.userId}
+                context={userModal.context}
+                currentUser={user}
+                onClose={() => setUserModal(prev => ({ ...prev, isOpen: false }))}
             />
         </div>
     );

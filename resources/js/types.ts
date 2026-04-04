@@ -157,3 +157,8 @@ export interface HomeSettings {
     stack_current?: string;
     stack_learning?: string; 
 }
+
+export interface UserReportContext {
+    id: number;
+    type: 'article' | 'comment' | 'blog';
+}

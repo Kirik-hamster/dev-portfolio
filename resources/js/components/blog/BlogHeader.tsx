@@ -2,7 +2,7 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
 import { ShieldCheck, User as UserIcon, Heart, Star, Folder, ChevronLeft, Eye, Tag, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Blog } from '../../types';
+import { Blog, UserReportContext } from '../../types';
 
 interface BlogHeaderProps {
     activeBlog: Blog | null;
@@ -10,7 +10,7 @@ interface BlogHeaderProps {
     onToggleLike?: (id: number, type: 'blog') => void;
     onToggleFavorite?: (id: number, type: 'blog') => void;
     onOpenTags: (tags: string[], title: string) => void;
-    onShowUser: (userId: number, context: any) => void;
+    onShowUser: (userId: number, context: UserReportContext) => void;
 }
 
 export const BlogHeader: React.FC<BlogHeaderProps> = ({ 

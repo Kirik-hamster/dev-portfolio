@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Article, Blog, BlogPagination, SortOption } from '../types';
+import { User, Article, Blog, UserReportContext, SortOption } from '../types';
 import { ArrowRight } from 'lucide-react';
 import { Pagination } from '../components/ui/Pagination';
 import { PremiumLoader } from '../components/PremiumLoader';
@@ -103,7 +103,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     const [userModal, setUserModal] = useState<{
         isOpen: boolean; 
         userId: number; 
-        context: { id: number; type: 'article' | 'comment' | 'blog' } | null 
+        context: UserReportContext | null
     }>({
         isOpen: false,
         userId: 0,
@@ -111,7 +111,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
     });
 
     // Функция-обработчик
-    const handleShowUser = (userId: number, context: any) => {
+    const handleShowUser = (userId: number, context: UserReportContext) => {
         setUserModal({ isOpen: true, userId, context });
     };
 
@@ -429,7 +429,7 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
             <UserPublicModal 
                 isOpen={userModal.isOpen}
                 userId={userModal.userId}
-                context={userModal.context as any}
+                context={userModal.context}
                 currentUser={user}
                 onClose={() => setUserModal(prev => ({ ...prev, isOpen: false }))}
             />

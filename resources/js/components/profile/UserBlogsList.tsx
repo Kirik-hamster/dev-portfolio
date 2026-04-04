@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'; // Убрали лишний useEffect, оставили useMemo
 import { useNavigate } from 'react-router-dom';
 import { Camera, ImageIcon, Plus,Trash2,X } from 'lucide-react';
-import { Blog, User, Article, BlogInput, BlogPagination, SortOption } from '../../types';
+import { Blog, User, Article, BlogInput, BlogPagination, SortOption, UserReportContext } from '../../types';
 import { UserArticlesList } from './UserArticlesList';
 import { Pagination } from '../ui/Pagination';
 import { FilterBar } from '../ui/FilterBar';
@@ -33,7 +33,7 @@ interface UserBlogsListProps {
     onPageChange: (page: number) => void; 
     onFilterChange?: (params: { search: string; sort: string; favorites: boolean }) => void;
     onOpenTags: (tags: string[], title: string) => void;
-    onShowUser: (userId: number, context: any) => void;
+    onShowUser: (userId: number, context: UserReportContext) => void;
     onCheckBan: () => boolean;
 }
 

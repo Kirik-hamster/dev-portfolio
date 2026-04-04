@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Article, User } from '../types';
+import { Article, User, UserReportContext } from '../types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/comments/CommentSection';
 import { 
@@ -39,11 +39,17 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
-    const [userModal, setUserModal] = useState<{isOpen: boolean, userId: number, context: any}>({
-        isOpen: false, userId: 0, context: null
+    const [userModal, setUserModal] = useState<{
+        isOpen: boolean, 
+        userId: number, 
+        context: UserReportContext | null
+    }>({
+        isOpen: false, 
+        userId: 0, 
+        context: null
     });
 
-    const handleShowUser = (uId: number, ctx: any) => {
+    const handleShowUser = (uId: number, ctx: UserReportContext) => {
         setUserModal({ isOpen: true, userId: uId, context: ctx });
     };
 

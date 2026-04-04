@@ -1,7 +1,7 @@
 // resources/js/components/blog/PostCard.tsx
 import React from 'react';
 import { Heart, Star, ShieldCheck, User as UserIcon, FileText, Pencil, Trash2, Eye, Plus, Info } from 'lucide-react';
-import { Article } from '../../types'; 
+import { Article, UserReportContext } from '../../types'; 
 
 interface PostCardProps {
     article: Article;
@@ -12,7 +12,7 @@ interface PostCardProps {
     onOpenTags: (tags: string[], title: string) => void;
     onEdit?: (article: Article) => void;
     onDelete?: (id: number) => void;
-    onShowUser: (userId: number, context: any) => void;
+    onShowUser: (userId: number, context: UserReportContext) => void;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ 

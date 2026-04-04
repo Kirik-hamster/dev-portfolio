@@ -1,7 +1,7 @@
 // resources/js/components/BlogCard.tsx
 import React from 'react';
 import { Heart, Star, ShieldCheck, User as UserIcon, Folder, Pencil, Trash2, Eye, Plus, Info } from 'lucide-react';
-import { Blog } from '../../types';
+import { Blog, UserReportContext } from '../../types';
 
 interface BlogCardProps {
     blog: Blog;
@@ -12,7 +12,7 @@ interface BlogCardProps {
     onOpenTags: (tags: string[], title: string) => void;
     onEdit?: (blog: Blog) => void;
     onDelete?: (id: number) => void;
-    onShowUser: (userId: number, context: any) => void;
+    onShowUser: (userId: number, context: UserReportContext) => void;
 }
 
 export const BlogCard: React.FC<BlogCardProps> = ({ 

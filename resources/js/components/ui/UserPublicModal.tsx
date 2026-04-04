@@ -6,7 +6,7 @@ import {
 import { createPortal } from 'react-dom';
 import { UserApiService } from '@/services/UserApiService';
 import { ModerationApiService } from '@/services/ModerationApiService';
-import { User } from '@/types';
+import { User, UserReportContext } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
 interface ProfileStats {
@@ -29,17 +29,12 @@ interface PublicProfileData {
     stats: ProfileStats;
 }
 
-interface ReportContext {
-    id: number;
-    type: 'article' | 'comment' | 'blog';
-}
-
 interface UserPublicModalProps {
     isOpen: boolean;
     onClose: () => void;
     userId: number;
     currentUser: User | null;
-    context?: ReportContext;
+    context?: UserReportContext | null;
 }
 
 export function UserPublicModal({ isOpen, onClose, userId, currentUser, context }: UserPublicModalProps) {
@@ -142,10 +137,6 @@ export function UserPublicModal({ isOpen, onClose, userId, currentUser, context 
                                     <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase text-blue-400 tracking-widest">
                                         {data.role}
                                     </span>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                        <span className="text-[7px] font-black uppercase text-gray-600 tracking-widest">Active</span>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -214,7 +205,7 @@ export function UserPublicModal({ isOpen, onClose, userId, currentUser, context 
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-3 bg-[#050505] rounded-xl px-4 py-3 border border-white/5">
                                                 <Clock size={14} className="text-gray-600" />
-                                                <input type="number" step="any" value={banHours} onChange={e => setBanHours(e.target.value)} className="bg-transparent border-none outline-none text-white text-xs w-full font-black" />
+                                                <input type="number" step="any" value={banHours} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBanHours(e.target.value)} className="bg-transparent border-none outline-none text-white text-xs w-full font-black" />
                                                 <span className="text-[8px] text-gray-600 font-black uppercase">Hrs</span>
                                             </div>
                                             <input type="text" value={banReason} onChange={e => setBanReason(e.target.value)} className="w-full bg-[#050505] border border-white/5 rounded-xl px-4 py-3 text-[10px] text-white outline-none focus:border-blue-500/30" placeholder="Reason..." />
@@ -228,6 +219,6 @@ export function UserPublicModal({ isOpen, onClose, userId, currentUser, context 
                 )}
             </div>
         </div>,
-        document.body // ✅ Решение ошибки TS 2554
+        document.body
     );
 }
