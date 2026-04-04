@@ -7,7 +7,7 @@ import { CommentSection } from '../components/comments/CommentSection';
 import { 
     ArrowLeft, User as UserIcon, Clock, Eye, MessageSquare, Heart,
     ShieldCheck,
-    Pencil
+    Pencil, Info
 } from 'lucide-react';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
@@ -204,9 +204,12 @@ export function ArticleDetailPage({ articleId, onBack, user, onNavigateToLogin }
                                     )}
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <span className="text-[11px] font-black text-white uppercase tracking-wider leading-none mb-1.5">
-                                        {article.user?.name}
-                                    </span>
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <span className="text-[11px] font-black text-white uppercase tracking-wider leading-none">
+                                            {article.user?.name}
+                                        </span>
+                                        <Info size={18} className="text-blue-500 opacity-50 group-hover/user:opacity-100 transition-all" />
+                                    </div>
                                     <span className="text-[9px] text-blue-500 font-bold uppercase tracking-widest leading-none">
                                         {article.user?.role || 'Contributor'}
                                     </span>

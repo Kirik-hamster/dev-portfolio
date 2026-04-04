@@ -1,6 +1,6 @@
 // resources/js/components/blog/BlogHeader.tsx
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { ShieldCheck, User as UserIcon, Heart, Star, Folder, ChevronLeft, Eye, Tag } from 'lucide-react';
+import { ShieldCheck, User as UserIcon, Heart, Star, Folder, ChevronLeft, Eye, Tag, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Blog } from '../../types';
 
@@ -81,7 +81,7 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
                     {/* АВТОРСКИЙ БЛОК */}
                     <div 
                         onClick={() => activeBlog && onShowUser(activeBlog.user_id, { id: activeBlog.id, type: 'blog' })}
-                        className="flex items-center gap-5 sm:gap-7 cursor-pointer group/user"
+                        className="flex items-center gap-5 sm:gap-7 cursor-pointer group/user w-full min-w-0" // Добавили min-w-0
                     >
                         <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-[35px] sm:rounded-[45px] bg-[#0a0a0a] border-4 border-[#080808] flex items-center justify-center shrink-0 shadow-2xl relative overflow-hidden group/avatar">
                             {activeBlog?.user?.role === 'admin' 
@@ -91,20 +91,27 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
                             <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
                         </div>
                         
-                        <div className="flex flex-col gap-2 pt-4">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">
+                        <div className="flex flex-col gap-2 flex-1 min-w-0 pt-4">
+                            <div className="flex items-center gap-3 w-full">
+                                <h2 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none truncate">
                                     {isProfile ? activeBlog?.title : activeBlog?.user?.name}
                                 </h2>
+                                
+                                <div className="shrink-0 p-2 rounded-full bg-white/5 border border-white/10 text-gray-500 group-hover/user:text-blue-500 group-hover/user:border-blue-500/30 transition-all active:scale-90">
+                                    <Info size={18} />
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
                                 {!isProfile && (
-                                    <span className="text-[8px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md font-black uppercase tracking-widest">
+                                    <span className="text-[8px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md font-black uppercase tracking-widest shrink-0">
                                         {activeBlog?.user?.role}
                                     </span>
                                 )}
+                                <span className="text-[10px] font-black uppercase text-gray-500 tracking-[0.4em] truncate">
+                                    {isProfile ? "Category Workspace" : "Автор"}
+                                </span>
                             </div>
-                            <span className="text-[10px] font-black uppercase text-gray-500 tracking-[0.4em]">
-                                {isProfile ? "Category Workspace" : "Автор"}
-                            </span>
                         </div>
                     </div>
 

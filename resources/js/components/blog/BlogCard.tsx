@@ -1,6 +1,6 @@
 // resources/js/components/BlogCard.tsx
 import React from 'react';
-import { Heart, Star, ShieldCheck, User as UserIcon, Folder, Pencil, Trash2, Eye, Plus } from 'lucide-react';
+import { Heart, Star, ShieldCheck, User as UserIcon, Folder, Pencil, Trash2, Eye, Plus, Info } from 'lucide-react';
 import { Blog } from '../../types';
 
 interface BlogCardProps {
@@ -80,9 +80,16 @@ export const BlogCard: React.FC<BlogCardProps> = ({
                     <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 shrink-0">
                         {blog.user?.role === 'admin' ? <ShieldCheck size={12} className="text-blue-500" /> : <UserIcon size={12} className="text-gray-500" />}
                     </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-black uppercase text-white/90 truncate leading-none mb-0.5">{blog.user?.name || 'User'}</span>
-                        <span className="text-[7px] font-bold uppercase text-gray-600 tracking-widest leading-none">{blog.user?.role || 'member'}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-[9px] font-black uppercase text-white/90 truncate leading-none mb-0.5">
+                                {blog.user?.name || 'User'}
+                            </span>
+                            <Info size={12} className="text-blue-500 opacity-50 group-hover/user:opacity-100 transition-all shrink-0" />
+                        </div>
+                        <span className="text-[7px] font-bold uppercase text-gray-600 tracking-widest leading-none">
+                            {blog.user?.role || 'member'}
+                        </span>
                     </div>
                 </div>
 

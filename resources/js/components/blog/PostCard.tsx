@@ -1,6 +1,6 @@
 // resources/js/components/blog/PostCard.tsx
 import React from 'react';
-import { Heart, Star, ShieldCheck, User as UserIcon, FileText, Pencil, Trash2, Eye, Plus } from 'lucide-react';
+import { Heart, Star, ShieldCheck, User as UserIcon, FileText, Pencil, Trash2, Eye, Plus, Info } from 'lucide-react';
 import { Article } from '../../types'; 
 
 interface PostCardProps {
@@ -71,17 +71,26 @@ export const PostCard: React.FC<PostCardProps> = ({
                 {/* БЛОК АВТОРА (с отступом) */}
                 <div 
                     onClick={(e) => {
-                        e.stopPropagation(); // Чтобы не открылся пост при клике на автора
+                        e.stopPropagation();
                         onShowUser(article.user_id, { id: article.id, type: 'article' });
                     }}
                     className="px-5 pt-2 mb-2 flex items-center gap-2.5 shrink-0 cursor-pointer group/user"
                 >
-                    <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 shrink-0 group-hover/user:border-blue-500/30 transition-colors">
                         {article.user?.role === 'admin' ? <ShieldCheck size={12} className="text-blue-500" /> : <UserIcon size={12} className="text-gray-500" />}
                     </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-black uppercase text-white/90 truncate leading-none mb-0.5">{article.user?.name || 'User'}</span>
-                        <span className="text-[7px] font-bold uppercase text-gray-600 tracking-widest leading-none">{article.user?.role || 'member'}</span>
+                    
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-[9px] font-black uppercase text-white/90 truncate leading-none">
+                                {article.user?.name || 'User'}
+                            </span>
+                            {/* Иконка теперь часть строки ника, очень аккуратная */}
+                            <Info size={12} className="text-blue-500 opacity-50 group-hover/user:opacity-100 transition-all shrink-0" />
+                        </div>
+                        <span className="text-[7px] font-bold uppercase text-gray-600 tracking-widest leading-none">
+                            {article.user?.role || 'member'}
+                        </span>
                     </div>
                 </div>
                 {/* ОБЛОЖКА (НА ВСЮ ШИРИНУ) */}

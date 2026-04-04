@@ -86,11 +86,12 @@ export function BlogsPage({ user, onArticleSelect, initialBlogId, onBlogSelect }
         const t = searchParams.get('search_type') as 'title' | 'author' | null;
 
         if (v) setViewMode(v);
-        if (s !== null) setSearchQuery(s);
-        if (t) setSearchType(t);
+        if (s !== null) {
+            setSearchQuery(s);
+            setSearchType(t || 'author'); 
+        }
         
-        // Если пришли параметры поиска — сбрасываем страницу на первую
-        if (s || v) setCurrentPage(1);
+        setCurrentPage(1);
     }, [searchParams]);
 
     const handleViewChange = (mode: 'blogs' | 'posts') => {
