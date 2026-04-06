@@ -375,10 +375,6 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({ article, onSave, onCan
                                         onChange={handleImageUpload} 
                                         disabled={isUploading}
                                     />
-                                    {/* Подсказка при наведении */}
-                                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-[8px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10">
-                                        Загрузить медиа
-                                    </span>
                                 </label>
                             )}
                             <div className="flex-grow" />
