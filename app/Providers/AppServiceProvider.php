@@ -23,6 +23,15 @@ class AppServiceProvider extends ServiceProvider
             \App\Interfaces\ArticleRepositoryInterface::class, 
             \App\Repositories\ArticleRepository::class // Проверь путь к файлу!
         );
+        if ($this->app->environment('local')) {
+            // Регистрируем ядро (Laravel сам найдет путь в vendor)
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            
+            // Регистрируем настройки (только если ты не удалил сам файл провайдера)
+            if (class_exists(\App\Providers\TelescopeServiceProvider::class)) {
+                $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+            }
+        }
     }
 
     /**
