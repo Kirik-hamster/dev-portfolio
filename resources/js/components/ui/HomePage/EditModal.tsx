@@ -3,6 +3,9 @@ import Cropper, { Area, Point } from 'react-easy-crop';
 import { createPortal } from 'react-dom';
 import { X, Save, Upload, Camera } from 'lucide-react';
 import { HomeApiService } from '@/services/HomeApiService';
+import { StatusModal } from '@/components/ui/StatusModal';
+
+
 
 // Описываем интерфейсы данных, чтобы не дублировать их
 interface ProfileData {
@@ -30,7 +33,6 @@ interface EditModalProps {
 export const EditModal: React.FC<EditModalProps> = ({ 
     isOpen, onClose, onSave, data, setData, stack, setStack 
 }) => {
-    // 1. Сначала определяем ВСЕ хуки (они всегда должны вызываться в одном порядке)
     const [image, setImage] = useState<string | null>(null);
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -42,7 +44,18 @@ export const EditModal: React.FC<EditModalProps> = ({
         setCroppedAreaPixels(pixels);
     }, []);
 
-    // 2. И только ПОСЛЕ всех хуков делаем ранний возврат
+    const [status, setStatus] = useState<{
+        isOpen: boolean;
+        type: 'success' | 'error';
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        type: 'error',
+        title: '',
+        message: ''
+    });
+
     if (!isOpen) return null;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +99,12 @@ export const EditModal: React.FC<EditModalProps> = ({
         } catch (e) {
             console.error(e);
             setIsUploading(false);
-            alert("Ошибка загрузки аватара");
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка медиа',
+                message: 'Не удалось загрузить аватар. Попробуйте другое изображение.'
+            });
         }
     };
 
@@ -94,6 +112,19 @@ export const EditModal: React.FC<EditModalProps> = ({
         setIsSaving(true);
         try { 
             await onSave(); 
+            setStatus({
+                isOpen: true,
+                type: 'success',
+                title: 'Профиль обновлен',
+                message: 'Ваши данные успешно синхронизированы с сервером.'
+            });
+        } catch (error) {
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка сохранения',
+                message: 'Не удалось обновить данные профиля. Проверьте интернет-соединение.'
+            });
         } finally { 
             setIsSaving(false); 
         }
@@ -174,6 +205,13 @@ export const EditModal: React.FC<EditModalProps> = ({
                     </button>
                 </div>
             </div>
+            <StatusModal 
+                isOpen={status.isOpen}
+                type={status.type}
+                title={status.title}
+                message={status.message}
+                onClose={() => setStatus(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>,
         document.body
     );

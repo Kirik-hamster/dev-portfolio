@@ -54,14 +54,30 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
     const [tempImage, setTempImage] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
-    const [showNoAccess, setShowNoAccess] = useState(false);
+    const [status, setStatus] = useState<{
+        isOpen: boolean;
+        type: 'success' | 'error';
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        type: 'error',
+        title: '',
+        message: ''
+    });
     const hasUploadAccess = user?.role === 'admin' || user?.role?.includes('-img');
 
     const handleUploadClick = (e: React.MouseEvent) => {
         if (!hasUploadAccess) {
-            e.preventDefault(); // Запрещаем открывать выбор файла
-            e.stopPropagation(); // Останавливаем событие
-            setShowNoAccess(true); // Включаем модалку ошибки
+            e.preventDefault();
+            e.stopPropagation();
+            // Используем универсальный статус
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Доступ ограничен',
+                message: 'У вас нет прав для изменения обложки. Эта функция доступна администраторам и редакторам медиа.'
+            });
         }
     }
 
@@ -96,7 +112,12 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
             }
             setTempImage(null);
         } catch (e) {
-            alert("Ошибка загрузки обложки");
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка медиа',
+                message: 'Не удалось загрузить обложку. Попробуйте файл другого формата или меньшего размера.'
+            });
         } finally {
             setIsUploading(false);
         }
@@ -355,11 +376,11 @@ export const UserBlogsList: React.FC<UserBlogsListProps> = (props) => {
                 />
             )}
             <StatusModal 
-                isOpen={showNoAccess}
+                isOpen={status.isOpen}
                 type="error"
                 title="Доступ ограничен"
                 message="У вас нет прав для изменения обложки. Эта функция доступна администраторам и редакторам медиа."
-                onClose={() => setShowNoAccess(false)}
+                onClose={() => setStatus(prev => ({ ...prev, isOpen: false }))}
             />
 
             {blogPagination && (

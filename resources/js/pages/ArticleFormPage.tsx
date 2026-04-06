@@ -51,17 +51,21 @@ export function ArticleFormPage({ user, onSave, onCancel }: ArticleFormPageProps
     }, [articleId, user.id, user.role, navigate]);
 
     const handleSave = async (data: ArticleInput) => {
-        const targetBlogId = blogId ? Number(blogId) : article?.blog_id;
-        const res = await ArticleApiService.save(data, targetBlogId, article?.id);
+        try {
+            const targetBlogId = blogId ? Number(blogId) : article?.blog_id;
+            const res = await ArticleApiService.save(data, targetBlogId, article?.id);
 
-        if (res.ok) {
-            onSave();
-        } else {
+            if (res.ok) {
+                onSave();
+            } else {
+                throw new Error("Failed to save"); // Прокидываем ошибку в catch
+            }
+        } catch (error) {
             setModalConfig({
                 isOpen: true,
                 type: 'error',
                 title: 'Ошибка сохранения',
-                message: 'Не удалось опубликовать запись. Проверьте уникальность заголовка.'
+                message: 'Не удалось опубликовать запись. Убедитесь, что все поля заполнены верно.'
             });
         }
     };

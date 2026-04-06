@@ -28,11 +28,28 @@ export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({
     const [showNoAccess, setShowNoAccess] = useState(false); // Для показа ошибки
     const hasUploadAccess = user?.role === 'admin' || user?.role?.includes('-img');
 
+    const [status, setStatus] = useState<{
+        isOpen: boolean;
+        type: 'success' | 'error';
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        type: 'error',
+        title: '',
+        message: ''
+    });
+
     const handleUploadClick = (e: React.MouseEvent) => {
         if (!hasUploadAccess) {
             e.preventDefault();
             e.stopPropagation();
-            setShowNoAccess(true);
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Доступ ограничен',
+                message: 'Изменять обложку может только администратор и редакторы медиа.'
+            });
         }
     };
 
@@ -70,7 +87,12 @@ export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({
             setImageUrl(res.url);
             setTempImage(null);
         } catch (e) {
-            alert("Ошибка загрузки");
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка загрузки',
+                message: 'Не удалось сохранить изображение в облако. Проверьте размер файла.'
+            });
         } finally {
             setIsUploading(false);
         }
@@ -170,11 +192,11 @@ export const ArticleMetaModal: React.FC<ArticleMetaModalProps> = ({
                 />
             )}
             <StatusModal 
-                isOpen={showNoAccess}
-                type="error"
-                title="Доступ ограничен"
-                message="Изменять обложку может только администратор."
-                onClose={() => setShowNoAccess(false)}
+                isOpen={status.isOpen}
+                type={status.type}
+                title={status.title}
+                message={status.message}
+                onClose={() => setStatus(prev => ({ ...prev, isOpen: false }))}
             />
         </div>,
         document.body

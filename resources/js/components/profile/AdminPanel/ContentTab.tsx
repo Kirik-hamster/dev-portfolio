@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { ExternalLink, FileText, Layout, Trash2, UploadCloud, X } from 'lucide-react';
 import { PremiumLoader } from '../../PremiumLoader';
 import { SettingsApiService } from '@/services/SettingsApiService';
+import { ConfirmModal } from '@/components/ui/ConfirmModel';
+import { StatusModal } from '@/components/ui/StatusModal';
 import { Settings } from '@/types';
 
 interface Props {
@@ -20,6 +22,20 @@ export const ContentTab: React.FC<Props> = ({
 }) => {
     const [isUploadingResume, setIsUploadingResume] = useState(false);
 
+    const [status, setStatus] = useState<{
+        isOpen: boolean;
+        type: 'success' | 'error';
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        type: 'success',
+        title: '',
+        message: ''
+    });
+
+    const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+
     const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -30,7 +46,12 @@ export const ContentTab: React.FC<Props> = ({
             if (res.url) {
                 // ⚡️ Обновляем ГЛОБАЛЬНЫЙ стейт, чтобы футер сразу увидел ссылку
                 setSettings({ ...settings, resumeUrl: res.url });
-                alert("Готово!");
+                setStatus({
+                    isOpen: true,
+                    type: 'success',
+                    title: 'Обновлено',
+                    message: 'Файл резюме успешно загружен в облако.'
+                });
             }
         } catch (error) {
             console.error(error);
@@ -40,15 +61,28 @@ export const ContentTab: React.FC<Props> = ({
     };
 
     const handleResumeDelete = async () => {
-        if (!window.confirm("Удалить файл резюме из облака?")) return;
         
         try {
             await SettingsApiService.deleteResume();
             const updated = { ...settings };
             delete updated.resumeUrl; 
             setSettings(updated);
+            setIsConfirmDeleteOpen(false); // Закрываем модалку подтверждения
+        
+            setStatus({
+                isOpen: true,
+                type: 'success',
+                title: 'Удалено',
+                message: 'Файл резюме стерт из хранилища.'
+            });
         } catch (error) {
-            alert("Ошибка при удалении");
+            setIsConfirmDeleteOpen(false);
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка',
+                message: 'Не удалось удалить файл. Попробуйте позже.'
+            });
         }
     };
 
@@ -67,7 +101,7 @@ export const ContentTab: React.FC<Props> = ({
                     <div className="flex flex-wrap justify-center gap-4">
                         {settings.resumeUrl && (
                             <button 
-                                onClick={handleResumeDelete}
+                                onClick={() => setIsConfirmDeleteOpen(true)}
                                 className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-95"
                                 title="Удалить файл"
                             >
@@ -162,6 +196,21 @@ export const ContentTab: React.FC<Props> = ({
             </div>
         </div>
         {demoLoading && <div className="bg-white/[0.01] border border-dashed border-white/5 rounded-[50px] p-20 animate-in zoom-in-95"><PremiumLoader /></div>}
+        <ConfirmModal 
+            isOpen={isConfirmDeleteOpen}
+            title="Удаление резюме"
+            message="Вы уверены, что хотите удалить файл резюме? Ссылка в футере исчезнет."
+            onConfirm={handleResumeDelete} // Сюда передаем функцию удаления
+            onCancel={() => setIsConfirmDeleteOpen(false)}
+        />
+
+        <StatusModal 
+            isOpen={status.isOpen}
+            type={status.type}
+            title={status.title}
+            message={status.message}
+            onClose={() => setStatus(prev => ({ ...prev, isOpen: false }))}
+        />            
     </div>
 );
 }

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { SettingsApiService } from '@/services/SettingsApiService';
 import { MailSettings, PaginatedResponse, User } from '@/types';
 
+import { StatusModal } from '@/components/ui/StatusModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModel'
+
 // Импортируем наши новые кусочки
 import { ConfigTab } from './ConfigTab';
 import { UsersTab } from './UsersTab';
@@ -41,6 +44,27 @@ export const AdminPanel = ({
         user: null
     });
 
+    const [status, setStatus] = useState<{
+        isOpen: boolean;
+        type: 'success' | 'error';
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        type: 'success',
+        title: '',
+        message: ''
+    });
+
+    // Стейт для подтверждения разблокировки
+    const [unbanConfirm, setUnbanConfirm] = useState<{
+        isOpen: boolean;
+        user: User | null;
+    }>({
+        isOpen: false,
+        user: null
+    });
+
     // --- LOGIC: USERS ---
     const fetchUsers = async (page: number = 1) => {
         const res: PaginatedResponse<User> = await SettingsApiService.getUsers(searchQuery, page);
@@ -76,27 +100,42 @@ export const AdminPanel = ({
             setBanModal({ isOpen: false, user: null });
             fetchUsers(currentPage);
         } else {
-            alert("Ошибка при блокировке");
+            setStatus({
+                isOpen: true,
+                type: 'error',
+                title: 'Ошибка модерации',
+                message: 'Не удалось заблокировать пользователя. Попробуйте обновить страницу.'
+            });
         }
     };
 
-    const handleUnban = async (targetUser: User) => {
-        if (window.confirm(`Разблокировать пользователя ${targetUser.name}?`)) {
-            // Мы прописали роут в api.php, давай вызовем его
-            // Можно добавить метод в ModerationApiService или вызвать напрямую:
-            const res = await fetch(`/api/admin/users/${targetUser.id}/unban`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
-                },
-                credentials: 'include'
-            });
+    const handleUnban = (targetUser: User) => {
+        setUnbanConfirm({ isOpen: true, user: targetUser });
+    };
 
-            if (res.ok) {
-                fetchUsers(currentPage);
-            }
+    const confirmUnbanAction = async () => {
+        if (!unbanConfirm.user) return;
+
+        const res = await fetch(`/api/admin/users/${unbanConfirm.user.id}/unban`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('XSRF-TOKEN=')[1]?.split(';')[0] || '')
+            },
+            credentials: 'include'
+        });
+
+        setUnbanConfirm({ isOpen: false, user: null });
+
+        if (res.ok) {
+            fetchUsers(currentPage);
+            setStatus({
+                isOpen: true,
+                type: 'success',
+                title: 'Доступ восстановлен',
+                message: 'Пользователь снова может публиковать контент.'
+            });
         }
     };
 
@@ -107,7 +146,14 @@ export const AdminPanel = ({
 
     const handleSaveMail = async () => {
         const res = await SettingsApiService.updateMail(mailConfig);
-        if (res.ok) alert("Настройки сохранены!");
+        if (res.ok) {
+            setStatus({
+                isOpen: true,
+                type: 'success',
+                title: 'Конфигурация SMTP',
+                message: 'Настройки почтового сервера успешно обновлены.'
+            });
+        }
     };
 
     return (
@@ -128,6 +174,22 @@ export const AdminPanel = ({
                 userName={banModal.user?.name || ''}
                 onClose={() => setBanModal({ isOpen: false, user: null })}
                 onConfirm={handleConfirmBan} // Вызывает API с 3-мя аргументами
+            />
+            <ConfirmModal 
+                isOpen={unbanConfirm.isOpen}
+                title="Разблокировка"
+                message={`Вы уверены, что хотите разблокировать пользователя ${unbanConfirm.user?.name}?`}
+                onConfirm={confirmUnbanAction}
+                onCancel={() => setUnbanConfirm({ isOpen: false, user: null })}
+                confirmLabel="Разблокировать"
+            />
+
+            <StatusModal 
+                isOpen={status.isOpen}
+                type={status.type}
+                title={status.title}
+                message={status.message}
+                onClose={() => setStatus(prev => ({ ...prev, isOpen: false }))}
             />
 
             {activeSubTab === 'config' && (

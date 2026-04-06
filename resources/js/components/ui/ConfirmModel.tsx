@@ -8,9 +8,10 @@ interface Props {
     message: string;
     onConfirm: () => void;
     onCancel: () => void;
+    confirmLabel?: string;
 }
 
-export const ConfirmModal: React.FC<Props> = ({ isOpen, title, message, onConfirm, onCancel }) => {
+export const ConfirmModal: React.FC<Props> = ({ isOpen, title, message, onConfirm, onCancel, confirmLabel = 'Удалить' }) => {
     if (!isOpen) return null;
 
     return createPortal(
@@ -37,7 +38,7 @@ export const ConfirmModal: React.FC<Props> = ({ isOpen, title, message, onConfir
                             onClick={onConfirm} 
                             className="flex-1 py-4 bg-white text-black rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all active:scale-95"
                         >
-                            Удалить
+                            {confirmLabel}
                         </button>
                         <button 
                             onClick={onCancel} 
