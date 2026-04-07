@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Users, Mail, ShieldCheck, Gavel, Unlock, AlertTriangle, Clock } from 'lucide-react';
 import { User } from '@/types';
 import { Pagination } from '@/components/ui/Pagination';
+import { UserReportsModal } from '@/components/ui/moderation/UserReportModal';
 
 interface Props {
     users: User[];
@@ -13,6 +14,8 @@ interface Props {
     currentPage: number;
     lastPage: number;
     onPageChange: (page: number) => void;
+    filterReported: boolean;
+    onFilterReported: (val: boolean) => void;
 }
 
 const getBanStatus = (bannedUntil: string | null) => {
@@ -33,20 +36,75 @@ const getBanStatus = (bannedUntil: string | null) => {
 };
 
 export const UsersTab: React.FC<Props> = ({ 
-    users, searchQuery, onSearch, onToggleAccess, onBan, onUnban, currentPage, lastPage, onPageChange 
-}) => (
+    users, 
+    searchQuery, 
+    onSearch, 
+    onToggleAccess, 
+    onBan, 
+    onUnban, 
+    currentPage, 
+    lastPage, 
+    onPageChange,
+    filterReported,
+    onFilterReported
+}) => {
+    const [selectedUserForReports, setSelectedUserForReports] = useState<User | null>(null);
+    return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-        {/* ПОИСК */}
-        <div className="relative group">
+{/* ПАНЕЛЬ УПРАВЛЕНИЯ ПОЛЬЗОВАТЕЛЯМИ */}
+<div className="flex flex-col lg:flex-row gap-4 mb-10 items-stretch">
+    
+    {/* ПОИСКОВАЯ СТРОКА */}
+    <div className="relative flex-1 group h-[64px]"> {/* Фиксируем высоту обертки */}
+        {/* Мягкий фон-свечение */}
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-[22px] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
+        
+        <div className="relative h-full">
             <input 
                 type="text"
-                placeholder="Поиск по имени или почте..."
-                className="w-full bg-white/[0.02] border border-white/5 rounded-2xl sm:rounded-3xl p-5 sm:p-6 pl-12 sm:pl-14 outline-none focus:border-blue-500/30 transition-all text-sm text-white"
+                placeholder="Поиск резидента по имени или email..."
+                // Добавили h-full, чтобы инпут занял всю высоту [64px]
+                className="w-full h-full bg-[#0a0a0a]/80 border border-white/5 backdrop-blur-xl rounded-[20px] px-5 pl-14 outline-none focus:border-blue-500/40 focus:ring-4 focus:ring-blue-500/5 transition-all text-sm text-white placeholder:text-gray-600 font-medium"
                 value={searchQuery}
                 onChange={(e) => onSearch(e.target.value)} 
             />
-            <Users className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-blue-500 transition-colors" size={20} />
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 pointer-events-none">
+                <Users 
+                    className="text-gray-600 group-focus-within:text-blue-500 transition-colors duration-300" 
+                    size={20} 
+                    strokeWidth={2.2}
+                />
+            </div>
         </div>
+    </div>
+
+    {/* ФИЛЬТР ЖАЛОБ */}
+    <button 
+        onClick={() => onFilterReported(!filterReported)} 
+        // Добавили h-[64px], чтобы высота точно совпала с инпутом
+        className={`relative shrink-0 h-[64px] px-8 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 border flex items-center justify-center gap-3 overflow-hidden group/btn
+            ${filterReported 
+                ? 'bg-rose-500 border-rose-400 text-white shadow-[0_0_30px_rgba(244,63,94,0.3)]' 
+                : 'bg-white/[0.03] border-white/5 text-gray-500 hover:text-white hover:bg-white/5 hover:border-white/10'}`}
+    >
+        {/* Анимированный блик */}
+        {filterReported && (
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+        )}
+        
+        <div className={`p-1.5 rounded-lg transition-colors ${filterReported ? 'bg-white/20' : 'bg-rose-500/10'}`}>
+            <AlertTriangle 
+                size={14} 
+                className={filterReported ? 'text-white' : 'text-rose-500'} 
+                strokeWidth={2.5}
+            />
+        </div>
+        
+        <span className="relative z-10">
+            {filterReported ? 'Активные нарушения' : 'Все резиденты'}
+        </span>
+    </button>
+</div>
 
         {/* 📱 МОБИЛЬНАЯ ВЕРСИЯ (Карточки) */}
         <div className="md:hidden space-y-4">
@@ -56,7 +114,7 @@ export const UsersTab: React.FC<Props> = ({
                     <div key={u.id} className={`bg-white/[0.02] border border-white/10 p-5 rounded-[30px] backdrop-blur-md space-y-5 ${banTimeLeft ? 'opacity-60' : ''}`}>
                         <div className="flex justify-between items-start">
                             <div className="flex gap-3">
-                                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${banTimeLeft ? 'border-rose-500/20 bg-rose-500/5 text-rose-500' : 'bg-white/5 border-white/5 text-gray-500'}`}>
+                                <div onClick={() => setSelectedUserForReports(u)} className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${banTimeLeft ? 'border-rose-500/20 bg-rose-500/5 text-rose-500' : 'bg-white/5 border-white/5 text-gray-500'}`}>
                                     {u.role === 'admin' ? <ShieldCheck size={16} /> : <Users size={16} />}
                                 </div>
                                 <div className="min-w-0">
@@ -64,12 +122,15 @@ export const UsersTab: React.FC<Props> = ({
                                     <div className="text-[10px] text-gray-600 truncate">{u.email}</div>
                                 </div>
                             </div>
-                            {/* Жалобы в углу */}
+                            {/* КНОПКА-ЖАЛОБА ДЛЯ МОБИЛКИ */}
                             {u.reports_count && u.reports_count > 0 && (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-rose-500/10 rounded-lg text-rose-500">
-                                    <AlertTriangle size={10} />
+                                <button 
+                                    onClick={() => setSelectedUserForReports(u)}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 active:scale-95 transition-all"
+                                >
+                                    <AlertTriangle size={12} />
                                     <span className="text-[10px] font-black">{u.reports_count}</span>
-                                </div>
+                                </button>
                             )}
                         </div>
 
@@ -137,10 +198,13 @@ export const UsersTab: React.FC<Props> = ({
                                 
                                 <td className="p-6 text-center">
                                     {u.reports_count && u.reports_count > 0 ? (
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-500">
+                                        <button 
+                                            onClick={() => setSelectedUserForReports(u)} // 👈 ОТКРЫВАЕМ МОДАЛКУ
+                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-500 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+                                        >
                                             <AlertTriangle size={10} />
                                             <span className="text-[10px] font-black">{u.reports_count}</span>
-                                        </div>
+                                        </button>
                                     ) : <span className="text-[10px] font-bold text-gray-700">0</span>}
                                 </td>
 
@@ -176,5 +240,12 @@ export const UsersTab: React.FC<Props> = ({
         <div className="p-4 sm:p-6 bg-white/[0.01] rounded-[30px] border border-white/5">
             <Pagination currentPage={currentPage} lastPage={lastPage} onPageChange={onPageChange} />
         </div>
+        <UserReportsModal 
+                isOpen={!!selectedUserForReports}
+                userId={selectedUserForReports?.id || 0}
+                userName={selectedUserForReports?.name || ''}
+                onClose={() => setSelectedUserForReports(null)}
+        />
     </div>
-);
+    );
+};

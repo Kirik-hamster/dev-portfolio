@@ -30,8 +30,8 @@ export const SettingsApiService = {
         });
     },
 
-    async getUsers(query: string = '', page: number = 1) {
-        const response = await fetch(`/api/admin/users?search=${query}&page=${page}`, {
+    async getUsers(query: string = '', page: number = 1, reported: boolean = false) {
+        const response = await fetch(`/api/admin/users?search=${query}&page=${page}&reported=${reported ? 1 : 0}`, {
             headers: getHeaders(),
             credentials: 'include'
         });

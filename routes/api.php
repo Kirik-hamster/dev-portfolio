@@ -120,7 +120,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::middleware(['role:admin,moderator'])->group(function () {
         // Список жалоб
         Route::get('/admin/reports', [ModerationController::class, 'index']);
-        
+
+        Route::get('/admin/users/{user}/reports', [AdminUserController::class, 'reports']);
+        Route::post('/admin/reports/{report}/resolve', [ModerationController::class, 'resolve']);
         // Управление юзерами (используем AdminUserController)
         Route::get('/admin/users', [AdminUserController::class, 'index']);
         Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole']);

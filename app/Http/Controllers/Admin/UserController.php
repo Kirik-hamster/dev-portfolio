@@ -11,12 +11,21 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
+        $onlyReported = $request->boolean('reported'); // Новый фильтр
 
-        // Ищем по имени или почте, пагинируем по 10 человек
         $users = User::when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             })
+            ->when($onlyReported, function ($query) {
+                // Показываем только тех, у кого есть НЕРАЗРЕШЕННЫЕ жалобы
+                $query->whereHas('receivedReports', function($q) {
+                    $q->where('is_resolved', false);
+                });
+            })
+            ->withCount(['receivedReports as reports_count' => function($query) {
+                $query->where('is_resolved', false); // Считаем только активные
+            }])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -69,4 +78,19 @@ class UserController extends Controller
         $user->update(['banned_until' => null]);
         return response()->json(['message' => 'Пользователь разблокирован']);
     }
+
+    public function reports(Request $request, User $user)
+{
+    // 1. Достаем булево значение из ссылки (?resolved=1 или 0)
+    $isResolved = $request->boolean('resolved', false);
+
+    // 2. Добавляем условие where
+    $reports = $user->receivedReports()
+        ->where('is_resolved', $isResolved) // 👈 Вот этот фильтр всё решит
+        ->with(['reporter:id,name', 'reportable'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return response()->json($reports);
+}
 }

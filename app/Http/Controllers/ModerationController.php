@@ -46,4 +46,8 @@ class ModerationController extends Controller
             ->latest()
             ->paginate(20);
     }
+    public function resolve(Report $report) {
+        $report->update(['is_resolved' => true]);
+        return response()->json(['message' => 'Рассмотрено']);
+    }
 }

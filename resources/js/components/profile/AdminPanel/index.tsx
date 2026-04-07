@@ -33,6 +33,7 @@ export const AdminPanel = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
+    const [filterReported, setFilterReported] = useState(false);
 
     const [mailConfig, setMailConfig] = useState<MailSettings>({
         mail_host: '', mail_port: '465', mail_username: '', mail_from_name: ''
@@ -67,7 +68,7 @@ export const AdminPanel = ({
 
     // --- LOGIC: USERS ---
     const fetchUsers = async (page: number = 1) => {
-        const res: PaginatedResponse<User> = await SettingsApiService.getUsers(searchQuery, page);
+        const res: PaginatedResponse<User> = await SettingsApiService.getUsers(searchQuery, page, filterReported);
         setUsers(res.data);
         setCurrentPage(res.current_page);
         setLastPage(res.last_page);
@@ -75,7 +76,7 @@ export const AdminPanel = ({
 
     useEffect(() => {
         if (activeSubTab === 'users') fetchUsers(currentPage);
-    }, [activeSubTab, searchQuery, currentPage]);
+    }, [activeSubTab, searchQuery, currentPage, filterReported]);
 
     const toggleMediaAccess = async (targetUser: User) => {
         const newRole = targetUser.role.includes('-img') 
@@ -167,6 +168,8 @@ export const AdminPanel = ({
                     lastPage={lastPage} onPageChange={setCurrentPage}
                     onBan={handleBan} 
                     onUnban={handleUnban}
+                    filterReported={filterReported}
+                    onFilterReported={setFilterReported}
                 />
             )}
             <BanUserModal 
