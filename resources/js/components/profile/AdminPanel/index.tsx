@@ -10,6 +10,7 @@ import { ContentTab } from './ContentTab';
 import { useSettings } from '@/context/SettingsContext';
 import { ModerationApiService } from '@/services/ModerationApiService';
 import { BanUserModal } from '@/components/ui/moderation/BanUserModal';
+import { StatsTab } from './StatsTab';
 
 export interface AdminPanelProps {
     allBlogsCount: number; 
@@ -23,7 +24,7 @@ export interface AdminPanelProps {
 export const AdminPanel = ({ 
     demoDuration, setDemoDuration, startDemo, cancelDemo, demoLoading 
 }: AdminPanelProps) => {
-    const [activeSubTab, setActiveSubTab] = useState<'config' | 'content' | 'users'>('config');
+    const [activeSubTab, setActiveSubTab] = useState<'config' | 'content' | 'users' | 'stats'>('config');
     const { settings, setSettings } = useSettings();
 
     const [users, setUsers] = useState<User[]>([]);
@@ -144,6 +145,10 @@ export const AdminPanel = ({
                     demoDuration={demoDuration} setDemoDuration={setDemoDuration}
                     startDemo={startDemo} cancelDemo={cancelDemo} demoLoading={demoLoading}
                 />
+            )}
+
+            {activeSubTab === 'stats' && (
+                <StatsTab />
             )}
         </div>
     );
