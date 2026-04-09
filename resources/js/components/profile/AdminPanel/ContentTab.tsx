@@ -3,6 +3,9 @@ import { ExternalLink, FileText, Layout, Trash2, UploadCloud, X } from 'lucide-r
 import { PremiumLoader } from '../../PremiumLoader';
 import { SettingsApiService } from '@/services/SettingsApiService';
 import { Settings } from '@/types/types';
+import { StatusModal } from '@/components/ui/StatusModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModel';
+
 
 interface Props {
     settings: Settings;
