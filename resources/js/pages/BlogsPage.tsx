@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Article, Blog, UserReportContext, SortOption } from '../types';
+import { User, Article, Blog, UserReportContext, SortOption } from '../types/types';
 import { ArrowRight } from 'lucide-react';
 import { Pagination } from '../components/ui/Pagination';
 import { PremiumLoader } from '../components/PremiumLoader';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Edit3, Trash2, Plus, Layout, Heart, MessageSquare, Star } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
-import { Article, User, SortOption } from '../types';
+import { Article, User, SortOption } from '../types/types';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { Pagination } from '../components/ui/Pagination';

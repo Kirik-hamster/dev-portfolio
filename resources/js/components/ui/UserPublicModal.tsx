@@ -6,7 +6,7 @@ import {
 import { createPortal } from 'react-dom';
 import { UserApiService } from '@/services/UserApiService';
 import { ModerationApiService } from '@/services/ModerationApiService';
-import { User, UserReportContext } from '@/types';
+import { User, UserReportContext } from '@/types/types';
 import { useNavigate } from 'react-router-dom';
 
 interface ProfileStats {

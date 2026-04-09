@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, Trash2, Plus, FileText, Loader2 } from 'lucide-react'; // Добавили Loader2
 import { useArticles } from '../../hooks/useArticles';
-import { Article, User, SortOption, UserReportContext } from '../../types';
+import { Article, User, SortOption, UserReportContext } from '../../types/types';
 import { ConfirmModal } from '../ui/ConfirmModel';
 import { Pagination } from '../ui/Pagination';
 import { PremiumLoader } from '../PremiumLoader';

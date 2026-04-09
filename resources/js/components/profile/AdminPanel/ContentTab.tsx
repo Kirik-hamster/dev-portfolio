@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { ExternalLink, FileText, Layout, Trash2, UploadCloud, X } from 'lucide-react';
 import { PremiumLoader } from '../../PremiumLoader';
 import { SettingsApiService } from '@/services/SettingsApiService';
+<<<<<<< HEAD
 import { ConfirmModal } from '@/components/ui/ConfirmModel';
 import { StatusModal } from '@/components/ui/StatusModal';
 import { Settings } from '@/types';
+=======
+import { Settings } from '@/types/types';
+>>>>>>> feat/moderation-and-reports
 
 interface Props {
     settings: Settings;

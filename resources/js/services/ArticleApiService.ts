@@ -1,4 +1,4 @@
-import { Article, ArticleInput, PaginatedResponse, ArticleQueryParams } from '../types';
+import { Article, ArticleInput, PaginatedResponse, ArticleQueryParams } from '../types/types';
 import { getHeaders } from './apiUtils';
 
 const BASE_URL = '/api/articles';

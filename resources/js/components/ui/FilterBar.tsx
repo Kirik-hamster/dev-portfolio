@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 /* Добавили Eye и Heart для наглядности сортировки */
 import { Search, ChevronDown, Star, Activity, Clock, User as UserIcon, Type, RotateCcw, Eye, Heart } from 'lucide-react';
-import { SortOption } from '@/types';
+import { SortOption } from '@/types/types';
 
 interface FilterBarProps {
     searchQuery: string;

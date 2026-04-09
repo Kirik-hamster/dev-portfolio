@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserCircle, BookOpen, Shield, Database, Plus, Folder, ChevronRight, X, Users, Activity, Pencil, Trash2, MessageSquare } from 'lucide-react';
-import { User as UserType, Blog, Article, BlogPagination, BlogInput, UserReportContext } from '../types';
+import { User as UserType, Blog, Article, BlogPagination, BlogInput, UserReportContext } from '../types/types';
 import { PremiumLoader } from '../components/PremiumLoader';
 import { AdminPanel } from '@/components/profile/AdminPanel/index';
 import { BlogApiService } from '../services/BlogApiService';

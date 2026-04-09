@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User } from '@/types';
+import { User } from '@/types/types';
 
 export const useBanCheck = (user: User | null) => {
     const [isBanModalOpen, setIsBanModalOpen] = useState(false);

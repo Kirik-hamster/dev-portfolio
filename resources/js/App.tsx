@@ -1,8 +1,8 @@
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
 import './bootstrap';
 import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { User, Blog } from './types';
+import { User, Blog } from './types/types';
 
 // Импортируем наши новые компоненты страниц
 import { PremiumLoader } from './components/PremiumLoader';
@@ -26,6 +26,12 @@ function AppContent() {
     const glowRef = useRef<HTMLDivElement>(null);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        fetch('/api/user', { credentials: 'include' }).catch(() => {});
+    }, [location.pathname]);
 
     const handleLogout = async () => {
         try {

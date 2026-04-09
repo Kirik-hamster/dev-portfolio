@@ -15,7 +15,7 @@ import {
     AlignLeft, AlignCenter, Link as LinkIcon, ListTree, UploadCloud, ChevronRight,
     X
 } from 'lucide-react'; 
-import { Article, ArticleInput, User } from '../types';
+import { Article, ArticleInput, User } from '../types/types';
 import { ArticleNavigation } from './ArticlePage/ArticleNavigation';
 import { MobileTocDrawer } from './ui/MobileTocDrawer';
 import { MobileTocToggle } from './ui/MobileTocToggle';
