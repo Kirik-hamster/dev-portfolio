@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, ThumbsUp, Search, ArrowUpRight, Clock, Hash, ChevronDown } from 'lucide-react';
-import { CommentWithArticle, ArticleTag, PaginatedResponse } from '../../types';
+import { CommentWithArticle, ArticleTag, PaginatedResponse } from '../../types/types';
 import { CommentApiService, HistoryParams } from '../../services/CommentApiService';
 import { Pagination } from '../ui/Pagination';
 import { PremiumLoader } from '../PremiumLoader';

@@ -1,7 +1,7 @@
 // resources/js/components/blog/PostCard.tsx
 import React from 'react';
 import { Heart, Star, ShieldCheck, User as UserIcon, FileText, Pencil, Trash2, Eye, Plus, Info } from 'lucide-react';
-import { Article, UserReportContext } from '../../types'; 
+import { Article, UserReportContext } from '../../types/types'; 
 
 interface PostCardProps {
     article: Article;

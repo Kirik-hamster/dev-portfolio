@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserCircle, Shield, CheckCircle, Lock, Key, EyeOff, Eye, Gavel } from 'lucide-react';
-import { User as UserType } from '../../types';
+import { User as UserType } from '../../types/types';
 import { AuthApiService } from '../../services/AuthApiService';
 import { StatusModal } from '../ui/StatusModal';
 

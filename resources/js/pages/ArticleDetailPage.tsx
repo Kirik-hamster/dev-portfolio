@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AuthRequiredModal } from '@/components/ui/AuthRequiredModal';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Article, User, UserReportContext } from '../types';
+import { Article, User, UserReportContext } from '../types/types';
 import { ArticleApiService } from '../services/ArticleApiService';
 import { CommentSection } from '../components/comments/CommentSection';
 import { 

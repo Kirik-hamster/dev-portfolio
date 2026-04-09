@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, ShieldCheck, User as UserIcon } from 'lucide-react';
-import { User, Comment, CommentSort, ErrorModalState, PaginatedResponse } from '../../types';
+import { User, Comment, CommentSort, ErrorModalState, PaginatedResponse, UserReportContext } from '../../types/types';
 import { CommentApiService } from '@/services/CommentApiService';
 import { CommentItem } from './CommentItem';
 import { AuthRequiredModal } from '../ui/AuthRequiredModal';
@@ -15,7 +15,7 @@ interface CommentSectionProps {
     user: User | null;
     onNavigateToLogin: () => void;
     ancestorIds?: number[];
-    onShowUser: (userId: number, context: any) => void;
+    onShowUser: (userId: number, context: UserReportContext) => void;
 }
 
 const MAX_CHARS = 1000;

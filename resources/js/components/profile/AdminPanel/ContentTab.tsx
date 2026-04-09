@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ExternalLink, FileText, Layout, Trash2, UploadCloud, X } from 'lucide-react';
 import { PremiumLoader } from '../../PremiumLoader';
 import { SettingsApiService } from '@/services/SettingsApiService';
-import { Settings } from '@/types';
+import { Settings } from '@/types/types';
 
 interface Props {
     settings: Settings;

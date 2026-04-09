@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User } from '../types';
+import { User } from '../types/types';
 import { useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
-import { User } from '../types';
+import { User } from '../types/types';
 
 // Импорт кусочков
 import { AdminBar } from '../components/HomePage/AdminBar';

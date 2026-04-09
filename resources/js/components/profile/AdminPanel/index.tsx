@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SettingsApiService } from '@/services/SettingsApiService';
-import { MailSettings, PaginatedResponse, User } from '@/types';
+import { MailSettings, PaginatedResponse, User } from '@/types/types';
 
 // Импортируем наши новые кусочки
 import { ConfigTab } from './ConfigTab';
@@ -10,7 +10,7 @@ import { ContentTab } from './ContentTab';
 import { useSettings } from '@/context/SettingsContext';
 import { ModerationApiService } from '@/services/ModerationApiService';
 import { BanUserModal } from '@/components/ui/moderation/BanUserModal';
-import { StatsTab } from './StatsTab';
+import { StatsTab } from './StatsTab/index';
 
 export interface AdminPanelProps {
     allBlogsCount: number; 

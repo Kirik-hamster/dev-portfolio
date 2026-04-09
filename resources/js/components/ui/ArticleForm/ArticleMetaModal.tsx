@@ -3,7 +3,7 @@ import { X, Tag, Link as LinkIcon, Camera, Trash2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { MediaApiService } from '@/services/MediaApiService';
 import { ImageCropModal } from '../ImageCropModal';
-import { User } from '@/types';
+import { User } from '@/types/types';
 import { StatusModal } from '../StatusModal';
 
 interface ArticleMetaModalProps {

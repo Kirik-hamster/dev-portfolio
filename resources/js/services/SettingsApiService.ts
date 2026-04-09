@@ -1,4 +1,4 @@
-import { MailSettings } from "@/types";
+import { MailSettings } from "@/types/types";
 
 import { getHeaders } from "./apiUtils";
 

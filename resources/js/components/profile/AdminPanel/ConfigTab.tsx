@@ -1,5 +1,5 @@
 import React from 'react';
-import { MailSettings } from '@/types';
+import { MailSettings } from '@/types/types';
 
 interface Props {
     mailConfig: MailSettings;

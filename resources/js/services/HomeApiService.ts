@@ -1,4 +1,4 @@
-import { HomeSettings } from "../types";
+import { HomeSettings } from "../types/types";
 import { getHeaders } from "./apiUtils";
 
 export const HomeApiService = {

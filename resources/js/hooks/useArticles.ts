@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Article, BlogPagination } from '../types';
+import { Article, BlogPagination } from '../types/types';
 import { ArticleApiService } from '../services/ArticleApiService';
 
 export function useArticles(
