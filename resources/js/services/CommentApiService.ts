@@ -1,4 +1,4 @@
-import { Comment, CommentWithArticle, PaginatedResponse } from "../types";
+import { Comment, CommentWithArticle, PaginatedResponse } from "../types/types";
 import { getHeaders } from "./apiUtils";
 
 

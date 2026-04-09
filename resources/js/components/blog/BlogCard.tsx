@@ -1,7 +1,7 @@
 // resources/js/components/BlogCard.tsx
 import React from 'react';
 import { Heart, Star, ShieldCheck, User as UserIcon, Folder, Pencil, Trash2, Eye, Plus, Info } from 'lucide-react';
-import { Blog, UserReportContext } from '../../types';
+import { Blog, UserReportContext } from '../../types/types';
 
 interface BlogCardProps {
     blog: Blog;

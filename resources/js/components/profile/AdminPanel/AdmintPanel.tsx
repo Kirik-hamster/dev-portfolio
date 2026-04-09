@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, Settings, Users, Layout } from 'lucide-react';
-import { MailSettings, User, PaginatedResponse } from '@/types';
-import { useSettings } from '@/context/SettingsContext';
+import { ChevronDown, Settings, Users, Layout, BarChart3 } from 'lucide-react';
 
-export type Tab = 'config' | 'users' | 'content';
+export type Tab = 'config' | 'users' | 'content' | 'stats';
 
 interface AdminTabsProps {
     activeTab: Tab;
@@ -14,7 +12,10 @@ const TAB_MAP = {
     config: { label: 'Конфигурация', icon: Settings },
     users: { label: 'Пользователи', icon: Users },
     content: { label: 'Наполнение', icon: Layout },
+    stats: { label: 'Статистика', icon: BarChart3 },
 };
+
+const ALL_TABS: Tab[] = ['config', 'users', 'content', 'stats'];
 
 export const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, onTabChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -52,7 +53,7 @@ export const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, onTabChange }) 
                 {/* Список вкладок (Выпадает вниз) */}
                 {isOpen && (
                     <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-[#0f0f0f] border border-white/10 rounded-[28px] p-2 z-[100] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                        {(['config', 'users', 'content'] as const).map((tab) => {
+                        {ALL_TABS.map((tab) => {
                             const Icon = TAB_MAP[tab].icon;
                             return (
                                 <button
@@ -77,7 +78,7 @@ export const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, onTabChange }) 
 
             {/* 💻 ДЕСКТОП ВЕРСИЯ: Обычные кнопки (как были) */}
             <div className="hidden sm:flex gap-4 p-1 bg-white/5 border border-white/10 rounded-2xl">
-                {(['config', 'users', 'content'] as const).map((tab) => (
+                {ALL_TABS.map((tab) => (
                     <button
                         key={tab}
                         onClick={() => onTabChange(tab)}

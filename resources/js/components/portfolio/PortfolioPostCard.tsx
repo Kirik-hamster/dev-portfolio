@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heart, Star, Edit3, Trash2, Eye, Layout, Plus, MessageSquare } from 'lucide-react';
-import { Article } from '../../types';
+import { Article } from '../../types/types';
 
 interface PortfolioPostCardProps {
     article: Article;

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\AvatarUploadController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\Admin\UserController as AdminUserController; // Админский (через alias)
+use App\Http\Controllers\Admin\StatsController;
 use App\Http\Controllers\ModerationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -128,6 +129,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole']);
         Route::post('/admin/users/{user}/ban', [AdminUserController::class, 'ban']);
         Route::post('/admin/users/{user}/unban', [AdminUserController::class, 'unban']);
+
+        Route::get('/admin/stats/summary', [StatsController::class, 'getSummary']);
+        Route::get('/admin/stats/users', [StatsController::class, 'getUserStats']);
+        Route::get('/admin/stats/details', [StatsController::class, 'getPathDetails']);
     });
     Route::post('/reports', [ModerationController::class, 'report']);
 });

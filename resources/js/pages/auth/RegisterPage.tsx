@@ -1,4 +1,4 @@
-import { User } from '@/types';
+import { User } from '@/types/types';
 import React, { useState } from 'react';
 import { AuthApiService } from '@/services/AuthApiService';
 import { StatusModal } from '@/components/ui/StatusModal';

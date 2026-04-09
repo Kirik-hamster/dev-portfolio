@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate, useNavigate, useParams, NavigateFunction } from 'react-router-dom';
-import { User, Article, Blog } from '../types';
+import { User, Article, Blog } from '../types/types';
 
 // Импорт страниц
 import { HomePage } from '../pages/HomePage';

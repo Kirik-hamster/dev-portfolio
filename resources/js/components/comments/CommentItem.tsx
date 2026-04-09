@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Heart, ShieldCheck, User as UserIcon, Trash2, Pencil, ChevronDown, ChevronUp, Undo2 } from 'lucide-react';
-import { User, Comment, UserReportContext } from '../../types';
+import { User, Comment, UserReportContext } from '../../types/types';
 import { CommentApiService } from '@/services/CommentApiService';
 import { ConfirmModal } from '../ui/ConfirmModel';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Gavel, Clock, ShieldAlert } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { User } from '@/types';
+import { User } from '@/types/types';
 
 interface Props {
     isOpen: boolean;

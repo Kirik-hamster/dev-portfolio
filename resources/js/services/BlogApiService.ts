@@ -1,4 +1,4 @@
-import { Blog, BlogInput, BlogPagination } from '../types';
+import { Blog, BlogInput, BlogPagination } from '../types/types';
 import { getHeaders } from './apiUtils';
 
 const BLOG_URL = '/api/blogs';

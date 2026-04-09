@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Mail, ShieldCheck, Gavel, Unlock, AlertTriangle, Clock } from 'lucide-react';
-import { User } from '@/types';
+import { User } from '@/types/types';
 import { Pagination } from '@/components/ui/Pagination';
 import { UserReportsModal } from '@/components/ui/moderation/UserReportModal';
 

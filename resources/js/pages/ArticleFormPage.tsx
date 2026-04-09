@@ -3,7 +3,7 @@ import { ArticleForm } from '@/components/ArticleForm';
 import { PremiumLoader } from '@/components/PremiumLoader';
 import { StatusModal } from '@/components/ui/StatusModal';
 import { ArticleApiService } from '@/services/ArticleApiService';
-import { Article, ArticleInput, User } from '@/types';
+import { Article, ArticleInput, User } from '@/types/types';
 import React from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { ScrollToTop } from '../components/ui/ScrollToTop';
