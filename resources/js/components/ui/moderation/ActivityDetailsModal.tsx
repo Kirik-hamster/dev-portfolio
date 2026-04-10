@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { RotateCcw } from 'lucide-react';
 import { 
     X, ExternalLink, User as UserIcon, Mail, Fingerprint, 
-    Shield, Ghost, Calendar, Clock, ArrowUpDown, Filter, Hash
+    Shield, Ghost, Calendar, Clock, ArrowUpDown, Filter, Hash,
+    Skull
 } from 'lucide-react';
 import { PremiumLoader } from '../../PremiumLoader';
 import { ModalUserInfo, RawLog } from '@/types/stats';
+import { StatsApiService } from '@/services/StatsApiService';
 
 interface Props {
     isOpen: boolean;
@@ -38,58 +41,89 @@ export const ActivityDetailsModal: React.FC<Props> = ({ isOpen, onClose, loading
         });
     }, [data, activeCategory, sortOrder]);
 
+    const [isResetting, setIsResetting] = useState(false);
+
+    const handleReset = async () => {
+        if (!confirm('Обнулить историю и рейтинг подозрительности?')) return;
+        setIsResetting(true);
+        try {
+            await StatsApiService.resetSuspicion(userInfo?.id || null, userInfo?.ip || '');
+            onClose(); // Закрываем, так как данных больше нет
+            window.location.reload(); // Перезагружаем таблицу
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsResetting(false);
+        }
+    };
+
+    const suspicion = userInfo?.suspicion_score || 0;
+    const isDanger = suspicion >= 80;
+    const isGuest = userInfo?.isGuest && !isDanger;
+
     if (!isOpen) return null;
 
     return createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-6 animate-in fade-in duration-300">
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={onClose} />
             
             <div className="relative w-full h-full sm:h-auto sm:max-w-2xl bg-[#080808] border-x sm:border border-white/10 sm:rounded-[40px] flex flex-col max-h-screen sm:max-h-[90vh] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                 
-                {/* 1. HEADER: Блок пользователя */}
-                <div className={`relative p-6 sm:p-10 border-b border-white/5 ${userInfo?.isGuest ? 'bg-orange-500/5' : 'bg-blue-600/5'}`}>
-                    <button onClick={onClose} className="absolute top-6 right-6 p-2.5 bg-white/5 hover:bg-white hover:text-black text-white rounded-full transition-all z-50 active:scale-90">
-                        <X size={20} />
-                    </button>
+                {/* 🛡 HEADER: Улучшенная верстка чтобы ничего не перекрывало */}
+                <div className={`relative p-6 sm:p-10 border-b border-white/5 transition-colors duration-500 ${
+                    isDanger ? 'bg-red-500/10' : isGuest ? 'bg-orange-500/5' : 'bg-blue-600/5'
+                }`}>
+                    
+                    {/* КНОПКА ЗАКРЫТИЯ (Теперь с фиксированным отступом и фоном) */}
+                    <div className="absolute top-4 right-4 z-[210]">
+                        <button 
+                            onClick={onClose} 
+                            className="p-3 bg-black/50 hover:bg-white hover:text-black text-white rounded-full border border-white/10 transition-all active:scale-90"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
 
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6">
-                        {/* Аватар */}
-                        <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center border-2 shrink-0 ${userInfo?.isGuest ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-blue-600/10 border-blue-500/20 text-blue-500 shadow-[0_0_30px_rgba(37,99,235,0.2)]'}`}>
-                            {userInfo?.isGuest ? <Ghost size={40} /> : <UserIcon size={40} />}
+                    <div className="flex flex-col sm:flex-row items-center gap-6 pr-8"> {/* Добавили pr-8 чтобы текст не залез под X */}
+                        <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center border-2 shrink-0 transition-all ${
+                            isDanger ? 'bg-red-500/20 border-red-500/40 text-red-500 shadow-2xl' :
+                            isGuest ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' :
+                            'bg-blue-600/10 border-blue-500/30 text-blue-500'
+                        }`}>
+                            {isDanger ? <Skull size={40} className="animate-pulse" /> : isGuest ? <Ghost size={40} /> : <UserIcon size={40} />}
                         </div>
-                        
-                        <div className="min-w-0 flex-1">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3">
-                                <h3 className="text-2xl font-black text-white uppercase tracking-tight truncate">
-                                    {userInfo?.name || 'Анонимный гость'}
+
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-col gap-1 mb-4 text-center sm:text-left">
+                                <h3 className={`text-2xl font-black uppercase tracking-tighter truncate ${isDanger ? 'text-red-500' : isGuest ? 'text-orange-500' : 'text-blue-500'}`}>
+                                    {userInfo?.name || 'Visitor'}
                                 </h3>
-                                {!userInfo?.isGuest && userInfo?.role && (
-                                    <span className="inline-flex px-3 py-1 bg-blue-600 text-[9px] font-black uppercase rounded-lg tracking-widest text-white shadow-lg shadow-blue-600/20 w-fit mx-auto sm:mx-0">
-                                        {userInfo.role}
-                                    </span>
-                                )}
-                                {userInfo?.isGuest && (
-                                    <span className="inline-flex px-3 py-1 bg-orange-600/20 border border-orange-500/30 text-[9px] font-black uppercase rounded-lg tracking-widest text-orange-500 w-fit mx-auto sm:mx-0">
-                                        GUEST_VISITOR
-                                    </span>
-                                )}
-                            </div>
-                            
-                            <div className="flex flex-wrap justify-center sm:justify-start gap-4">
-                                {userInfo?.email && (
-                                    <div className="flex items-center gap-2 text-gray-400 text-[10px] font-bold uppercase tracking-wider bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
-                                        <Mail size={12} className="text-blue-500" /> {userInfo.email}
+                                <div className="flex items-center justify-center sm:justify-start gap-2">
+                                    <div className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${
+                                        isDanger ? 'bg-red-500/20 border-red-500/40 text-red-500' : 'bg-green-500/10 text-green-500'
+                                    }`}>
+                                        {suspicion}% RISK
                                     </div>
-                                )}
-                                <div className="flex items-center gap-2 text-gray-400 text-[10px] font-bold uppercase tracking-wider bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
-                                    <Fingerprint size={12} className={userInfo?.isGuest ? 'text-orange-500' : 'text-blue-500'} /> {userInfo?.ip}
+                                    
+                                    {/* КНОПКА АМНИСТИИ */}
+                                    <button 
+                                        onClick={handleReset}
+                                        disabled={isResetting}
+                                        className="flex items-center gap-1.5 px-3 py-1 bg-white/5 hover:bg-white/10 text-gray-500 hover:text-white rounded-lg text-[8px] font-black uppercase transition-all border border-white/5"
+                                    >
+                                        <RotateCcw size={10} className={isResetting ? 'animate-spin' : ''} />
+                                        {isResetting ? 'Сброс...' : 'Амнистия'}
+                                    </button>
                                 </div>
-                                {userInfo?.id && (
-                                    <div className="flex items-center gap-2 text-gray-500 text-[10px] font-bold uppercase bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
-                                        <Hash size={12} /> ID: {userInfo.id}
-                                    </div>
-                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-center sm:justify-start gap-3 text-[10px] font-bold text-gray-500">
+                                    <Fingerprint size={12} className="text-blue-500"/> {userInfo?.ip}
+                                </div>
+                                <div className="text-[10px] text-gray-500 font-medium italic opacity-40 bg-black/40 p-2 rounded-xl border border-white/5">
+                                    {userInfo?.user_agent || 'UA String Empty'}
+                                </div>
                             </div>
                         </div>
                     </div>

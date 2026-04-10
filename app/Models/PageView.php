@@ -10,6 +10,7 @@ class PageView extends Model
         'user_id', 
         'page_path', 
         'ip_address', 
+        'user_agent',
         'is_guest', 
         'viewed_at', 
         'views_count'

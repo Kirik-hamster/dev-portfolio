@@ -14,7 +14,7 @@ export const StatsTab = () => {
     const [summary, setSummary] = useState<StatsSummary | null>(null);
     const [details, setDetails] = useState<UserStatRow[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<'all' | 'users' | 'guests'>('all');
+    const [filter, setFilter] = useState<'all' | 'users' | 'guests' | 'suspicious'>('all');
     const [period, setPeriod] = useState<number>(14);
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -91,7 +91,9 @@ export const StatsTab = () => {
             email: found?.user?.email ?? undefined,
             role: found?.user?.role ?? undefined,
             ip: ip,
-            isGuest: !userId
+            isGuest: !userId,
+            suspicion_score: found?.suspicion_score,
+            user_agent: found?.user_agent
         };
 
         setPathModal({
@@ -103,6 +105,7 @@ export const StatsTab = () => {
 
         try {
             const res = await StatsApiService.getPathDetails(userId, ip, date);
+            // Добавляем проверку, чтобы User-Agent из первой записи лога подтянулся, если его нет в userInfo
             setPathModal(prev => ({ 
                 ...prev, 
                 data: Array.isArray(res) ? res : [], 

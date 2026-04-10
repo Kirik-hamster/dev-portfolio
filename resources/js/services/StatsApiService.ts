@@ -27,5 +27,16 @@ export const StatsApiService = {
             credentials: 'include'
         });
         return response.json();
+    },
+
+    async resetSuspicion(userId: number | null, ip: string) {
+        const body = userId ? { user_id: userId } : { ip_address: ip };
+        const response = await fetch(`/api/admin/stats/reset`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(body),
+            credentials: 'include'
+        });
+        return response.json();
     }
 };

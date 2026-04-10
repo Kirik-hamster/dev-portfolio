@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import {
   Eye, Layout, Briefcase, MessageSquare, ChevronDown,
-  User as UserIcon, Ghost, Filter, Shield, Key, UserCircle,
+  User as UserIcon, Ghost, Skull, Filter, Shield, Key, UserCircle,
   Plus,
-  Minus
+  Minus,
+  AlertTriangle
 } from 'lucide-react';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatsSummary, UserStatRow, HistoryItem } from '@/types/stats'; 
@@ -119,21 +120,47 @@ export const StatsTable: React.FC<StatsTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {details.map((row) => {
-              const rid = row.user_id ? `u-${row.user_id}` : `g-${row.ip_address}`;
+            {details.map((row, index) => {
+              // 🛡 УНИКАЛЬНЫЙ КЛЮЧ: добавляем индекс, чтобы не было дублей ключей React
+              const rid = row.user_id 
+                ? `u-${row.user_id}-${index}` 
+                : `g-${row.ip_address}-${index}`;
               const isEx = expandedId === rid;
+
+              // 🛡 ЛОГИКА ОПРЕДЕЛЕНИЯ ЦВЕТА И УГРОЗЫ
+              const score = row.suspicion_score || 0;
+              const isDanger = score >= 80; // Красный (Бот)
+              const isGuest = row.is_guest && !isDanger; // Желтый (Гость)
+              const isUser = !row.is_guest && !isDanger; // Синий (Юзер)
+
               return (
                 <React.Fragment key={rid}>
-                  <tr className="group hover:bg-white/[0.02] transition-all border-l-2 border-transparent hover:border-blue-500">
+                  <tr className={`group transition-all border-l-2 ${
+                    isDanger ? 'bg-red-500/[0.03] border-red-500' : 
+                    isGuest ? 'hover:bg-orange-500/[0.01] border-transparent hover:border-orange-500' :
+                    'hover:bg-blue-500/[0.02] border-transparent hover:border-blue-500'
+                  }`}>
                     <td className="p-6 cursor-pointer" onClick={() => setExpandedId(isEx ? null : rid)}>
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${row.is_guest ? 'bg-orange-500/5 border-orange-500/20 text-orange-500' : 'bg-blue-500/5 border-blue-500/20 text-blue-500'}`}>
-                          {row.is_guest ? <Ghost size={18} /> : <UserIcon size={18} />}
+                        {/* ИКОНКА СУБЪЕКТА */}
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${
+                          isDanger ? 'bg-red-500/10 border-red-500/20 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' :
+                          isGuest ? 'bg-orange-500/5 border-orange-500/20 text-orange-500' :
+                          'bg-blue-500/5 border-blue-500/20 text-blue-500'
+                        }`}>
+                          {isDanger ? <Skull size={18} className="animate-pulse" /> : 
+                          row.is_guest ? <Ghost size={18} /> : <UserIcon size={18} />}
                         </div>
+
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-black text-white uppercase tracking-tight truncate">
-                            {row.user?.name || 'Гость'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-black uppercase tracking-tight truncate ${
+                              isDanger ? 'text-red-500' : isGuest ? 'text-orange-500' : 'text-blue-500'
+                            }`}>
+                              {row.user?.name || (isDanger ? 'Threat Bot' : 'Гость')}
+                            </span>
+                            {score > 0 && score < 80 && <AlertTriangle size={12} className="text-orange-500" />}
+                          </div>
                           <span className="text-[10px] text-gray-600 font-bold">{row.ip_address}</span>
                         </div>
                       </div>
@@ -190,43 +217,79 @@ export const StatsTable: React.FC<StatsTableProps> = ({
           const rid = row.user_id ? `u-${row.user_id}` : `g-${row.ip_address}`;
           const isEx = expandedId === rid;
 
+          // 🛡 ЛОГИКА УГРОЗЫ
+          const score = row.suspicion_score || 0;
+          const isDanger = score >= 80;
+          const isWarning = score > 0 && score < 80;
+
           return (
-            <div key={rid} className="bg-white/[0.02] border border-white/10 rounded-2xl p-4">
+            <div 
+              key={rid} 
+              className={`border transition-all duration-300 rounded-3xl p-5 ${
+                isDanger 
+                  ? 'bg-red-500/[0.05] border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]' 
+                  : 'bg-white/[0.02] border-white/10'
+              }`}
+            >
               {/* Заголовок карточки */}
-              <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${row.is_guest ? 'bg-orange-500/5 border-orange-500/20 text-orange-500' : 'bg-blue-500/5 border-blue-500/20 text-blue-500'}`}>
-                  {row.is_guest ? <Ghost size={18} /> : <UserIcon size={18} />}
+              <div className="flex items-start gap-4">
+                {/* ИКОНКА (Skull / Ghost / User) */}
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 transition-all ${
+                  isDanger 
+                    ? 'bg-red-500/10 border-red-500/30 text-red-500 shadow-lg shadow-red-500/20' 
+                    : isWarning ? 'bg-orange-500/10 border-orange-500/20 text-orange-500'
+                    : row.is_guest ? 'bg-white/5 border-white/10 text-gray-500' 
+                    : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
+                }`}>
+                  {isDanger ? <Skull size={22} className="animate-pulse" /> : row.is_guest ? <Ghost size={22} /> : <UserIcon size={22} />}
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-white uppercase truncate">
-                      {row.user?.name || 'Гость'}
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`text-sm font-black uppercase truncate ${isDanger ? 'text-red-500' : 'text-white'}`}>
+                        {row.user?.name || (isDanger ? 'Threat Client' : 'Гость')}
+                      </span>
+                      {isWarning && <AlertTriangle size={12} className="text-orange-500" />}
+                    </div>
+                    
                     <button
                       onClick={() => setExpandedId(isEx ? null : rid)}
-                      className="flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest"
+                      className="flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded-lg"
                     >
                       {new Date(row.last_visit).toLocaleDateString()}
                       <ChevronDown size={14} className={`transition-transform duration-300 ${isEx ? 'rotate-180' : ''}`} />
                     </button>
                   </div>
-                  <span className="text-[10px] text-gray-600 font-bold block mt-0.5">{row.ip_address}</span>
+
+                  {/* IP + WHOIS */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-gray-600 font-bold">{row.ip_address}</span>
+                    <div className="w-1 h-1 rounded-full bg-white/10" />
+                    <a 
+                      href={`https://whois.domaintools.com/${row.ip_address}`} 
+                      target="_blank" 
+                      className="text-[9px] text-blue-500/60 font-black uppercase tracking-tighter hover:text-blue-400 transition-colors"
+                    >
+                      Whois
+                    </a>
+                  </div>
                 </div>
               </div>
 
-              {/* Сетка метрик */}
-              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                <div className="flex justify-between items-center border-b border-white/10 pb-1">
-                  <span className="text-gray-500 flex items-center gap-1"><Eye size={12} /> Всего</span>
+              {/* Сетка метрик (как была) */}
+              <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-gray-500 flex items-center gap-2"><Eye size={12} /> Всего</span>
                   <button
                     onClick={() => openDetails(row.user_id, row.ip_address, row.last_visit)}
-                    className="font-black text-blue-500"
+                    className={`font-black ${isDanger ? 'text-red-400' : 'text-blue-500'}`}
                   >
                     {row.total}
                   </button>
                 </div>
-                <div className="flex justify-between items-center border-b border-white/10 pb-1">
-                  <span className="text-gray-500 flex items-center gap-1"><Layout size={12} /> Главная</span>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-gray-500 flex items-center gap-2"><Layout size={12} /> Главная</span>
                   <span className="font-bold text-white">{row.home}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-white/10 pb-1">

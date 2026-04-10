@@ -76,7 +76,6 @@ export const ArticleApiService = {
     async save(data: ArticleInput, blogId?: number, id?: number) {
         if (!id && !blogId) {
             console.error("ОШИБКА: blogId потерялся перед отправкой!");
-            alert("Ошибка: Не выбрана папка. Вернитесь в профиль и выберите папку снова.");
             return Promise.reject("Missing blogId");
         }
 
