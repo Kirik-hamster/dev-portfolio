@@ -18,6 +18,10 @@ export const StatsTab = () => {
     const [period, setPeriod] = useState<number>(14);
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [expandedId, setExpandedId] = useState<string | null>(null);
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [perPage, setPerPage] = useState(50);
     
     const [pathModal, setPathModal] = useState<{
         isOpen: boolean;
@@ -44,27 +48,43 @@ export const StatsTab = () => {
                 finalFrom = isoString.split('T')[0] ?? '';
             }
 
-            const [s, d] = await Promise.all([
+            const [s, response] = await Promise.all([
                 StatsApiService.getSummary(filter, finalFrom, dateRange.to || ''),
-                StatsApiService.getUserStats(filter, finalFrom, dateRange.to || '')
+                StatsApiService.getUserStats(filter, finalFrom, dateRange.to || '', currentPage, perPage)
             ]);
             
             setSummary(s);
-            setDetails(Array.isArray(d) ? d : []);
+            if (response && response.data) {
+                setDetails(response.data);
+                setLastPage(response.last_page);
+                setCurrentPage(response.current_page);
+            } else {
+                setDetails([]);
+            }
         } catch (e) {
             console.error("Ошибка аналитики:", e);
             setDetails([]);
         } finally {
             setLoading(false);
         }
-    }, [filter, period, dateRange]);
+    }, [filter, period, dateRange, currentPage, perPage])
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    // ХЕНДЛЕРЫ ДЛЯ ТАБЛИЦЫ
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Скроллим наверх при переключении
+    };
+
+    const handlePerPageChange = (count: number) => {
+        setPerPage(count);
+        setCurrentPage(1); // При смене кол-ва строк всегда прыгаем на 1 страницу
+    };
 
     const openDetails = async (userId: number | null, ip: string, date: string) => {
         const found = details.find(d => userId ? d.user_id === userId : (d.ip_address === ip && d.is_guest));
         
-        // 🛡 ИСПРАВЛЕНИЕ ОШИБКИ 2375: Явное соответствие ModalUserInfo
         const modalInfo: ModalUserInfo = {
             id: found?.user?.id ?? undefined,
             name: found?.user?.name ?? 'Анонимный гость',
@@ -122,6 +142,11 @@ export const StatsTab = () => {
                 expandedId={expandedId} 
                 setExpandedId={setExpandedId} 
                 openDetails={openDetails} 
+                currentPage={currentPage}
+                lastPage={lastPage}
+                perPage={perPage}
+                onPageChange={handlePageChange}
+                onPerPageChange={handlePerPageChange}
             />
 
             <ActivityDetailsModal 

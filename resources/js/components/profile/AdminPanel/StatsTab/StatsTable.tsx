@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Eye, Layout, Briefcase, MessageSquare, ChevronDown,
-  User as UserIcon, Ghost, Filter, Shield, Key, UserCircle
+  User as UserIcon, Ghost, Filter, Shield, Key, UserCircle,
+  Plus,
+  Minus
 } from 'lucide-react';
-import { StatsSummary, UserStatRow, HistoryItem } from '@/types/stats';
+import { Pagination } from '@/components/ui/Pagination';
+import { StatsSummary, UserStatRow, HistoryItem } from '@/types/stats'; 
+
 
 interface StatsTableProps {
   details: UserStatRow[];
@@ -11,18 +15,89 @@ interface StatsTableProps {
   expandedId: string | null;
   setExpandedId: (id: string | null) => void;
   openDetails: (userId: number | null, ip: string, date: string) => void;
+  currentPage: number;
+  lastPage: number;
+  perPage: number;
+  onPageChange: (page: number) => void;
+  onPerPageChange: (count: number) => void;
 }
 
 export const StatsTable: React.FC<StatsTableProps> = ({
-  details, summary, expandedId, setExpandedId, openDetails
+  details, summary, expandedId, setExpandedId, openDetails,
+  currentPage, lastPage, perPage, onPageChange, onPerPageChange
 }) => {
+  const tableTopRef = useRef<HTMLDivElement>(null);
+  // Локальный стейт для текста в инпуте, чтобы можно было стирать всё
+  const [inputValue, setInputValue] = React.useState(perPage.toString());
+
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+      if (isFirstRender.current) {
+          isFirstRender.current = false;
+          window.scrollTo(0, 0); 
+          return; 
+      }
+
+      if (tableTopRef.current) {
+          const yOffset = -80; 
+          const element = tableTopRef.current;
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+          window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+}, [currentPage]);
+  React.useEffect(() => {
+      setInputValue(perPage.toString());
+  }, [perPage]);
   return (
-    <div className="bg-white/[0.01] border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
-      {/* Общий заголовок */}
+    <div ref={tableTopRef} className="bg-white/[0.01] border border-white/5 rounded-[40px] shadow-2xl flex flex-col">
+      
+      {/* 1. ШАПКА: Заголовок слева, инпут справа */}
       <div className="p-8 border-b border-white/5 bg-white/[0.01] flex items-center justify-between">
         <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white flex items-center gap-3">
           <Filter size={14} className="text-blue-500" /> Подробная статистика активности
         </h3>
+
+        {/* Настройка количества строк */}
+        <div className="flex items-center gap-1 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5">
+          <Layout size={12} className="text-gray-500" />
+          
+          <button
+            onClick={() => onPerPageChange(Math.max(1, perPage - 1))}
+            className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+          >
+            <Minus size={12} />
+          </button>
+          
+          <input
+            type="text"
+            inputMode="numeric"
+            value={inputValue} // Используем локальный стейт
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, ''); // Только цифры
+              setInputValue(raw);
+
+              const val = parseInt(raw, 10);
+              if (!isNaN(val) && val > 0) {
+                onPerPageChange(val); 
+              }
+            }}
+            onBlur={() => {
+              setInputValue(perPage.toString());
+            }}
+            className="w-8 bg-transparent border-none outline-none text-blue-500 text-xs font-black text-center p-0"
+          />
+          
+          <button
+            onClick={() => onPerPageChange(perPage + 1)}
+            className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+          >
+            <Plus size={12} />
+          </button>
+          
+          <span className="text-[9px] text-gray-600 font-black uppercase ml-1">Строк</span>
+        </div>
       </div>
 
       {/* ========== ДЕСКТОП (sm и выше) ========== */}
@@ -106,21 +181,6 @@ export const StatsTable: React.FC<StatsTableProps> = ({
               );
             })}
           </tbody>
-          <tfoot className="bg-white/[0.05] border-t border-white/10 text-[9px] font-black text-white uppercase tracking-widest">
-            <tr>
-              <td className="p-8">ИТОГО ПО СИСТЕМЕ</td>
-              <td className="p-8 text-center border-x border-white/5 text-blue-500 text-sm shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]">
-                {summary?.total_views ?? 0}
-              </td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.home ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.portfolio ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.blogs ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.profile ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.admin ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.auth ?? 0}</td>
-              <td className="p-8"></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
 
@@ -222,25 +282,34 @@ export const StatsTable: React.FC<StatsTableProps> = ({
             </div>
           );
         })}
-
-        {/* Итоговая карточка (мобильная) */}
-        {summary && (
-          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-black text-white uppercase tracking-widest">ИТОГО ПО СИСТЕМЕ</span>
-              <span className="text-sm font-black text-blue-500">{summary.total_views}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
-              <div className="flex justify-between"><span className="text-gray-500">Главная</span> <span className="font-bold text-white">{summary.column_totals?.home ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Кейсы</span> <span className="font-bold text-white">{summary.column_totals?.portfolio ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Блоги</span> <span className="font-bold text-white">{summary.column_totals?.blogs ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Профиль</span> <span className="font-bold text-white">{summary.column_totals?.profile ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Админ</span> <span className="font-bold text-white">{summary.column_totals?.admin ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Auth</span> <span className="font-bold text-white">{summary.column_totals?.auth ?? 0}</span></div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* 4. ПАГИНАЦИЯ (Ниже списка) */}
+      {lastPage > 1 && (
+        <div className="p-8 border-t border-white/5 flex justify-center">
+          <Pagination 
+            currentPage={currentPage} 
+            lastPage={lastPage} 
+            onPageChange={onPageChange} 
+          />
+        </div>
+      )}
+
+      {/* 5. ИТОГИ (Всегда внизу) */}
+      {summary && (
+        <div className="bg-white/[0.04] border-t border-white/10 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] opacity-40">Итоговые показатели системы</span>
+          <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Всего</span><span className="text-sm font-black text-blue-500">{summary.total_views}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Главная</span><span className="text-sm font-black text-white">{summary.column_totals?.home}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Кейсы</span><span className="text-sm font-black text-white">{summary.column_totals?.portfolio}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Блоги</span><span className="text-sm font-black text-white">{summary.column_totals?.blogs}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Профиль</span><span className="text-sm font-black text-white">{summary.column_totals?.profile}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Админ</span><span className="text-sm font-black text-white">{summary.column_totals?.admin}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Auth</span><span className="text-sm font-black text-white">{summary.column_totals?.auth}</span></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

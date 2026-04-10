@@ -14,12 +14,37 @@ class StatsController extends Controller
     private function getCategorySql()
     {
         return [
-            DB::raw("SUM(CASE WHEN page_path = '/' OR page_path LIKE '/api/home%' THEN views_count ELSE 0 END) as home"),
-            DB::raw("SUM(CASE WHEN page_path LIKE '/portfolio%' OR page_path LIKE '/api/portfolio%' OR page_path LIKE '/api/blogs/1/%' THEN views_count ELSE 0 END) as portfolio"),
-            DB::raw("SUM(CASE WHEN (page_path LIKE '/blogs%' OR page_path LIKE '/article%') AND page_path NOT LIKE '/api/blogs/1/%' THEN views_count ELSE 0 END) as blogs"),
-            DB::raw("SUM(CASE WHEN page_path LIKE '/api/admin%' OR page_path LIKE '/profile/admin%' THEN views_count ELSE 0 END) as admin"),
-            DB::raw("SUM(CASE WHEN page_path LIKE '%login%' OR page_path LIKE '%register%' OR page_path LIKE '%verify%' OR page_path LIKE '%csrf%' THEN views_count ELSE 0 END) as auth"),
-            DB::raw("SUM(CASE WHEN (page_path LIKE '/profile%' AND page_path NOT LIKE '/profile/admin%') OR page_path = '/api/user' THEN views_count ELSE 0 END) as profile")
+            DB::raw("SUM(CASE 
+                WHEN page_path = '/' 
+                OR page_path LIKE '/api/home%' 
+                THEN views_count ELSE 0 END) as home"),
+            DB::raw("SUM(CASE 
+                WHEN page_path LIKE '/portfolio%' 
+                OR page_path LIKE '/api/portfolio%' 
+                OR page_path LIKE '/api/blogs/1/%' 
+                THEN views_count ELSE 0 END) as portfolio"),
+            DB::raw("SUM(CASE 
+                WHEN (page_path LIKE '/blogs%' 
+                OR page_path LIKE '/article%'
+                OR page_path LIKE '/api/articles%'
+                OR page_path LIKE '/api/blogs%') 
+                AND page_path NOT LIKE '/api/blogs/1/%'
+                THEN views_count ELSE 0 END) as blogs"),
+            DB::raw("SUM(CASE 
+                WHEN page_path LIKE '/api/admin%' 
+                OR page_path LIKE '/profile/admin%' 
+                THEN views_count ELSE 0 END) as admin"),
+            DB::raw("SUM(CASE 
+                WHEN page_path LIKE '%login%' 
+                OR page_path LIKE '%register%' 
+                OR page_path LIKE '%verify%' 
+                OR page_path LIKE '%csrf%' 
+                THEN views_count ELSE 0 END) as auth"),
+            DB::raw("SUM(CASE 
+                WHEN (page_path LIKE '/profile%' 
+                AND page_path NOT LIKE '/profile/admin%') 
+                AND page_path != '/api/user' 
+                THEN views_count ELSE 0 END) as profile")
         ];
     }
 
@@ -57,6 +82,8 @@ class StatsController extends Controller
             $type = $request->query('type', 'all');
             $from = $request->query('from');
             $to = $request->query('to');
+            // ⚡️ Добавляем получение количества строк из запроса (по дефолту 50)
+            $perPage = $request->query('per_page', 50); 
 
             $query = PageView::select(
                 array_merge(
@@ -73,32 +100,35 @@ class StatsController extends Controller
             $results = $query->groupBy('user_id', 'ip_address', 'is_guest')
                 ->with('user:id,name,email')
                 ->orderBy('last_visit', 'desc')
-                ->get()
-                ->map(function($item) use ($from, $to) {
-                    $historyQuery = PageView::select(
-                        array_merge(
-                            ['viewed_at', DB::raw('SUM(views_count) as total'), DB::raw("GROUP_CONCAT(DISTINCT page_path) as paths_list")],
-                            $this->getCategorySql()
-                        )
+                ->paginate((int)$perPage);
+
+            // Так как paginate вернул объект LengthAwarePaginator, 
+            // нам нужно пройтись по его коллекции элементов, чтобы добавить историю
+            $results->getCollection()->transform(function($item) use ($from, $to) {
+                $historyQuery = PageView::select(
+                    array_merge(
+                        ['viewed_at', DB::raw('SUM(views_count) as total')],
+                        $this->getCategorySql()
                     )
-                    ->where('ip_address', $item->ip_address)
-                    ->where('user_id', $item->user_id);
+                )
+                ->where('ip_address', $item->ip_address)
+                ->where('user_id', $item->user_id);
 
-                    if ($from) $historyQuery->where('viewed_at', '>=', $from);
-                    if ($to) $historyQuery->where('viewed_at', '<=', $to);
+                if ($from) $historyQuery->where('viewed_at', '>=', $from);
+                if ($to) $historyQuery->where('viewed_at', '<=', $to);
 
-                    $item->history = $historyQuery->groupBy('viewed_at')
-                        ->orderBy('viewed_at', 'desc')
-                        ->get();
-                    return $item;
-                });
+                $item->history = $historyQuery->groupBy('viewed_at')
+                    ->orderBy('viewed_at', 'desc')
+                    ->get();
+                return $item;
+            });
 
+            // Возвращаем весь объект пагинации (там внутри будет ключ 'data' с твоими строками)
             return response()->json($results);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
     public function getPathDetails(Request $request) {
         $query = PageView::query()->where('viewed_at', $request->date);
         if ($request->user_id) {

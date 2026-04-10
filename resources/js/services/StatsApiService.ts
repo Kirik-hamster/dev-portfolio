@@ -9,11 +9,14 @@ export const StatsApiService = {
         return response.json();
     },
 
-    async getUserStats(type = 'all', from = '', to = '') {
-        const response = await fetch(`/api/admin/stats/users?type=${type}&from=${from}&to=${to}`, {
-            headers: getHeaders(),
-            credentials: 'include'
-        });
+    async getUserStats(type = 'all', from = '', to = '', page = 1, perPage = 50) {
+        const response = await fetch(
+            `/api/admin/stats/users?type=${type}&from=${from}&to=${to}&page=${page}&per_page=${perPage}`, 
+            {
+                headers: getHeaders(),
+                credentials: 'include'
+            }
+        );
         return response.json();
     },
 
