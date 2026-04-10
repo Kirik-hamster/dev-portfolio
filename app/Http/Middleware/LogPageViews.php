@@ -46,6 +46,7 @@ class LogPageViews
                 [
                     'is_guest'    => !Auth::check(),
                     'views_count' => \DB::raw('views_count + 1'),
+                    'user_agent'  => $request->userAgent(),
                 ]
             );
         }

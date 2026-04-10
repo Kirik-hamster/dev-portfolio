@@ -4,8 +4,8 @@ import { StatsSummary } from '@/types/stats';
 
 interface StatsCardsProps {
     summary: StatsSummary | null;
-    filter: 'all' | 'users' | 'guests';
-    setFilter: (t: 'all' | 'users' | 'guests') => void;
+    filter: 'all' | 'users' | 'guests' | 'suspicious'; 
+    setFilter: (t: 'all' | 'users' | 'guests' | 'suspicious') => void;
 }
 
 export const StatsCards: React.FC<StatsCardsProps> = ({ summary, filter, setFilter }) => {
@@ -46,18 +46,17 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ summary, filter, setFilt
                     </div>
                 </div>
 
-                {/* Группа: Фильтры (Адаптивные) */}
-                <div className="flex bg-black/40 p-1 rounded-xl sm:rounded-2xl border border-white/5 shrink-0 self-start md:self-center w-full md:w-auto">
-                    {(['all', 'users', 'guests'] as const).map(t => (
+                <div className="flex bg-black/40 p-1 rounded-xl sm:rounded-2xl border border-white/5 w-full md:w-auto overflow-x-auto">
+                    {(['all', 'users', 'guests', 'suspicious'] as const).map(t => (
                         <button 
                             key={t} 
                             onClick={() => setFilter(t)} 
                             className={`flex-1 md:flex-none px-3 sm:px-5 py-2 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase transition-all whitespace-nowrap
                                 ${filter === t 
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                                    ? (t === 'suspicious' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white') 
                                     : 'text-gray-500 hover:text-white'}`}
                         >
-                            {t === 'all' ? 'Все' : t === 'users' ? 'Юзеры' : 'Гости'}
+                            {t === 'all' ? 'Все' : t === 'users' ? 'Юзеры' : t === 'guests' ? 'Гости' : 'Подозрительные'}
                         </button>
                     ))}
                 </div>

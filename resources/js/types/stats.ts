@@ -38,6 +38,8 @@ export interface UserStatRow extends ColumnTotals {
         role: string;
     };
     history: HistoryItem[];
+    suspicion_score?: number;
+    user_agent?: string;
 }
 
 export interface ModalUserInfo {
@@ -47,6 +49,8 @@ export interface ModalUserInfo {
     role?: string | undefined;
     ip: string;
     isGuest: boolean;
+    suspicion_score?: number | undefined; 
+    user_agent?: string | undefined;
 }
 
 export interface RawLog {
@@ -54,4 +58,5 @@ export interface RawLog {
     views_count: number;
     updated_at: string;
     viewed_at: string;
+    user_agent?: string;
 }

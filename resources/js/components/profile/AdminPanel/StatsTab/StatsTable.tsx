@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Eye, Layout, Briefcase, MessageSquare, ChevronDown,
-  User as UserIcon, Ghost, Filter, Shield, Key, UserCircle
+  User as UserIcon, Ghost, Skull, Filter, Shield, Key, UserCircle,
+  Plus,
+  Minus,
+  AlertTriangle
 } from 'lucide-react';
-import { StatsSummary, UserStatRow, HistoryItem } from '@/types/stats';
+import { Pagination } from '@/components/ui/Pagination';
+import { StatsSummary, UserStatRow, HistoryItem } from '@/types/stats'; 
+
 
 interface StatsTableProps {
   details: UserStatRow[];
@@ -11,18 +16,89 @@ interface StatsTableProps {
   expandedId: string | null;
   setExpandedId: (id: string | null) => void;
   openDetails: (userId: number | null, ip: string, date: string) => void;
+  currentPage: number;
+  lastPage: number;
+  perPage: number;
+  onPageChange: (page: number) => void;
+  onPerPageChange: (count: number) => void;
 }
 
 export const StatsTable: React.FC<StatsTableProps> = ({
-  details, summary, expandedId, setExpandedId, openDetails
+  details, summary, expandedId, setExpandedId, openDetails,
+  currentPage, lastPage, perPage, onPageChange, onPerPageChange
 }) => {
+  const tableTopRef = useRef<HTMLDivElement>(null);
+  // Локальный стейт для текста в инпуте, чтобы можно было стирать всё
+  const [inputValue, setInputValue] = React.useState(perPage.toString());
+
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+      if (isFirstRender.current) {
+          isFirstRender.current = false;
+          window.scrollTo(0, 0); 
+          return; 
+      }
+
+      if (tableTopRef.current) {
+          const yOffset = -80; 
+          const element = tableTopRef.current;
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+          window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+}, [currentPage]);
+  React.useEffect(() => {
+      setInputValue(perPage.toString());
+  }, [perPage]);
   return (
-    <div className="bg-white/[0.01] border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
-      {/* Общий заголовок */}
+    <div ref={tableTopRef} className="bg-white/[0.01] border border-white/5 rounded-[40px] shadow-2xl flex flex-col">
+      
+      {/* 1. ШАПКА: Заголовок слева, инпут справа */}
       <div className="p-8 border-b border-white/5 bg-white/[0.01] flex items-center justify-between">
         <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white flex items-center gap-3">
           <Filter size={14} className="text-blue-500" /> Подробная статистика активности
         </h3>
+
+        {/* Настройка количества строк */}
+        <div className="flex items-center gap-1 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5">
+          <Layout size={12} className="text-gray-500" />
+          
+          <button
+            onClick={() => onPerPageChange(Math.max(1, perPage - 1))}
+            className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+          >
+            <Minus size={12} />
+          </button>
+          
+          <input
+            type="text"
+            inputMode="numeric"
+            value={inputValue} // Используем локальный стейт
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, ''); // Только цифры
+              setInputValue(raw);
+
+              const val = parseInt(raw, 10);
+              if (!isNaN(val) && val > 0) {
+                onPerPageChange(val); 
+              }
+            }}
+            onBlur={() => {
+              setInputValue(perPage.toString());
+            }}
+            className="w-8 bg-transparent border-none outline-none text-blue-500 text-xs font-black text-center p-0"
+          />
+          
+          <button
+            onClick={() => onPerPageChange(perPage + 1)}
+            className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+          >
+            <Plus size={12} />
+          </button>
+          
+          <span className="text-[9px] text-gray-600 font-black uppercase ml-1">Строк</span>
+        </div>
       </div>
 
       {/* ========== ДЕСКТОП (sm и выше) ========== */}
@@ -44,21 +120,47 @@ export const StatsTable: React.FC<StatsTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {details.map((row) => {
-              const rid = row.user_id ? `u-${row.user_id}` : `g-${row.ip_address}`;
+            {details.map((row, index) => {
+              // 🛡 УНИКАЛЬНЫЙ КЛЮЧ: добавляем индекс, чтобы не было дублей ключей React
+              const rid = row.user_id 
+                ? `u-${row.user_id}-${index}` 
+                : `g-${row.ip_address}-${index}`;
               const isEx = expandedId === rid;
+
+              // 🛡 ЛОГИКА ОПРЕДЕЛЕНИЯ ЦВЕТА И УГРОЗЫ
+              const score = row.suspicion_score || 0;
+              const isDanger = score >= 80; // Красный (Бот)
+              const isGuest = row.is_guest && !isDanger; // Желтый (Гость)
+              const isUser = !row.is_guest && !isDanger; // Синий (Юзер)
+
               return (
                 <React.Fragment key={rid}>
-                  <tr className="group hover:bg-white/[0.02] transition-all border-l-2 border-transparent hover:border-blue-500">
+                  <tr className={`group transition-all border-l-2 ${
+                    isDanger ? 'bg-red-500/[0.03] border-red-500' : 
+                    isGuest ? 'hover:bg-orange-500/[0.01] border-transparent hover:border-orange-500' :
+                    'hover:bg-blue-500/[0.02] border-transparent hover:border-blue-500'
+                  }`}>
                     <td className="p-6 cursor-pointer" onClick={() => setExpandedId(isEx ? null : rid)}>
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${row.is_guest ? 'bg-orange-500/5 border-orange-500/20 text-orange-500' : 'bg-blue-500/5 border-blue-500/20 text-blue-500'}`}>
-                          {row.is_guest ? <Ghost size={18} /> : <UserIcon size={18} />}
+                        {/* ИКОНКА СУБЪЕКТА */}
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${
+                          isDanger ? 'bg-red-500/10 border-red-500/20 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' :
+                          isGuest ? 'bg-orange-500/5 border-orange-500/20 text-orange-500' :
+                          'bg-blue-500/5 border-blue-500/20 text-blue-500'
+                        }`}>
+                          {isDanger ? <Skull size={18} className="animate-pulse" /> : 
+                          row.is_guest ? <Ghost size={18} /> : <UserIcon size={18} />}
                         </div>
+
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-black text-white uppercase tracking-tight truncate">
-                            {row.user?.name || 'Гость'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-black uppercase tracking-tight truncate ${
+                              isDanger ? 'text-red-500' : isGuest ? 'text-orange-500' : 'text-blue-500'
+                            }`}>
+                              {row.user?.name || (isDanger ? 'Threat Bot' : 'Гость')}
+                            </span>
+                            {score > 0 && score < 80 && <AlertTriangle size={12} className="text-orange-500" />}
+                          </div>
                           <span className="text-[10px] text-gray-600 font-bold">{row.ip_address}</span>
                         </div>
                       </div>
@@ -106,21 +208,6 @@ export const StatsTable: React.FC<StatsTableProps> = ({
               );
             })}
           </tbody>
-          <tfoot className="bg-white/[0.05] border-t border-white/10 text-[9px] font-black text-white uppercase tracking-widest">
-            <tr>
-              <td className="p-8">ИТОГО ПО СИСТЕМЕ</td>
-              <td className="p-8 text-center border-x border-white/5 text-blue-500 text-sm shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]">
-                {summary?.total_views ?? 0}
-              </td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.home ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.portfolio ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.blogs ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.profile ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.admin ?? 0}</td>
-              <td className="p-8 text-center text-gray-500">{summary?.column_totals?.auth ?? 0}</td>
-              <td className="p-8"></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
 
@@ -130,43 +217,79 @@ export const StatsTable: React.FC<StatsTableProps> = ({
           const rid = row.user_id ? `u-${row.user_id}` : `g-${row.ip_address}`;
           const isEx = expandedId === rid;
 
+          // 🛡 ЛОГИКА УГРОЗЫ
+          const score = row.suspicion_score || 0;
+          const isDanger = score >= 80;
+          const isWarning = score > 0 && score < 80;
+
           return (
-            <div key={rid} className="bg-white/[0.02] border border-white/10 rounded-2xl p-4">
+            <div 
+              key={rid} 
+              className={`border transition-all duration-300 rounded-3xl p-5 ${
+                isDanger 
+                  ? 'bg-red-500/[0.05] border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]' 
+                  : 'bg-white/[0.02] border-white/10'
+              }`}
+            >
               {/* Заголовок карточки */}
-              <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${row.is_guest ? 'bg-orange-500/5 border-orange-500/20 text-orange-500' : 'bg-blue-500/5 border-blue-500/20 text-blue-500'}`}>
-                  {row.is_guest ? <Ghost size={18} /> : <UserIcon size={18} />}
+              <div className="flex items-start gap-4">
+                {/* ИКОНКА (Skull / Ghost / User) */}
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 transition-all ${
+                  isDanger 
+                    ? 'bg-red-500/10 border-red-500/30 text-red-500 shadow-lg shadow-red-500/20' 
+                    : isWarning ? 'bg-orange-500/10 border-orange-500/20 text-orange-500'
+                    : row.is_guest ? 'bg-white/5 border-white/10 text-gray-500' 
+                    : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
+                }`}>
+                  {isDanger ? <Skull size={22} className="animate-pulse" /> : row.is_guest ? <Ghost size={22} /> : <UserIcon size={22} />}
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-white uppercase truncate">
-                      {row.user?.name || 'Гость'}
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`text-sm font-black uppercase truncate ${isDanger ? 'text-red-500' : 'text-white'}`}>
+                        {row.user?.name || (isDanger ? 'Threat Client' : 'Гость')}
+                      </span>
+                      {isWarning && <AlertTriangle size={12} className="text-orange-500" />}
+                    </div>
+                    
                     <button
                       onClick={() => setExpandedId(isEx ? null : rid)}
-                      className="flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest"
+                      className="flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded-lg"
                     >
                       {new Date(row.last_visit).toLocaleDateString()}
                       <ChevronDown size={14} className={`transition-transform duration-300 ${isEx ? 'rotate-180' : ''}`} />
                     </button>
                   </div>
-                  <span className="text-[10px] text-gray-600 font-bold block mt-0.5">{row.ip_address}</span>
+
+                  {/* IP + WHOIS */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-gray-600 font-bold">{row.ip_address}</span>
+                    <div className="w-1 h-1 rounded-full bg-white/10" />
+                    <a 
+                      href={`https://whois.domaintools.com/${row.ip_address}`} 
+                      target="_blank" 
+                      className="text-[9px] text-blue-500/60 font-black uppercase tracking-tighter hover:text-blue-400 transition-colors"
+                    >
+                      Whois
+                    </a>
+                  </div>
                 </div>
               </div>
 
-              {/* Сетка метрик */}
-              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                <div className="flex justify-between items-center border-b border-white/10 pb-1">
-                  <span className="text-gray-500 flex items-center gap-1"><Eye size={12} /> Всего</span>
+              {/* Сетка метрик (как была) */}
+              <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-gray-500 flex items-center gap-2"><Eye size={12} /> Всего</span>
                   <button
                     onClick={() => openDetails(row.user_id, row.ip_address, row.last_visit)}
-                    className="font-black text-blue-500"
+                    className={`font-black ${isDanger ? 'text-red-400' : 'text-blue-500'}`}
                   >
                     {row.total}
                   </button>
                 </div>
-                <div className="flex justify-between items-center border-b border-white/10 pb-1">
-                  <span className="text-gray-500 flex items-center gap-1"><Layout size={12} /> Главная</span>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-gray-500 flex items-center gap-2"><Layout size={12} /> Главная</span>
                   <span className="font-bold text-white">{row.home}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-white/10 pb-1">
@@ -222,25 +345,34 @@ export const StatsTable: React.FC<StatsTableProps> = ({
             </div>
           );
         })}
-
-        {/* Итоговая карточка (мобильная) */}
-        {summary && (
-          <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-4 mt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-black text-white uppercase tracking-widest">ИТОГО ПО СИСТЕМЕ</span>
-              <span className="text-sm font-black text-blue-500">{summary.total_views}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
-              <div className="flex justify-between"><span className="text-gray-500">Главная</span> <span className="font-bold text-white">{summary.column_totals?.home ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Кейсы</span> <span className="font-bold text-white">{summary.column_totals?.portfolio ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Блоги</span> <span className="font-bold text-white">{summary.column_totals?.blogs ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Профиль</span> <span className="font-bold text-white">{summary.column_totals?.profile ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Админ</span> <span className="font-bold text-white">{summary.column_totals?.admin ?? 0}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Auth</span> <span className="font-bold text-white">{summary.column_totals?.auth ?? 0}</span></div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* 4. ПАГИНАЦИЯ (Ниже списка) */}
+      {lastPage > 1 && (
+        <div className="p-8 border-t border-white/5 flex justify-center">
+          <Pagination 
+            currentPage={currentPage} 
+            lastPage={lastPage} 
+            onPageChange={onPageChange} 
+          />
+        </div>
+      )}
+
+      {/* 5. ИТОГИ (Всегда внизу) */}
+      {summary && (
+        <div className="bg-white/[0.04] border-t border-white/10 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] opacity-40">Итоговые показатели системы</span>
+          <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Всего</span><span className="text-sm font-black text-blue-500">{summary.total_views}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Главная</span><span className="text-sm font-black text-white">{summary.column_totals?.home}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Кейсы</span><span className="text-sm font-black text-white">{summary.column_totals?.portfolio}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Блоги</span><span className="text-sm font-black text-white">{summary.column_totals?.blogs}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Профиль</span><span className="text-sm font-black text-white">{summary.column_totals?.profile}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Админ</span><span className="text-sm font-black text-white">{summary.column_totals?.admin}</span></div>
+            <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 uppercase font-black">Auth</span><span className="text-sm font-black text-white">{summary.column_totals?.auth}</span></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

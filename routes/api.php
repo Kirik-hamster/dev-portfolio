@@ -133,6 +133,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::get('/admin/stats/summary', [StatsController::class, 'getSummary']);
         Route::get('/admin/stats/users', [StatsController::class, 'getUserStats']);
         Route::get('/admin/stats/details', [StatsController::class, 'getPathDetails']);
+        Route::post('/admin/stats/reset', [StatsController::class, 'resetSuspicion']);
     });
     Route::post('/reports', [ModerationController::class, 'report']);
 });
